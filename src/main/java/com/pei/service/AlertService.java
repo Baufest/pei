@@ -17,8 +17,8 @@ public class AlertService {
     public boolean verifyMoneyMule(List<Transaction> transactions) {
         List<Transaction> last24HoursTransactions = transactionService.getLast24HoursTransactions(transactions);
 
-        BigDecimal totalDeposits = transactionService.totalDeposits(transactions);
-        BigDecimal totalTransfers = transactionService.totalTransfers(transactions);
+        BigDecimal totalDeposits = transactionService.totalDeposits(last24HoursTransactions);
+        BigDecimal totalTransfers = transactionService.totalTransfers(last24HoursTransactions);
 
         // Si en 24 horas: sum(depósitos) > 5 y sum(transferencias) >= 0.8 * sum(depósitos) → alerta.
         return totalDeposits.compareTo(BigDecimal.valueOf(5)) > 0 &&
