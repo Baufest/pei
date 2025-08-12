@@ -53,7 +53,7 @@ class AlertControllerTest {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.length()").value(2))
             .andExpect(jsonPath("$.userId").value(1))
-            .andExpect(jsonPath("$.message").value("Alerta: Posible Money Mule detectado del usuario 1"))
+            .andExpect(jsonPath("$.description").value("Alerta: Posible Money Mule detectado del usuario 1"))
             .andDo(print());
     }
 
