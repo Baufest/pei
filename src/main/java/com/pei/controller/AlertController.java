@@ -4,6 +4,8 @@ import com.pei.dto.Alert;
 import com.pei.domain.Account;
 import com.pei.domain.Transaction;
 import com.pei.service.AlertService;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -37,14 +39,29 @@ public class AlertController {
 
     @PostMapping("/alerta-red-transacciones")
     public ResponseEntity<Alert> checkMultipleAccountsCashNotRelated(@RequestBody List<Transaction> transactions) {
-        List<Account> alertAccounts = alertService.verifyMultipleAccountsCashNotRelated(transactions);
-        Long userId = transactions.isEmpty() ? null : 1L /* transactions.get(0).getUser().getId() */;
+        try {
+            /* si no viene nada, manda 404 */
+            if (transactions == null || transactions.isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
 
-        if (alertAccounts.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        } else {
-            return ResponseEntity.ok(new Alert(userId,
-                    "Alert: Multiples transactions not related to the account of " + userId + " detected"));
+            /* deberia controlar que ninguna transaccion sea nula */
+            if (transactions.stream().anyMatch(t -> t == null)) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            List<Account> alertAccounts = alertService.verifyMultipleAccountsCashNotRelated(transactions);
+
+            Long userId = transactions.get(0).getUser() != null ? transactions.get(0).getUser().getId() : null;
+
+            if (alertAccounts.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            } else {
+                return ResponseEntity.ok(new Alert(userId,
+                        "Alert: Multiples transactions not related to the account of " + userId + " detected"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }
