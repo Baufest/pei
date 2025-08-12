@@ -21,7 +21,7 @@ public class Account {
     @CreationTimestamp
     private LocalDateTime creationDate;
 
-    @Column
+    @Column(nullable = false)
     private String type;
 
     @ManyToOne

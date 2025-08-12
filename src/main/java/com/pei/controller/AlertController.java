@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.pei.dto.Alert;
-import com.pei.dto.TransferReq;
+import com.pei.dto.TransferRequest;
 import com.pei.service.AccountService;
 
 
@@ -22,9 +22,9 @@ public class AlertController {
     AccountService accountService;
 
     @PostMapping("/alerta-cuenta-nueva")
-    public ResponseEntity<Alert> validarTransferenciasCuentasRecienCreadas(@RequestBody TransferReq transferReq) {
+    public ResponseEntity<Alert> validateNewAccountTransfers(@RequestBody TransferRequest transferReq) {
         try {
-            Alert alert = accountService.validarTransferenciasCuentasRecienCreadas(transferReq.getCuentaDestino(), transferReq.getTransaccionActual());
+            Alert alert = accountService.validateNewAccountTransfers(transferReq.getDestinationAccount(), transferReq.getCurrentTransaction());
             return ResponseEntity.ok(alert);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(new Alert(null, "Error interno del servidor."));
@@ -32,9 +32,9 @@ public class AlertController {
     }
 
     @GetMapping("/alerta-cliente-alto-riesgo/{userId}")
-    public ResponseEntity<Alert> validarClienteAltoRiesgo(@PathVariable Long userId) {
+    public ResponseEntity<Alert> validateHighRiskClient(@PathVariable Long userId) {
         try {
-            Alert alert = accountService.validarClienteAltoRiesgo(userId);
+            Alert alert = accountService.validateHighRiskClient(userId);
             return ResponseEntity.ok(alert);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(new Alert(null, "Error interno del servidor."));

@@ -54,14 +54,14 @@ class AlertControllerTest {
             Transaction transaccion = new Transaction();
             Alert alertaEsperada = new Alert(null, "Alerta de prueba");
     
-            when(accountService.validarTransferenciasCuentasRecienCreadas(any(Account.class), any(Transaction.class)))
+            when(accountService.validateNewAccountTransfers(any(Account.class), any(Transaction.class)))
                     .thenReturn(alertaEsperada);
     
             String cuentaJson = objectMapper.writeValueAsString(cuenta);
             String transaccionJson = objectMapper.writeValueAsString(transaccion);
             String requestBody = "{" +
-                    "\"cuentaDestino\":" + cuentaJson + "," +
-                    "\"transaccionActual\":" + transaccionJson +
+                    "\"destinationAccount\":" + cuentaJson + "," +
+                    "\"currentTransaction\":" + transaccionJson +
                     "}";
     
             
@@ -77,7 +77,7 @@ class AlertControllerTest {
             Long userId = 1L;
             Alert alertaEsperada = new Alert(userId, "Alerta: El cliente es de alto riesgo.");
 
-            when(accountService.validarClienteAltoRiesgo(userId)).thenReturn(alertaEsperada);
+            when(accountService.validateHighRiskClient(userId)).thenReturn(alertaEsperada);
 
             mockMvc.perform(get("/api/alerta-cliente-alto-riesgo/{userId}", userId)
                     .contentType(MediaType.APPLICATION_JSON))

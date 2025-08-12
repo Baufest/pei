@@ -37,8 +37,8 @@ class AccountServiceTest {
     private UserRepository userRepository;
 
     @Nested
-    @DisplayName("Tests para validarClienteAltoRiesgo")
-    class ValidarClienteAltoRiesgoTests {
+    @DisplayName("Tests for validateHighRiskClient")
+    class ValidateHighRiskClientTests {
 
         @Test
         @DisplayName("Debe retornar alerta de alto riesgo si el usuario es de alto riesgo")
@@ -49,7 +49,7 @@ class AccountServiceTest {
 
             when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
-            Alert alert = accountService.validarClienteAltoRiesgo(userId);
+            Alert alert = accountService.validateHighRiskClient(userId);
 
             assertEquals("Alerta: El cliente es de alto riesgo.", alert.description());
         }
@@ -63,7 +63,7 @@ class AccountServiceTest {
 
             when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
-            Alert alert = accountService.validarClienteAltoRiesgo(userId);
+            Alert alert = accountService.validateHighRiskClient(userId);
 
             assertEquals("Cliente verificado como de bajo riesgo.", alert.description());
         }
@@ -75,7 +75,7 @@ class AccountServiceTest {
 
             when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-            Alert alert = accountService.validarClienteAltoRiesgo(userId);
+            Alert alert = accountService.validateHighRiskClient(userId);
 
             assertEquals("Alerta: Usuario no encontrado.", alert.description());
         }
@@ -83,8 +83,8 @@ class AccountServiceTest {
     }
 
     @Nested
-    @DisplayName("validarTransferenciasCuentasRecienCreadas")
-    class ValidarTransferenciasCuentasRecienCreadasTests {
+    @DisplayName("validateNewAccountTransfers")
+    class ValidateNewAccountTransfersTests {
 
         @Test
         @DisplayName("Debe alertar si la cuenta fue creada hace menos de 48 horas")
@@ -93,7 +93,7 @@ class AccountServiceTest {
             when(transaccionActual.getDate()).thenReturn(now);
             when(cuentaDestino.getCreationDate()).thenReturn(now.minusHours(24));
 
-            Alert alert = accountService.validarTransferenciasCuentasRecienCreadas(cuentaDestino, transaccionActual);
+            Alert alert = accountService.validateNewAccountTransfers(cuentaDestino, transaccionActual);
 
             assertEquals("Alerta: Se transfiere dinero a una cuenta creada hace menos de 48 horas.",
                     alert.description());
@@ -106,7 +106,7 @@ class AccountServiceTest {
             when(transaccionActual.getDate()).thenReturn(now);
             when(cuentaDestino.getCreationDate()).thenReturn(now.minusHours(72));
 
-            Alert alert = accountService.validarTransferenciasCuentasRecienCreadas(cuentaDestino, transaccionActual);
+            Alert alert = accountService.validateNewAccountTransfers(cuentaDestino, transaccionActual);
 
             assertEquals("Transferencia permitida.", alert.description());
         }
@@ -118,7 +118,7 @@ class AccountServiceTest {
             when(transaccionActual.getDate()).thenReturn(now);
             when(cuentaDestino.getCreationDate()).thenReturn(now.minusHours(48));
 
-            Alert alert = accountService.validarTransferenciasCuentasRecienCreadas(cuentaDestino, transaccionActual);
+            Alert alert = accountService.validateNewAccountTransfers(cuentaDestino, transaccionActual);
 
             assertEquals("Transferencia permitida.", alert.description());
         }
@@ -130,7 +130,7 @@ class AccountServiceTest {
             when(transaccionActual.getDate()).thenReturn(now);
             when(cuentaDestino.getCreationDate()).thenReturn(now.plusHours(1));
 
-            Alert alert = accountService.validarTransferenciasCuentasRecienCreadas(cuentaDestino, transaccionActual);
+            Alert alert = accountService.validateNewAccountTransfers(cuentaDestino, transaccionActual);
 
             assertEquals("Transferencia permitida.", alert.description());
         }

@@ -17,11 +17,11 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column
+    @Column(nullable = false)
     private String name;
 
-    @Column
-    private boolean highRisk;
+    @Column(nullable = false)
+    private Boolean highRisk;
 
     @OneToMany(mappedBy = "user")
     private List<Account> accounts;

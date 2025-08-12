@@ -3,7 +3,6 @@ package com.pei.service;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.pei.domain.Account;
@@ -15,23 +14,25 @@ import com.pei.repository.UserRepository;
 @Service
 public class AccountService {
 
-    @Autowired
     private UserRepository userRepository;
 
-    public Alert validarTransferenciasCuentasRecienCreadas(Account cuentaDestino, Transaction transaccionActual) {
-            LocalDateTime fechaLimite = transaccionActual.getDate().minusHours(48);
-
-            //si la fecha de creacin de la cuenta está entre (48 hs antes) && (fecha de la transacción)
-            if (cuentaDestino.getCreationDate().isAfter(fechaLimite) 
-            && cuentaDestino.getCreationDate().isBefore(transaccionActual.getDate())) {
-                return new Alert(null, "Alerta: Se transfiere dinero a una cuenta creada hace menos de 48 horas.");
-            } else {
-                return new Alert(null, "Transferencia permitida.");
-            }
-        
+    public AccountService(UserRepository userRepository){
+        this.userRepository = userRepository;
     }
 
-    public Alert validarClienteAltoRiesgo(Long userId) {
+    public Alert validateNewAccountTransfers(Account destinationAccount, Transaction currentTransaction) {
+        LocalDateTime limitDate = currentTransaction.getDate().minusHours(48);
+
+        // If the account creation date is between (48 hours before) && (transaction date)
+        if (destinationAccount.getCreationDate().isAfter(limitDate)
+                && destinationAccount.getCreationDate().isBefore(currentTransaction.getDate())) {
+            return new Alert(null, "Alerta: Se transfiere dinero a una cuenta creada hace menos de 48 horas.");
+        } else {
+            return new Alert(null, "Transferencia permitida.");
+        }
+    }
+
+    public Alert validateHighRiskClient(Long userId) {
         Optional<User> userOpt = userRepository.findById(userId);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
