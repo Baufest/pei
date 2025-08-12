@@ -54,4 +54,21 @@ public class AccountService {
             return new Alert(userId, "Alerta: Usuario no encontrado.");
         }
     }
+
+    public Alert validateUserProfileTransaction(User user, Transaction transaction) {
+        if (user == null || user.getProfile() == null) {
+            return new Alert(null, "Alerta: Datos de usuario inválidos.");
+        }
+
+        if(transaction == null || transaction.getAmount() == null) {
+            return new Alert(null, "Alerta: Datos de transacción inválidos.");
+        }
+
+        if(transaction.getAmount() > 3 * user.getAverageMonthlySpending() && user.getProfile().equals("ahorrista")) {
+            return new Alert(null, "Alerta: Monto inusual para perfil.");
+        }
+
+        return new Alert(null, "Perfil de usuario validado para la transacción.");
+    }
+
 }

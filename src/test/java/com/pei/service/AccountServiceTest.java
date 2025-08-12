@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.pei.domain.Account;
 import com.pei.domain.Transaction;
+import com.pei.domain.User;
 import com.pei.dto.Alert;
 
 @ExtendWith(MockitoExtension.class)
@@ -131,6 +132,94 @@ class AccountServiceTest {
             Alert alert = accountService.validateNewAccountTransfers(cuentaDestino, transaccionActual);
 
             assertEquals("Transferencia permitida.", alert.description());
+        }
+    }
+
+    @Nested
+    @DisplayName("Tests para validateUserProfileTransaction")
+    class ValidateUserProfileTransactionTests {
+
+        @Test
+        @DisplayName("Debe retornar alerta si el usuario es null")
+        void testUserNull() {
+            Alert alert = accountService.validateUserProfileTransaction(null, new Transaction(100.0));
+            assertNotNull(alert);
+            assertEquals("Alerta: Datos de usuario inválidos.", alert.description());
+        }
+
+        @Test
+        @DisplayName("Debe retornar alerta si el perfil del usuario es null")
+        void testUserProfileNull() {
+            User user = new User();
+            user.setProfile(null);
+            Alert alert = accountService.validateUserProfileTransaction(user, new Transaction(100.0));
+            assertNotNull(alert);
+            assertEquals("Alerta: Datos de usuario inválidos.", alert.description());
+        }
+
+        @Test
+        @DisplayName("Debe retornar alerta si la transacción es null")
+        void testTransactionNull() {
+            User user = new User();
+            user.setProfile("normal");
+            user.setAverageMonthlySpending(1000.0);
+            Alert alert = accountService.validateUserProfileTransaction(user, null);
+            assertNotNull(alert);
+            assertEquals("Alerta: Datos de transacción inválidos.", alert.description());
+        }
+
+        @Test
+        @DisplayName("Debe retornar alerta si el monto de la transacción es null")
+        void testTransactionAmountNull() {
+            User user = new User();
+            user.setProfile("normal");
+            user.setAverageMonthlySpending(1000.0);
+            Transaction transaction = new Transaction(null);
+            Alert alert = accountService.validateUserProfileTransaction(user, transaction);
+            assertNotNull(alert);
+            assertEquals("Alerta: Datos de transacción inválidos.", alert.description());
+        }
+
+        @Test
+        @DisplayName("Debe retornar alerta si el monto es mayor a 3 veces el promedio y perfil es 'ahorrista'")
+        void testAmountExceedsThresholdAndProfileAhorrista() {
+            User user = new User();
+            user.setProfile("ahorrista");
+            user.setAverageMonthlySpending(1000.0);
+            Transaction transaction = new Transaction(3500.0); // > 3 * 1000 = 3000
+
+            Alert alert = accountService.validateUserProfileTransaction(user, transaction);
+
+            assertNotNull(alert);
+            assertEquals("Alerta: Monto inusual para perfil.", alert.description());
+        }
+
+        @Test
+        @DisplayName("Debe permitir validación correcta para monto dentro del rango y perfil 'ahorrista'")
+        void testValidAmountAndProfileAhorrista() {
+            User user = new User();
+            user.setProfile("ahorrista");
+            user.setAverageMonthlySpending(1000.0);
+            Transaction transaction = new Transaction(2500.0); // <= 3 * 1000
+
+            Alert alert = accountService.validateUserProfileTransaction(user, transaction);
+
+            assertNotNull(alert);
+            assertEquals("Perfil de usuario validado para la transacción.", alert.description());
+        }
+
+        @Test
+        @DisplayName("Debe permitir validación correcta para cualquier perfil distinto de 'ahorrista'")
+        void testValidAmountAndProfileOther() {
+            User user = new User();
+            user.setProfile("normal");
+            user.setAverageMonthlySpending(1000.0);
+            Transaction transaction = new Transaction(5000.0); // monto alto, pero perfil distinto
+
+            Alert alert = accountService.validateUserProfileTransaction(user, transaction);
+
+            assertNotNull(alert);
+            assertEquals("Perfil de usuario validado para la transacción.", alert.description());
         }
     }
 }

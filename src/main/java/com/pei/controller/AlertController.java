@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.pei.dto.Alert;
 import com.pei.dto.TransferRequest;
+import com.pei.dto.UserTransaction;
 import com.pei.service.AccountService;
 
 
@@ -41,15 +42,15 @@ public class AlertController {
         }
     }
 
-    // @PostMapping("/alerta-perfil")
-    // public ResponseEntity<Alert> validateUserProfile(@RequestBody User user) {
-    //     try {
-    //         Alert alert = accountService.validateUserProfile(user);
-    //         return ResponseEntity.ok(alert);
-    //     } catch (Exception e) {
-    //         return ResponseEntity.status(500).body(new Alert(null, "Error interno del servidor."));
-    //     }
-    // }
+    @PostMapping("/alerta-perfil")
+    public ResponseEntity<Alert> validateUserProfileTransaction(@RequestBody UserTransaction userTransaction) {
+        try {
+            Alert alert = accountService.validateUserProfileTransaction(userTransaction.getUser(), userTransaction.getTransaction());
+            return ResponseEntity.ok(alert);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new Alert(null, "Error interno del servidor."));
+        }
+    }
 
 }
 

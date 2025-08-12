@@ -23,8 +23,14 @@ public class User {
     @Column(nullable = false)
     private String risk;
 
+    @Column(nullable = false)
+    private String profile;
+
+    @Column(nullable = false)
+    private Double averageMonthlySpending;
+
     @OneToMany(mappedBy = "user")
-    private List<Account> accounts;
+    private List<Account> accounts = new ArrayList<>();
 
     public User() {
     }
@@ -54,6 +60,22 @@ public class User {
 
     public void setAccounts(List<Account> accounts) {
         this.accounts = accounts;
+    }
+
+    public String getProfile() {
+        return profile;
+    }
+
+    public void setProfile(String profile) {
+        this.profile = profile;
+    }
+
+    public Double getAverageMonthlySpending() {
+        return averageMonthlySpending;
+    }
+
+    public void setAverageMonthlySpending(Double averageMonthlySpending) {
+        this.averageMonthlySpending = averageMonthlySpending;
     }
 
 }

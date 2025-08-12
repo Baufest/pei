@@ -18,7 +18,14 @@ public class Transaction {
     @Column(nullable = false)
     private LocalDateTime date;
 
+    @Column(nullable = false)
+    private Double amount;
+
     public Transaction() {
+    }
+
+    public Transaction(Double amount) {
+        this.amount = amount;
     }
 
 
@@ -32,6 +39,14 @@ public class Transaction {
 
     public void setDate(LocalDateTime date) {
         this.date = date;
+    }
+
+    public Double getAmount() {
+        return amount;
+    }
+
+    public void setAmount(Double amount) {
+        this.amount = amount;
     }
 
 

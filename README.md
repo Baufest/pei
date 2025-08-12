@@ -14,9 +14,35 @@ Aplicación base PEI desarrollada en **Java 17** con **Spring Boot 3**. Alerta t
 
 ## Endpoints Principales
 
+### POST `/alerta-perfil`
+
+Alerta si un perfil de usuario no corresponde a el monto de una transacción realizada.
+
+**Request Body:**
+```json
+{
+  "user": {
+    "profile": "ahorrista",
+    "averageMonthlySpending": 1000.0
+  },
+  "transaction": {
+    "amount": 3500.0
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Alerta: Monto inusual para perfil."
+}
+```
+
+
 ### GET `/alerta-cliente-alto-riesgo/{userId}`
 
 Alerta si un cliente(usuario) es de alto riesgo. Busca en la base de datos el ID y comprueba su etiqueta de riesgo
+
 
 **Response:**
 ```json
@@ -80,12 +106,14 @@ Tests unitarios aplicados en AlertController
 En los tests de controlador se mockea el servicio (AccountService) para aislar la capa REST y validar que los endpoints responden correctamente, sin depender de la lógica interna o base de datos.
 
 Tests unitarios aplicados en AccountService
+
 Validar cliente alto riesgo
 testUsuarioAltoRiesgo: verifica que se genera la alerta correcta cuando el usuario es de alto riesgo.
 
 testUsuarioBajoRiesgo: verifica que se genera la alerta correcta cuando el usuario es de bajo riesgo.
 
 testUsuarioNoEncontrado: verifica que se genera la alerta correcta cuando el usuario no existe.
+
 
 Validar transferencias a cuentas recién creadas
 testCuentaCreadaHaceMenosDe48Horas: alerta si la cuenta fue creada hace menos de 48 horas.
@@ -95,5 +123,21 @@ testCuentaCreadaHaceMasDe48Horas: permite transferencia si la cuenta fue creada 
 testCuentaCreadaExactamente48Horas: permite transferencia si la cuenta fue creada hace exactamente 48 horas.
 
 testCuentaCreadaDespuesDeTransaccion: permite transferencia si la cuenta fue creada después de la fecha de la transacción.
+
+
+Validar perfil de usuario en transacción
+testUserNull: retorna alerta si el usuario es null.
+
+testUserProfileNull: retorna alerta si el perfil del usuario es null.
+
+testTransactionNull: retorna alerta si la transacción es null.
+
+testTransactionAmountNull: retorna alerta si el monto de la transacción es null.
+
+testAmountExceedsThresholdAndProfileAhorrista: retorna alerta si el monto es mayor a 3 veces el promedio y el perfil es "ahorrista".
+
+testValidAmountAndProfileAhorrista: permite validación correcta si el monto está dentro del rango y el perfil es "ahorrista".
+
+testValidAmountAndProfileOther: permite validación correcta para cualquier perfil distinto de "ahorrista".
 
 ---
