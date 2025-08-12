@@ -18,9 +18,9 @@ public class AccountService {
             //si la fecha de creacin de la cuenta está entre (48 hs antes) && (fecha de la transacción)
             if (cuentaDestino.getCreationDate().isAfter(fechaLimite) 
             && cuentaDestino.getCreationDate().isBefore(transaccionActual.getDate())) {
-                return new Alert("Alerta: Se transfiere dinero a una cuenta creada hace menos de 48 horas.");
+                return new Alert(null, "Alerta: Se transfiere dinero a una cuenta creada hace menos de 48 horas.");
             } else {
-                return new Alert("Transferencia permitida.");
+                return new Alert(null, "Transferencia permitida.");
             }
         
     }

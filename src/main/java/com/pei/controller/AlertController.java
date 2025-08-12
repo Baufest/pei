@@ -25,7 +25,7 @@ public class AlertController {
             Alert alert = accountService.validarTransferenciasCuentasRecienCreadas(transferReq.getCuentaDestino(), transferReq.getTransaccionActual());
             return ResponseEntity.ok(alert);
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(new Alert("Error interno del servidor."));
+            return ResponseEntity.status(500).body(new Alert(null, "Error interno del servidor."));
         }
     }
     

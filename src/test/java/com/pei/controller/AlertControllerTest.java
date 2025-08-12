@@ -51,7 +51,7 @@ class AlertControllerTest {
         void validarTransferenciasCuentasRecienCreadas_CuandoOk_RetornaAlerta() throws Exception {
             Account cuenta = new Account();
             Transaction transaccion = new Transaction();
-            Alert alertaEsperada = new Alert("Alerta de prueba");
+            Alert alertaEsperada = new Alert(null, "Alerta de prueba");
     
             when(accountService.validarTransferenciasCuentasRecienCreadas(any(Account.class), any(Transaction.class)))
                     .thenReturn(alertaEsperada);
