@@ -23,6 +23,9 @@ class TransactionServiceTest {
     @Autowired
     TransactionService transactionService;
 
+    @Autowired
+    TransactionService service;
+
     User user, user2;
 
     @BeforeEach
@@ -44,7 +47,7 @@ class TransactionServiceTest {
                 new Account(1L, user),
                 new Account(2L, user2));
 
-        TransactionService service = new TransactionService();
+
         List<Transaction> result = service.getLast24HoursTransactions(List.of(recentTransaction, oldTransaction));
 
         assertEquals(1, result.size());
