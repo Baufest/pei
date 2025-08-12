@@ -1,15 +1,16 @@
 package com.pei.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
+
 import java.time.LocalDateTime;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.pei.domain.Account;
@@ -42,7 +43,7 @@ class AccountServiceTest {
 
             Alert alert = accountService.validarTransferenciasCuentasRecienCreadas(cuentaDestino, transaccionActual);
 
-            assertEquals("Alerta: Se transfiere dinero a una cuenta creada hace menos de 48 horas.", alert.getMessage());
+            assertEquals("Alerta: Se transfiere dinero a una cuenta creada hace menos de 48 horas.", alert.description());
         }
 
         @Test
@@ -54,7 +55,7 @@ class AccountServiceTest {
 
             Alert alert = accountService.validarTransferenciasCuentasRecienCreadas(cuentaDestino, transaccionActual);
 
-            assertEquals("Transferencia permitida.", alert.getMessage());
+            assertEquals("Transferencia permitida.", alert.description());
         }
 
         @Test
@@ -66,7 +67,7 @@ class AccountServiceTest {
 
             Alert alert = accountService.validarTransferenciasCuentasRecienCreadas(cuentaDestino, transaccionActual);
 
-            assertEquals("Transferencia permitida.", alert.getMessage());
+            assertEquals("Transferencia permitida.", alert.description());
         }
 
         @Test
@@ -78,7 +79,7 @@ class AccountServiceTest {
 
             Alert alert = accountService.validarTransferenciasCuentasRecienCreadas(cuentaDestino, transaccionActual);
 
-            assertEquals("Transferencia permitida.", alert.getMessage());
+            assertEquals("Transferencia permitida.", alert.description());
         }
     }
 }
