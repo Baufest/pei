@@ -4,69 +4,96 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pei.domain.Account;
 import com.pei.domain.Transaction;
 import com.pei.domain.User;
+import com.pei.dto.Alert;
 import com.pei.service.AlertService;
+import com.pei.service.TransactionService;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(AlertController.class)
 class AlertControllerTest {
 
-    @MockitoBean
-    private AlertService service;
+    AlertController controller;
+    User user, user2, user3, user4;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    @BeforeEach
+    void setup() {
+        user = new User(1L);
+        user2 = new User(2L);
+        user3 = new User(3L);
+        user4 = new User(4L);
 
-    @Autowired
-    MockMvc mockMvc;
-
-    @Test
-    void Should_ReturnOkAlert_When_MoneyMuleDetected() throws Exception {
-        // Aquí puedes simular el comportamiento del servicio y probar la lógica del controlador
-        // Simular el comportamiento del servicio
-        User user = new User(1L);
-        Account account = new Account(1L, user);
-        LocalDateTime now = LocalDateTime.now();
-        List<Transaction> inputTransactions = List.of(new Transaction(user, new BigDecimal("100.00"), now.minusHours(2), account, account));
-
-        when(service.verifyMoneyMule(anyList())).thenReturn(true);
-
-        mockMvc.perform(post("/alerta-money-mule")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(inputTransactions))) // Simular una solicitud POST
-            .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$.length()").value(2))
-            .andExpect(jsonPath("$.userId").value(1))
-            .andExpect(jsonPath("$.description").value("Alerta: Posible Money Mule detectado del usuario 1"))
-            .andDo(print());
+        controller = new AlertController(
+                new AlertService(new TransactionService()));
     }
 
     @Test
-    void Should_ReturnNotContent_When_MoneyMuleNotDetected() throws Exception {
-        // Aquí puedes simular el comportamiento del servicio y probar la lógica del controlador
-        // Simular el comportamiento del servicio
-        when(service.verifyMoneyMule(anyList())).thenReturn(false);
+    void shouldReturnAlert_When_AccountsFound() {
+        Account destino = new Account(1L, user);
 
-        mockMvc.perform(post("/alerta-money-mule")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("[]"))// Simular una solicitud POST con un cuerpo vacío, ya que esta Mockeado el Service
-            .andExpect(status().isNotFound())
-            .andDo(print());
+        Transaction t1 = new Transaction(user, new BigDecimal(200L),
+                LocalDateTime.now(),
+                new Account(2L, user2),
+                destino);
+        Transaction t2 = new Transaction(user, new BigDecimal(200L),
+                LocalDateTime.now(),
+                new Account(3L, user3),
+                destino);
+        Transaction t3 = new Transaction(user, new BigDecimal(200L),
+                LocalDateTime.now(),
+                new Account(4L, user4),
+                destino);
+
+        Alert alertExpected = new Alert(user.getId(),
+                "Alert: Multiples transactions not related to the account of " + user.getId() + " detected");
+
+        ResponseEntity<Alert> alertResponse = controller.checkMultipleAccountsCashNotRelated(List.of(t1, t2, t3));
+
+        assertEquals(HttpStatus.OK, alertResponse.getStatusCode());
+        assertNotNull(alertResponse.getBody());
+        assertEquals(user.getId(), alertResponse.getBody().userId());
+        assertEquals(alertExpected,
+                alertResponse.getBody());
+    }
+
+    @Test
+    void shouldReturnNotFound_When_NoAccountsFound() {
+        Account destino = new Account(1L, user);
+
+        Transaction t1 = new Transaction(user, new BigDecimal(200L),
+                LocalDateTime.now(),
+                new Account(2L, user2),
+                destino);
+        Transaction t2 = new Transaction(user, new BigDecimal(200L),
+                LocalDateTime.now(),
+                new Account(3L, user3),
+                destino);
+
+        ResponseEntity<Alert> alertResponse = controller.checkMultipleAccountsCashNotRelated(List.of(t1, t2));
+
+        assertEquals(HttpStatus.NOT_FOUND, alertResponse.getStatusCode());
+        assertFalse(alertResponse.hasBody());
     }
 }

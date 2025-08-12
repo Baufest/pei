@@ -9,10 +9,21 @@ import java.util.Objects;
 @Entity
 public class Transaction {
 
-    @Id @GeneratedValue
+    @Id
+    @GeneratedValue
     private Long id;
 
-    @ManyToOne @Column(nullable = false)
+    /*
+     * //Version eli comentada porque no puedo hcaer las pruebas
+     * 
+     * @ManyToOne
+     * 
+     * @Column(nullable = false)
+     * private User user;
+     */
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Column(nullable = false)
@@ -21,15 +32,27 @@ public class Transaction {
     @Column(nullable = false)
     private LocalDateTime transactionDate;
 
-    @ManyToOne @Column(nullable = false)
+    /*
+     * @ManyToOne @Column(nullable = false)
+     * private Account sourceAccount;
+     * 
+     * @ManyToOne @Column(nullable = false)
+     * private Account destinationAccount;
+     */
+
+    @ManyToOne
+    @JoinColumn(name = "source_account_id", nullable = false)
     private Account sourceAccount;
 
-    @ManyToOne @Column(nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "destination_account_id", nullable = false)
     private Account destinationAccount;
 
-    protected Transaction() {}
+    protected Transaction() {
+    }
 
-    public Transaction(User user, BigDecimal amount, LocalDateTime transactionDate, Account sourceAccount, Account destinationAccount) {
+    public Transaction(User user, BigDecimal amount, LocalDateTime transactionDate, Account sourceAccount,
+            Account destinationAccount) {
         this.user = user;
         this.amount = amount;
         this.transactionDate = transactionDate;
@@ -83,9 +106,13 @@ public class Transaction {
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || getClass() != o.getClass())
+            return false;
         Transaction that = (Transaction) o;
-        return Objects.equals(id, that.id) && Objects.equals(user, that.user) && Objects.equals(amount, that.amount) && Objects.equals(transactionDate, that.transactionDate) && Objects.equals(sourceAccount, that.sourceAccount) && Objects.equals(destinationAccount, that.destinationAccount);
+        return Objects.equals(id, that.id) && Objects.equals(user, that.user) && Objects.equals(amount, that.amount)
+                && Objects.equals(transactionDate, that.transactionDate)
+                && Objects.equals(sourceAccount, that.sourceAccount)
+                && Objects.equals(destinationAccount, that.destinationAccount);
     }
 
     @Override
@@ -93,4 +120,3 @@ public class Transaction {
         return Objects.hash(id, user, amount, transactionDate, sourceAccount, destinationAccount);
     }
 }
-

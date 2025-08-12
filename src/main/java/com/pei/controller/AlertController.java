@@ -1,7 +1,7 @@
 package com.pei.controller;
 
-
 import com.pei.dto.Alert;
+import com.pei.domain.Account;
 import com.pei.domain.Transaction;
 import com.pei.service.AlertService;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +23,8 @@ public class AlertController {
     @PostMapping("/alerta-money-mule")
     public ResponseEntity<Alert> detectMoneyMule(@RequestBody List<Transaction> transactions) {
         boolean alertFlag = alertService.verifyMoneyMule(transactions);
-        //TODO: Deberíamos obtener el ID del usuario con Spring Security, pero aun no esta implementado
+        // TODO: Deberíamos obtener el ID del usuario con Spring Security, pero aun no
+        // esta implementado
         // Por ahora, asumimos que las transacciones tienen un usuario asociado
         Long userId = transactions.isEmpty() ? null : transactions.get(0).getUser().getId();
 
@@ -31,6 +32,19 @@ public class AlertController {
             return ResponseEntity.ok(new Alert(userId, "Alerta: Posible Money Mule detectado del usuario " + userId));
         } else {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/alerta-red-transacciones")
+    public ResponseEntity<Alert> checkMultipleAccountsCashNotRelated(@RequestBody List<Transaction> transactions) {
+        List<Account> alertAccounts = alertService.verifyMultipleAccountsCashNotRelated(transactions);
+        Long userId = transactions.isEmpty() ? null : 1L /* transactions.get(0).getUser().getId() */;
+
+        if (alertAccounts.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        } else {
+            return ResponseEntity.ok(new Alert(userId,
+                    "Alert: Multiples transactions not related to the account of " + userId + " detected"));
         }
     }
 }
