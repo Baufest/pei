@@ -47,7 +47,6 @@ class TransactionServiceTest {
                 new Account(1L, user),
                 new Account(2L, user2));
 
-
         List<Transaction> result = service.getLast24HoursTransactions(List.of(recentTransaction, oldTransaction));
 
         assertEquals(1, result.size());
