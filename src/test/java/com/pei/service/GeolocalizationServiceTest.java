@@ -30,8 +30,8 @@ class GeolocalizationServiceTest {
     @Test
     void givenDifferentCountries_thenReturnsAlert() {
         List<Logins> logins = Arrays.asList(
-                new Logins(1L, "Argentina", LocalDateTime.now()),
-                new Logins(1L, "Chile", LocalDateTime.now().minusMinutes(10))
+                new Logins(1L, null, "Argentina", LocalDateTime.now()),
+                new Logins(1L, null, "Chile", LocalDateTime.now().minusMinutes(10))
         );
 
         when(loginsRepository.findRecentLogins(eq(1L), any(LocalDateTime.class)))
@@ -47,8 +47,8 @@ class GeolocalizationServiceTest {
     @Test
     void givenSameCountry_thenReturnsNull() {
         List<Logins> logins = Arrays.asList(
-                new Logins(1L, "Argentina", LocalDateTime.now()),
-                new Logins(1L, "Argentina", LocalDateTime.now().minusMinutes(20))
+                new Logins(1L, null, "Argentina", LocalDateTime.now()),
+                new Logins(1L, null, "Argentina", LocalDateTime.now().minusMinutes(20))
         );
 
         when(loginsRepository.findRecentLogins(eq(1L), any(LocalDateTime.class)))

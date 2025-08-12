@@ -1,5 +1,8 @@
 package com.pei.dto;
 
-//manyToOne con usuario
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 
-public record Purchase(Long id, Long userId) {}
+//manyToOne con usuario
+@Entity
+public record Purchase(@Id Long id, Long userId) {}
