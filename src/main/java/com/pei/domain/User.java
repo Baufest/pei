@@ -1,4 +1,4 @@
-package com.pei.model;
+package com.pei.domain;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
