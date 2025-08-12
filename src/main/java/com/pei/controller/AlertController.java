@@ -23,4 +23,5 @@ public class AlertController {
             return ResponseEntity.notFound().build();
         }
     }
+
 }
