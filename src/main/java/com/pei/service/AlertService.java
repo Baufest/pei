@@ -20,6 +20,10 @@ public class AlertService {
         BigDecimal totalDeposits = transactionService.totalDeposits(last24HoursTransactions);
         BigDecimal totalTransfers = transactionService.totalTransfers(last24HoursTransactions);
 
+        if(totalDeposits == null || totalTransfers == null || last24HoursTransactions.isEmpty()) {
+            return false; // No hay transacciones relevantes
+        }
+
         // Si en 24 horas: sum(depósitos) > 5 y sum(transferencias) >= 0.8 * sum(depósitos) → alerta.
         return totalDeposits.compareTo(BigDecimal.valueOf(5)) > 0 &&
             totalTransfers.compareTo(totalDeposits.multiply(BigDecimal.valueOf(0.8))) >= 0;

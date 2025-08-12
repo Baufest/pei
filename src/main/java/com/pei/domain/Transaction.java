@@ -6,13 +6,14 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-@Entity
+@Entity @Table(name = "UserTransaction")
 public class Transaction {
 
-    @Id @GeneratedValue
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne @Column(nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
     private User user;
 
     @Column(nullable = false)
@@ -21,10 +22,12 @@ public class Transaction {
     @Column(nullable = false)
     private LocalDateTime transactionDate;
 
-    @ManyToOne @Column(nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "source_account", referencedColumnName = "id", nullable = false)
     private Account sourceAccount;
 
-    @ManyToOne @Column(nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "destination_account", referencedColumnName = "id", nullable = false)
     private Account destinationAccount;
 
     protected Transaction() {}

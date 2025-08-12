@@ -1,18 +1,16 @@
 package com.pei.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 
 import java.util.Objects;
 
-@Entity
+@Entity @Table(name = "Account")
 public class Account {
-    @Id @GeneratedValue
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
+    @JoinColumn(name = "owner", referencedColumnName = "id", nullable = false)
     private User owner;
 
     public Long getId() {
@@ -27,15 +25,20 @@ public class Account {
         this.owner = owner;
     }
 
+    public Account(User owner) {
+        this.owner = owner;
+    }
+
     public Account(Long id, User owner) {
         this.id = id;
         this.owner = owner;
     }
+
     public void setId(Long id) {
         this.id = id;
     }
 
-    protected Account() {}
+    public Account() {}
 
     @Override
     public boolean equals(Object o) {
