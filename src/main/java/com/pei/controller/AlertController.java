@@ -19,7 +19,7 @@ public class AlertController {
         this.alertService = alertService;
     }
 
-    @PostMapping("alerta-money-mule")
+    @PostMapping("/alerta-money-mule")
     public ResponseEntity<Alert> detectMoneyMule(@RequestBody List<Transaction> transactions) {
         boolean alertFlag = alertService.verifyMoneyMule(transactions);
         //TODO: Deberíamos obtener el ID del usuario con Spring Security, pero aun no esta implementado
