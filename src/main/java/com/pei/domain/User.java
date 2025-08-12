@@ -5,6 +5,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -19,6 +20,15 @@ public class User {
 
     protected User() {}
 
+    public User(Long id) {
+        this.id = id;
+        this.accounts = new java.util.ArrayList<>();
+    }
+    public User(Long id, List<Account> accounts) {
+        this.id = id;
+        this.accounts = accounts;
+    }
+
     public Long getId() {
         return id;
     }
@@ -29,6 +39,13 @@ public class User {
 
     public void addAccounts(Account account) {
         this.accounts.add(account);
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+    public void setAccounts(List<Account> accounts) {
+        this.accounts = accounts;
     }
 
     @Override

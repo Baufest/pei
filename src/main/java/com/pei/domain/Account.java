@@ -27,6 +27,14 @@ public class Account {
         this.owner = owner;
     }
 
+    public Account(Long id, User owner) {
+        this.id = id;
+        this.owner = owner;
+    }
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     protected Account() {}
 
     @Override

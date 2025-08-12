@@ -29,6 +29,14 @@ public class Transaction {
 
     protected Transaction() {}
 
+    public Transaction(User user, BigDecimal amount, LocalDateTime transactionDate, Account sourceAccount, Account destinationAccount) {
+        this.user = user;
+        this.amount = amount;
+        this.transactionDate = transactionDate;
+        this.sourceAccount = sourceAccount;
+        this.destinationAccount = destinationAccount;
+    }
+
     public Long getId() {
         return id;
     }
