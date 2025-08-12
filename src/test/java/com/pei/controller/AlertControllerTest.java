@@ -2,6 +2,7 @@ package com.pei.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -68,6 +69,19 @@ class AlertControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(requestBody))
             .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("GET /api/alerta-cliente-alto-riesgo/{userId} - éxito")
+        void validarClienteAltoRiesgo_CuandoOk_RetornaAlerta() throws Exception {
+            Long userId = 1L;
+            Alert alertaEsperada = new Alert(userId, "Alerta: El cliente es de alto riesgo.");
+
+            when(accountService.validarClienteAltoRiesgo(userId)).thenReturn(alertaEsperada);
+
+            mockMvc.perform(get("/api/alerta-cliente-alto-riesgo/{userId}", userId)
+                    .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk());
         }
     }
 

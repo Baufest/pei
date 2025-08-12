@@ -14,6 +14,18 @@ Aplicación base PEI desarrollada en **Java 17** con **Spring Boot 3**. Alerta t
 
 ## Endpoints Principales
 
+### GET `/alerta-cliente-alto-riesgo/{userId}`
+
+Alerta si un cliente(usuario) es de alto riesgo. Busca en la base de datos el ID y comprueba su etiqueta de riesgo
+
+**Response:**
+```json
+{
+  "message": "Alerta: El cliente es de alto riesgo."
+}
+```
+
+
 ### POST `/api/alerta-cuenta-nueva`
 
 Valida si una transferencia se realiza a una cuenta creada hace menos de 48 horas.
@@ -64,38 +76,24 @@ Las pruebas están implementadas en:
 - [src/test/java/com/pei/service/AccountServiceTest.java](src/test/java/com/pei/service/AccountServiceTest.java)
 - [src/test/java/com/pei/controller/AlertControllerTest.java](src/test/java/com/pei/controller/AlertControllerTest.java)
 
-### Ejemplo de test de servicio
+Tests unitarios aplicados en AlertController
+En los tests de controlador se mockea el servicio (AccountService) para aislar la capa REST y validar que los endpoints responden correctamente, sin depender de la lógica interna o base de datos.
 
-Se valida que el servicio [`AccountService`](src/main/java/com/pei/service/AccountService.java) retorna la alerta correcta según la fecha de creación de la cuenta destino.
+Tests unitarios aplicados en AccountService
+Validar cliente alto riesgo
+testUsuarioAltoRiesgo: verifica que se genera la alerta correcta cuando el usuario es de alto riesgo.
 
-```java
-@ExtendWith(MockitoExtension.class)
-class AccountServiceTest {
-    @Test
-    void testCuentaCreadaHaceMenosDe48Horas() {
-        // ...setup...
-        Alert alert = accountService.validarTransferenciasCuentasRecienCreadas(cuentaDestino, transaccionActual);
-        assertEquals("Alerta: Se transfiere dinero a una cuenta creada hace menos de 48 horas.", alert.getMessage());
-    }
-}
-```
+testUsuarioBajoRiesgo: verifica que se genera la alerta correcta cuando el usuario es de bajo riesgo.
 
-### Ejemplo de test de controlador
+testUsuarioNoEncontrado: verifica que se genera la alerta correcta cuando el usuario no existe.
 
-Se valida que el endpoint `/api/alerta-cuenta-nueva` responde correctamente ante una solicitud válida.
+Validar transferencias a cuentas recién creadas
+testCuentaCreadaHaceMenosDe48Horas: alerta si la cuenta fue creada hace menos de 48 horas.
 
-```java
-@ExtendWith(MockitoExtension.class)
-class AlertControllerTest {
-    @Test
-    void validarTransferenciasCuentasRecienCreadas_CuandoOk_RetornaAlerta() throws Exception {
-        // ...setup...
-        mockMvc.perform(post("/api/alerta-cuenta-nueva")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(requestBody))
-        .andExpect(status().isOk());
-    }
-}
-```
+testCuentaCreadaHaceMasDe48Horas: permite transferencia si la cuenta fue creada hace más de 48 horas.
+
+testCuentaCreadaExactamente48Horas: permite transferencia si la cuenta fue creada hace exactamente 48 horas.
+
+testCuentaCreadaDespuesDeTransaccion: permite transferencia si la cuenta fue creada después de la fecha de la transacción.
 
 ---

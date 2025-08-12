@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -15,7 +16,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.pei.domain.Account;
 import com.pei.domain.Transaction;
+import com.pei.domain.User;
 import com.pei.dto.Alert;
+import com.pei.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Tests para AccountService")
@@ -30,6 +33,55 @@ class AccountServiceTest {
     @Mock
     private Transaction transaccionActual;
 
+    @Mock
+    private UserRepository userRepository;
+
+    @Nested
+    @DisplayName("Tests para validarClienteAltoRiesgo")
+    class ValidarClienteAltoRiesgoTests {
+
+        @Test
+        @DisplayName("Debe retornar alerta de alto riesgo si el usuario es de alto riesgo")
+        void testUsuarioAltoRiesgo() {
+            Long userId = 1L;
+            User user = new User();
+            user.setHighRisk(true);
+
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+            Alert alert = accountService.validarClienteAltoRiesgo(userId);
+
+            assertEquals("Alerta: El cliente es de alto riesgo.", alert.description());
+        }
+
+        @Test
+        @DisplayName("Debe retornar alerta de bajo riesgo si el usuario es de bajo riesgo")
+        void testUsuarioBajoRiesgo(){
+            Long userId = 2L;
+            User user = new User();
+            user.setHighRisk(false);
+
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+            Alert alert = accountService.validarClienteAltoRiesgo(userId);
+
+            assertEquals("Cliente verificado como de bajo riesgo.", alert.description());
+        }
+
+        @Test
+        @DisplayName("Debe retornar alerta de usuario no encontrado si el usuario no es encontrado")
+        void testUsuarioNoEncontrado(){
+            Long userId = 3L;
+
+            when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+            Alert alert = accountService.validarClienteAltoRiesgo(userId);
+
+            assertEquals("Alerta: Usuario no encontrado.", alert.description());
+        }
+
+    }
+
     @Nested
     @DisplayName("validarTransferenciasCuentasRecienCreadas")
     class ValidarTransferenciasCuentasRecienCreadasTests {
@@ -43,7 +95,8 @@ class AccountServiceTest {
 
             Alert alert = accountService.validarTransferenciasCuentasRecienCreadas(cuentaDestino, transaccionActual);
 
-            assertEquals("Alerta: Se transfiere dinero a una cuenta creada hace menos de 48 horas.", alert.description());
+            assertEquals("Alerta: Se transfiere dinero a una cuenta creada hace menos de 48 horas.",
+                    alert.description());
         }
 
         @Test
