@@ -41,4 +41,15 @@ public class AlertController {
         }
     }
 
+    // @PostMapping("/alerta-perfil")
+    // public ResponseEntity<Alert> validateUserProfile(@RequestBody User user) {
+    //     try {
+    //         Alert alert = accountService.validateUserProfile(user);
+    //         return ResponseEntity.ok(alert);
+    //     } catch (Exception e) {
+    //         return ResponseEntity.status(500).body(new Alert(null, "Error interno del servidor."));
+    //     }
+    // }
+
 }
+

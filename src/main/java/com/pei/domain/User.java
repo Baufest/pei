@@ -21,7 +21,7 @@ public class User {
     private String name;
 
     @Column(nullable = false)
-    private Boolean highRisk;
+    private String risk;
 
     @OneToMany(mappedBy = "user")
     private List<Account> accounts;
@@ -40,12 +40,12 @@ public class User {
         this.name = name;
     }
 
-    public boolean isHighRisk() {
-        return highRisk;
+    public String getRisk() {
+        return risk;
     }
 
-    public void setHighRisk(boolean highRisk) {
-        this.highRisk = highRisk;
+    public void setRisk(String risk) {
+        this.risk = risk;
     }
 
     public List<Account> getAccounts() {
