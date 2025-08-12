@@ -22,15 +22,19 @@ public class AlertController {
 
     @PostMapping("/alerta-money-mule")
     public ResponseEntity<Alert> detectMoneyMule(@RequestBody List<Transaction> transactions) {
-        boolean alertFlag = alertService.verifyMoneyMule(transactions);
-        //TODO: Deberíamos obtener el ID del usuario con Spring Security, pero aun no esta implementado
-        // Por ahora, asumimos que las transacciones tienen un usuario asociado
-        Long userId = transactions.isEmpty() ? null : transactions.get(0).getUser().getId();
+        try {
+            boolean alertFlag = alertService.verifyMoneyMule(transactions);
+            //TODO: Deberíamos obtener el ID del usuario con Spring Security, pero aun no esta implementado
+            // Por ahora, asumimos que las transacciones tienen un usuario asociado
+            Long userId = transactions.isEmpty() ? null : transactions.get(0).getUser().getId();
 
-        if (alertFlag) {
-            return ResponseEntity.ok(new Alert(userId, "Alerta: Posible Money Mule detectado del usuario " + userId));
-        } else {
-            return ResponseEntity.notFound().build();
+            if (alertFlag) {
+                return ResponseEntity.ok(new Alert(userId, "Alerta: Posible Money Mule detectado del usuario " + userId));
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
         }
     }
 }
