@@ -1,6 +1,6 @@
 package com.pei.service;
 
-import com.pei.model.Transaction;
+import com.pei.domain.Transaction;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
