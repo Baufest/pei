@@ -5,18 +5,19 @@ import com.pei.dto.Chargeback;
 import com.pei.dto.Purchase;
 import com.pei.repository.ChargebackRepository;
 import com.pei.repository.PurchaseRepository;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-    
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -26,17 +27,20 @@ import com.pei.domain.Account;
 import com.pei.domain.Transaction;
 import com.pei.domain.User;
 
+@ExtendWith(MockitoExtension.class)
 class TransactionServiceTest {
 
     User user1, user2;
     Account account1, account2;
+    @Mock
     private ChargebackRepository chargebackRepository;
+    @Mock
     private PurchaseRepository purchaseRepository;
+    @InjectMocks
     private TransactionService transactionService;
 
     @BeforeEach
     void setUp() {
-        transactionService = new TransactionService(chargebackRepository, purchaseRepository);
         user1 = new User(1L);
         user2 = new User(2L);
         account1 = new Account(1L, user1);
@@ -123,26 +127,26 @@ class TransactionServiceTest {
     void givenChargebackFraud_thenReturnsAlert() {
         when(chargebackRepository.findByUserId(1L))
                 .thenReturn(List.of(
-                        new Chargeback(1L, 1L),
-                        new Chargeback(2L, 1L)
+                        new Chargeback(1L, user1),
+                        new Chargeback(2L, user1)
                 ));
         when(purchaseRepository.findByUserId(1L))
                 .thenReturn(List.of(
-                        new Purchase(1L, 1L),
-                        new Purchase(2L, 1L),
-                        new Purchase(3L, 1L),
-                        new Purchase(4L, 1L),
-                        new Purchase(5L, 1L),
-                        new Purchase(6L, 1L),
-                        new Purchase(7L, 1L),
-                        new Purchase(8L, 1L),
-                        new Purchase(9L, 1L),
-                        new Purchase(10L, 1L),
-                        new Purchase(11L, 1L),
-                        new Purchase(12L, 1L),
-                        new Purchase(13L, 1L),
-                        new Purchase(14L, 1L),
-                        new Purchase(15L, 1L)
+                        new Purchase(1L, user1),
+                        new Purchase(2L, user1),
+                        new Purchase(3L, user1),
+                        new Purchase(4L, user1),
+                        new Purchase(5L, user1),
+                        new Purchase(6L, user1),
+                        new Purchase(7L, user1),
+                        new Purchase(8L, user1),
+                        new Purchase(9L, user1),
+                        new Purchase(10L, user1),
+                        new Purchase(11L, user1),
+                        new Purchase(12L, user1),
+                        new Purchase(13L, user1),
+                        new Purchase(14L, user1),
+                        new Purchase(15L, user1)
                 ));
 
         Alert alert = transactionService.getChargebackFraudAlert(1L);
@@ -158,19 +162,19 @@ class TransactionServiceTest {
     void givenNoChargebackFraud_thenReturnsNull() {
         
         when(chargebackRepository.findByUserId(1L))
-                .thenReturn(List.of(new Chargeback(1L, 1L)));
+                .thenReturn(List.of(new Chargeback(1L, user1)));
         when(purchaseRepository.findByUserId(1L))
                 .thenReturn(List.of(
-                        new Purchase(1L, 1L),
-                        new Purchase(2L, 1L),
-                        new Purchase(3L, 1L),
-                        new Purchase(4L, 1L),
-                        new Purchase(5L, 1L),
-                        new Purchase(6L, 1L),
-                        new Purchase(7L, 1L),
-                        new Purchase(8L, 1L),
-                        new Purchase(9L, 1L),
-                        new Purchase(10L, 1L)
+                        new Purchase(1L, user1),
+                        new Purchase(2L, user1),
+                        new Purchase(3L, user1),
+                        new Purchase(4L, user1),
+                        new Purchase(5L, user1),
+                        new Purchase(6L, user1),
+                        new Purchase(7L, user1),
+                        new Purchase(8L, user1),
+                        new Purchase(9L, user1),
+                        new Purchase(10L, user1)
                 ));
 
         Alert alert = transactionService.getChargebackFraudAlert(1L);
@@ -185,8 +189,8 @@ class TransactionServiceTest {
         
         when(chargebackRepository.findByUserId(1L))
                 .thenReturn(List.of(
-                        new Chargeback(1L, 1L),
-                        new Chargeback(2L, 1L)
+                        new Chargeback(1L, user1),
+                        new Chargeback(2L, user1)
                 ));
         when(purchaseRepository.findByUserId(1L))
                 .thenReturn(Collections.emptyList());

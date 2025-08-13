@@ -8,4 +8,5 @@ import com.pei.domain.User;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     
+    
 }

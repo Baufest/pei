@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.pei.dto.Chargeback;
+import com.pei.dto.Purchase;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -34,6 +37,12 @@ public class User {
 
     @OneToMany(mappedBy = "owner")
     private List<Account> accounts = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user")
+    private List<Purchase> purchases = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user")
+    private List<Chargeback> chargebacks = new ArrayList<>();
 
     public User() {}
 
