@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.pei.dto.Alert;
@@ -17,7 +16,6 @@ public class GeolocalizationService {
     
     private LoginsRepository loginsRepository;
 
-    @Autowired
     public GeolocalizationService(LoginsRepository loginsRepository) {
         this.loginsRepository = loginsRepository;}
     

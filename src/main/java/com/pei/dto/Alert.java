@@ -3,10 +3,8 @@ package com.pei.dto;
 public record Alert(Long userId, String description) {
 
     public Long getUserId() {
-        return userId;
-    }
+       return userId;}
 
     public Object getDescription() {
-        return description;
-    }
+       return description;}
 }

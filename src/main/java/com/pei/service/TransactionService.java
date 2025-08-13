@@ -1,6 +1,5 @@
 package com.pei.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.pei.dto.Alert;
@@ -13,7 +12,6 @@ public class TransactionService {
     private final ChargebackRepository chargebackRepository;
     private final PurchaseRepository purchaseRepository;
 
-    @Autowired
     public TransactionService(ChargebackRepository chargebackRepository, PurchaseRepository purchaseRepository) {
         this.chargebackRepository = chargebackRepository;
         this.purchaseRepository = purchaseRepository;}
