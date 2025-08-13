@@ -109,10 +109,12 @@ GET /api/alerta-cliente-alto-riesgo/123
 
 ### Request - Validación de perfil de usuario
 
-```json
+```http
 POST /api/alerta-perfil
 Content-Type: application/json
+```
 
+```json
 {
   "user": {
     "id": 123
