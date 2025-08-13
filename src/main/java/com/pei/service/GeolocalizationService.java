@@ -34,5 +34,4 @@ public class GeolocalizationService {
         return null; 
     }
     
-    
     }
