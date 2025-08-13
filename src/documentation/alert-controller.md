@@ -137,4 +137,3 @@ En caso de error interno, se retorna HTTP 500 con un mensaje genérico.
 Las validaciones dependen de la lógica implementada en AccountService.
 📅 Fecha y Autor
 Fecha: 13/08/2025
-Autor: Fernando Elian Benitez
