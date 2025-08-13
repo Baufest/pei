@@ -25,8 +25,8 @@ public class ClienteService {
     public static String obtenerClienteJson(int idCliente) {
         try {
             ObjectNode cliente = mapper.createObjectNode();
-            cliente.put("idCliente", idCliente);
-            cliente.put("nombres", NOMBRES[random.nextInt(NOMBRES.length)]);
+            cliente.put("id", idCliente);
+            cliente.put("name", NOMBRES[random.nextInt(NOMBRES.length)]);
             cliente.put("apellidos", APELLIDOS[random.nextInt(APELLIDOS.length)]);
             cliente.put("telefono", generarNumeroTelefono(false));
             cliente.put("celular", generarNumeroTelefono(true));
@@ -34,11 +34,11 @@ public class ClienteService {
             cliente.put("codigoPostal", String.format("%05d", random.nextInt(100000)));
             cliente.put("fechaNacimiento", generarFechaNacimiento());
             cliente.put("numeroDocumento", String.format("%08d", random.nextInt(100000000)));
-            cliente.put("perfil", PERFILES[random.nextInt(PERFILES.length)]);
+            cliente.put("profile", PERFILES[random.nextInt(PERFILES.length)]);
             cliente.put("fechaAlta", LocalDate.now().minusDays(random.nextInt(2000)).toString());
             cliente.put("gastoPromedioMensual", random.nextInt(9000) + 1000);
+            cliente.put("risk", RIESGO[random.nextInt(PERFILES.length)]);
             cliente.put("tipoCliente", TIPOCLIENTE[random.nextInt(TIPOCLIENTE.length)]);
-            cliente.put("riesgo", RIESGO[random.nextInt(PERFILES.length)]);
             cliente.set("chargebacks", generarChargebacks());
 
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(cliente);
