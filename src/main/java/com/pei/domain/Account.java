@@ -1,6 +1,7 @@
 package com.pei.domain;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -32,6 +33,15 @@ public class Account {
     public Account() {
     }
 
+    public Account(User owner) {
+        this.owner = owner;
+    }
+
+    public Account(Long id, User owner) {
+        this.id = id;
+        this.owner = owner;
+    }
+
     public Long getId() {
         return id;
     }
@@ -58,6 +68,18 @@ public class Account {
 
     public void setOwner(User owner) {
         this.owner = owner;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Account account = (Account) o;
+        return Objects.equals(id, account.id) && Objects.equals(owner, account.owner);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, owner);
     }
 
 }

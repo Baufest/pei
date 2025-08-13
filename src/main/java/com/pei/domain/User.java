@@ -3,6 +3,7 @@ package com.pei.domain;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,8 +11,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
-@Entity
+@Entity @Table(name = "client")
 public class User {
 
     @Id
@@ -33,7 +35,15 @@ public class User {
     @OneToMany(mappedBy = "owner")
     private List<Account> accounts = new ArrayList<>();
 
-    public User() {
+    public User() {}
+
+    public User(Long id) {
+        this.id = id;
+        this.accounts = new java.util.ArrayList<>();
+    }
+    public User(Long id, List<Account> accounts) {
+        this.id = id;
+        this.accounts = accounts;
     }
 
     public Long getId() {
@@ -53,6 +63,10 @@ public class User {
 
     public void setRisk(String risk) {
         this.risk = risk;
+    }
+
+    public void addAccounts(Account account) {
+        this.accounts.add(account);
     }
 
     public List<Account> getAccounts() {
@@ -79,4 +93,15 @@ public class User {
         this.averageMonthlySpending = averageMonthlySpending;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return Objects.equals(id, user.id) && Objects.equals(accounts, user.accounts);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, accounts);
+    }
 }

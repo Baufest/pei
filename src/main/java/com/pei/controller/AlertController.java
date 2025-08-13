@@ -1,6 +1,7 @@
 package com.pei.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -9,18 +10,42 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.pei.domain.Transaction;
 import com.pei.dto.Alert;
 import com.pei.dto.TransferRequest;
 import com.pei.dto.UserTransaction;
 import com.pei.service.AccountService;
-
+import com.pei.service.AlertService;
 
 @RestController
 @RequestMapping("/api")
 public class AlertController {
 
-    @Autowired
-    AccountService accountService;
+    private AlertService alertService;
+    private AccountService accountService;
+
+    public AlertController(AlertService alertService, AccountService accountService) {
+        this.alertService = alertService;
+        this.accountService = accountService;
+    }
+
+    @PostMapping("/alerta-money-mule")
+    public ResponseEntity<Alert> detectMoneyMule(@RequestBody List<Transaction> transactions) {
+        try {
+            boolean alertFlag = alertService.verifyMoneyMule(transactions);
+            //TODO: Deberíamos obtener el ID del usuario con Spring Security, pero aun no esta implementado
+            // Por ahora, asumimos que las transacciones tienen un usuario asociado
+            Long userId = transactions.isEmpty() ? null : transactions.get(0).getUser().getId();
+
+            if (alertFlag) {
+                return ResponseEntity.ok(new Alert(userId, "Alerta: Posible Money Mule detectado del usuario " + userId));
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
 
     @PostMapping("/alerta-cuenta-nueva")
     public ResponseEntity<Alert> validateNewAccountTransfers(@RequestBody TransferRequest transferReq) {
