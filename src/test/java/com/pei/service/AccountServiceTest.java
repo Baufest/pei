@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.DisplayName;
@@ -142,7 +143,7 @@ class AccountServiceTest {
         @Test
         @DisplayName("Debe retornar alerta si el usuario es null")
         void testUserNull() {
-            Alert alert = accountService.validateUserProfileTransaction(null, new Transaction(100.0));
+            Alert alert = accountService.validateUserProfileTransaction(null, new Transaction(BigDecimal.valueOf(100.0)));
             assertNotNull(alert);
             assertEquals("Alerta: Datos de usuario inválidos.", alert.description());
         }
@@ -152,7 +153,7 @@ class AccountServiceTest {
         void testUserProfileNull() {
             User user = new User();
             user.setProfile(null);
-            Alert alert = accountService.validateUserProfileTransaction(user, new Transaction(100.0));
+            Alert alert = accountService.validateUserProfileTransaction(user, new Transaction(BigDecimal.valueOf(100.0)));
             assertNotNull(alert);
             assertEquals("Alerta: Datos de usuario inválidos.", alert.description());
         }
@@ -162,7 +163,7 @@ class AccountServiceTest {
         void testTransactionNull() {
             User user = new User();
             user.setProfile("normal");
-            user.setAverageMonthlySpending(1000.0);
+            user.setAverageMonthlySpending(BigDecimal.valueOf(1000.0));
             Alert alert = accountService.validateUserProfileTransaction(user, null);
             assertNotNull(alert);
             assertEquals("Alerta: Datos de transacción inválidos.", alert.description());
@@ -173,7 +174,7 @@ class AccountServiceTest {
         void testTransactionAmountNull() {
             User user = new User();
             user.setProfile("normal");
-            user.setAverageMonthlySpending(1000.0);
+            user.setAverageMonthlySpending(BigDecimal.valueOf(1000.0));
             Transaction transaction = new Transaction(null);
             Alert alert = accountService.validateUserProfileTransaction(user, transaction);
             assertNotNull(alert);
@@ -185,8 +186,8 @@ class AccountServiceTest {
         void testAmountExceedsThresholdAndProfileAhorrista() {
             User user = new User();
             user.setProfile("ahorrista");
-            user.setAverageMonthlySpending(1000.0);
-            Transaction transaction = new Transaction(3500.0); // > 3 * 1000 = 3000
+            user.setAverageMonthlySpending(BigDecimal.valueOf(1000.0));
+            Transaction transaction = new Transaction(BigDecimal.valueOf(3500.0)); // > 3 * 1000 = 3000
 
             Alert alert = accountService.validateUserProfileTransaction(user, transaction);
 
@@ -199,8 +200,8 @@ class AccountServiceTest {
         void testValidAmountAndProfileAhorrista() {
             User user = new User();
             user.setProfile("ahorrista");
-            user.setAverageMonthlySpending(1000.0);
-            Transaction transaction = new Transaction(2500.0); // <= 3 * 1000
+            user.setAverageMonthlySpending(BigDecimal.valueOf(1000.0));
+            Transaction transaction = new Transaction(BigDecimal.valueOf(2500.0)); // <= 3 * 1000
 
             Alert alert = accountService.validateUserProfileTransaction(user, transaction);
 
@@ -213,8 +214,8 @@ class AccountServiceTest {
         void testValidAmountAndProfileOther() {
             User user = new User();
             user.setProfile("normal");
-            user.setAverageMonthlySpending(1000.0);
-            Transaction transaction = new Transaction(5000.0); // monto alto, pero perfil distinto
+            user.setAverageMonthlySpending(BigDecimal.valueOf(1000.0));
+            Transaction transaction = new Transaction(BigDecimal.valueOf(5000.0)); // monto alto, pero perfil distinto
 
             Alert alert = accountService.validateUserProfileTransaction(user, transaction);
 

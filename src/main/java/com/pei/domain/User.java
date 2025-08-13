@@ -1,5 +1,6 @@
 package com.pei.domain;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,9 +28,9 @@ public class User {
     private String profile;
 
     @Column(nullable = false)
-    private Double averageMonthlySpending;
+    private BigDecimal averageMonthlySpending;
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "owner")
     private List<Account> accounts = new ArrayList<>();
 
     public User() {
@@ -70,11 +71,11 @@ public class User {
         this.profile = profile;
     }
 
-    public Double getAverageMonthlySpending() {
+    public BigDecimal getAverageMonthlySpending() {
         return averageMonthlySpending;
     }
 
-    public void setAverageMonthlySpending(Double averageMonthlySpending) {
+    public void setAverageMonthlySpending(BigDecimal averageMonthlySpending) {
         this.averageMonthlySpending = averageMonthlySpending;
     }
 

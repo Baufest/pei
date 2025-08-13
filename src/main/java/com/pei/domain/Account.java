@@ -9,6 +9,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
 @Entity
@@ -25,7 +26,8 @@ public class Account {
     private String type;
 
     @ManyToOne
-    private User user;
+    @JoinColumn(name = "owner", referencedColumnName = "id", nullable = false)
+    private User owner;
 
     public Account() {
     }
@@ -48,6 +50,14 @@ public class Account {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        this.owner = owner;
     }
 
 }

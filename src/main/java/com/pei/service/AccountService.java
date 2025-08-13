@@ -64,7 +64,9 @@ public class AccountService {
             return new Alert(null, "Alerta: Datos de transacción inválidos.");
         }
 
-        if(transaction.getAmount() > 3 * user.getAverageMonthlySpending() && user.getProfile().equals("ahorrista")) {
+        if (user.getAverageMonthlySpending() != null
+                && transaction.getAmount().compareTo(user.getAverageMonthlySpending().multiply(java.math.BigDecimal.valueOf(3))) > 0
+                && user.getProfile().equals("ahorrista")) {
             return new Alert(null, "Alerta: Monto inusual para perfil.");
         }
 
