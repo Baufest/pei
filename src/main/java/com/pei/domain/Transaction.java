@@ -45,36 +45,36 @@ public class Transaction {
         return id;
     }
 
-    public BigDecimal getMonto() {
+    public BigDecimal getAmount() {
         return amount;
     }
 
-    public void setMonto(BigDecimal monto) {
-        this.amount = monto;
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
     }
 
-    public LocalDateTime getFechaHora() {
+    public LocalDateTime getDateHour() {
         return dateHour;
     }
 
-    public void setFechaHora(LocalDateTime fechaHora) {
-        this.dateHour = fechaHora;
+    public void setDateHour(LocalDateTime dateHour) {
+        this.dateHour = dateHour;
     }
 
-    public String getCuentaOrigen() {
+    public String getAccountOrigin() {
         return accountOrigin;
     }
 
-    public void setCuentaOrigen(String cuentaOrigen) {
-        this.accountOrigin = cuentaOrigen;
+    public void setAccountOrigin(String accountOrigin) {
+        this.accountOrigin = accountOrigin;
     }
 
-    public String getCuentaDestino() {
+    public String getAccountDestiny() {
         return accountDestiny;
     }
 
-    public void setCuentaDestino(String cuentaDestino) {
-        this.accountDestiny = cuentaDestino;
+    public void setAccountDestiny(String accountDestiny) {
+        this.accountDestiny = accountDestiny;
     }
 
     public List<Approval> getApprovalList() {
