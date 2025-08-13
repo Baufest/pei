@@ -1,17 +1,20 @@
 package com.pei.service;
 
-import com.pei.domain.Account;
-import com.pei.domain.Transaction;
-import com.pei.domain.User;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.pei.domain.Account;
+import com.pei.domain.Transaction;
+import com.pei.domain.User;
 
 class TransactionServiceTest {
     TransactionService transactionService;

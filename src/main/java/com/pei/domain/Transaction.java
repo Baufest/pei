@@ -1,12 +1,19 @@
 package com.pei.domain;
 
-import jakarta.persistence.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-@Entity @Table(name = "UserTransaction")
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+
+@Entity @Table(name = "user_transaction")
 public class Transaction {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,7 +27,7 @@ public class Transaction {
     private BigDecimal amount;
 
     @Column(nullable = false)
-    private LocalDateTime transactionDate;
+    private LocalDateTime date;
 
     @ManyToOne
     @JoinColumn(name = "source_account", referencedColumnName = "id", nullable = false)
@@ -30,18 +37,30 @@ public class Transaction {
     @JoinColumn(name = "destination_account", referencedColumnName = "id", nullable = false)
     private Account destinationAccount;
 
-    protected Transaction() {}
+    public Transaction() {}
 
-    public Transaction(User user, BigDecimal amount, LocalDateTime transactionDate, Account sourceAccount, Account destinationAccount) {
+    public Transaction(BigDecimal amount){
+        this.amount = amount;
+    }
+
+    public Transaction(User user, BigDecimal amount, LocalDateTime date, Account sourceAccount, Account destinationAccount) {
         this.user = user;
         this.amount = amount;
-        this.transactionDate = transactionDate;
+        this.date = date;
         this.sourceAccount = sourceAccount;
         this.destinationAccount = destinationAccount;
     }
 
     public Long getId() {
         return id;
+    }
+
+    public LocalDateTime getDate() {
+        return date;
+    }
+
+    public void setDate(LocalDateTime date) {
+        this.date = date;
     }
 
     public User getUser() {
@@ -59,15 +78,6 @@ public class Transaction {
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }
-
-    public LocalDateTime getTransactionDate() {
-        return transactionDate;
-    }
-
-    public void setTransactionDate(LocalDateTime transactionDate) {
-        this.transactionDate = transactionDate;
-    }
-
     public Account getSourceAccount() {
         return sourceAccount;
     }
@@ -88,12 +98,12 @@ public class Transaction {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         Transaction that = (Transaction) o;
-        return Objects.equals(id, that.id) && Objects.equals(user, that.user) && Objects.equals(amount, that.amount) && Objects.equals(transactionDate, that.transactionDate) && Objects.equals(sourceAccount, that.sourceAccount) && Objects.equals(destinationAccount, that.destinationAccount);
+        return Objects.equals(id, that.id) && Objects.equals(user, that.user) && Objects.equals(amount, that.amount) && Objects.equals(date, that.date) && Objects.equals(sourceAccount, that.sourceAccount) && Objects.equals(destinationAccount, that.destinationAccount);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, user, amount, transactionDate, sourceAccount, destinationAccount);
+        return Objects.hash(id, user, amount, date, sourceAccount, destinationAccount);
     }
 }
 

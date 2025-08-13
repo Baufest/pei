@@ -1,10 +1,11 @@
 package com.pei.service;
 
-import com.pei.domain.Transaction;
-import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
 import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.pei.domain.Transaction;
 
 @Service
 public class TransactionService {
@@ -12,7 +13,7 @@ public class TransactionService {
     //TODO: Probablemente tengamos que hacer una Query SQL para obtener las transacciones, sería más performante
     public List<Transaction> getLast24HoursTransactions(List<Transaction> transactions) {
         return transactions.stream()
-            .filter(transaction -> transaction.getTransactionDate().isAfter(
+            .filter(transaction -> transaction.getDate().isAfter(
                 java.time.LocalDateTime.now().minusDays(1)))
             .toList();
     }
