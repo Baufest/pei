@@ -1,0 +1,8 @@
+cliente:
+    confiable:
+        antiguedad:
+            medicion: MES       # MES, AÑO, DIA, SEMANA
+            minima: 24          # Número entero o decimal (ej: 18, 1.5)
+        perfiles-no-confiables:
+            - IRRECUPERABLE     # Perfiles del cliente no confiable
+        limite-chargeback: 0
