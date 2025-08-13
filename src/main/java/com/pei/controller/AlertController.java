@@ -1,24 +1,22 @@
 package com.pei.controller;
 
+import com.pei.domain.Transaction;
+import com.pei.dto.Alert;
+import com.pei.dto.TimeRangeRequest;
+import com.pei.service.AlertService;
 import org.springframework.http.ResponseEntity;
+import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.pei.dto.Alert;
 import com.pei.service.GeolocalizationService;
 import com.pei.service.TransactionService;
-
-import java.util.List;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-
-import com.pei.domain.Transaction;
 import com.pei.dto.TransferRequest;
 import com.pei.dto.UserTransaction;
 import com.pei.service.AccountService;
-import com.pei.service.AlertService;
 
 @RestController
 @RequestMapping("/api")
@@ -26,11 +24,11 @@ public class AlertController {
 
     private final TransactionService transactionService;
     private final GeolocalizationService geolocalizationService;
-    private AlertService alertService;
-    private AccountService accountService;
+    private final AlertService alertService;
+    private final AccountService accountService;
 
-    public AlertController(AlertService alertService, 
-                AccountService accountService, TransactionService transactionService, 
+    public AlertController(AlertService alertService,
+                AccountService accountService, TransactionService transactionService,
                 GeolocalizationService geolocalizationService) {
         this.alertService = alertService;
         this.accountService = accountService;
@@ -86,7 +84,7 @@ public class AlertController {
         }
     }
 
-    
+
 
     @GetMapping("/alerta-chargeback/{userId}")
     public ResponseEntity<Alert> getChargebackAlert(@PathVariable Long userId) {
@@ -111,5 +109,23 @@ public class AlertController {
 
     }
 
-}
+    @PostMapping("/alerta-aprobaciones")
+    public ResponseEntity<Alert> evaluateApprovals(@RequestBody Long transactionId){
+        Alert alerta = alertService.approvalAlert(transactionId);
+        if (alerta != null) {
+            return ResponseEntity.ok(alerta);
+        }
+        return ResponseEntity.notFound().build();
+    }
 
+
+    @PostMapping("/alerta-horario")
+    public ResponseEntity<Alert> evaluateTransactionOutOfTimeRange(@RequestBody TimeRangeRequest request){
+        Alert alerta = alertService.timeRangeAlert(request.getTransactions(), request.getNewTransaction());
+        if (alerta != null) {
+            return ResponseEntity.ok(alerta);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+}

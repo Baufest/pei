@@ -1,23 +1,25 @@
 package com.pei.service;
 
+import com.pei.domain.*;
+import com.pei.repository.*;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
-
-import com.pei.domain.Transaction;
 import com.pei.dto.Alert;
-import com.pei.repository.ChargebackRepository;
-import com.pei.repository.PurchaseRepository;
 
 @Service
 public class TransactionService {
 
     private final ChargebackRepository chargebackRepository;
     private final PurchaseRepository purchaseRepository;
+    private final TransactionRepository transactionRepository;
 
-    public TransactionService(ChargebackRepository chargebackRepository, PurchaseRepository purchaseRepository) {
+    public TransactionService(ChargebackRepository chargebackRepository, PurchaseRepository purchaseRepository, TransactionRepository transactionRepository) {
         this.chargebackRepository = chargebackRepository;
-        this.purchaseRepository = purchaseRepository;}
+        this.purchaseRepository = purchaseRepository;
+        this.transactionRepository = transactionRepository;
+    }
 
     //TODO: Probablemente tengamos que hacer una Query SQL para obtener las transacciones, sería más performante
     public List<Transaction> getLast24HoursTransactions(List<Transaction> transactions) {
@@ -46,7 +48,7 @@ public class TransactionService {
             .map(Transaction::getAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
-  
+
     public Alert getChargebackFraudAlert(Long userId) {
         int numberOfChargebacks = chargebackRepository.findByUserId(userId).size();
         int numberOfPurchases = purchaseRepository.findByUserId(userId).size();
@@ -54,7 +56,7 @@ public class TransactionService {
 
         if (numberOfPurchases == 0 && numberOfChargebacks > 0) {
             chargebackFraudAlert = new Alert(
-                    userId, 
+                    userId,
                     "Chargeback fraud detected for user " + userId
                 );
         }
@@ -62,12 +64,32 @@ public class TransactionService {
         if (numberOfPurchases > 0) {
             if ((double) numberOfChargebacks / numberOfPurchases > 0.1) {
                 chargebackFraudAlert = new Alert(
-                    userId, 
+                    userId,
                     "Chargeback fraud detected for user " + userId
                 );
             }
         }
-
         return chargebackFraudAlert;
+    }
+    public TimeRange getAvgTimeRange(List<Transaction> transactions) {
+        if (transactions == null || transactions.isEmpty()) {
+            throw new IllegalArgumentException("Transactions list was empty.");
+        }
+        int minHour = Integer.MAX_VALUE;
+        int maxHour = Integer.MIN_VALUE;
+
+        for (Transaction transaction : transactions) {
+            LocalDateTime dateHour = transaction.getDate();
+            int hora = dateHour.getHour();
+
+            if (hora < minHour) minHour = hora;
+            if (hora > maxHour) maxHour = hora;
+        }
+        return new TimeRange(minHour, maxHour);
+    }
+
+    public int getApprovalCount(Long transactionId){
+        Transaction transaction =  transactionRepository.findById(transactionId).orElseThrow(() -> new RuntimeException("Transaction not found in database"));
+        return transaction.getApprovalList().size();
     }
 }

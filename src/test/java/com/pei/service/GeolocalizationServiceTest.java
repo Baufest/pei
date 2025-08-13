@@ -40,8 +40,8 @@ class GeolocalizationServiceTest {
         Alert alert = geolocalizationService.getLoginAlert(1L);
 
         assertNotNull(alert);
-        assertEquals(1L, alert.getUserId());
-        assertEquals("Multiple countries logins detected for user 1", alert.getDescription());
+        assertEquals(1L, alert.userId());
+        assertEquals("Multiple countries logins detected for user 1", alert.description());
     }
 
     @Test

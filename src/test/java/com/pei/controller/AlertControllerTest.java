@@ -2,7 +2,7 @@ package com.pei.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -14,10 +14,13 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.pei.service.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
@@ -30,11 +33,10 @@ import com.pei.domain.Transaction;
 import com.pei.domain.User;
 import com.pei.dto.Alert;
 import com.pei.dto.UserTransaction;
-import com.pei.service.AccountService;
-import com.pei.service.AlertService;
 
 
 @WebMvcTest(AlertController.class)
+@ExtendWith(MockitoExtension.class)
 class AlertControllerTest {
 
     @MockitoBean
@@ -43,8 +45,15 @@ class AlertControllerTest {
     @MockitoBean
     private AccountService accountService;
 
+    @MockitoBean
+    private TransactionService transactionService;
+
+    @MockitoBean
+    private GeolocalizationService geolocalizationService;
+
     @Autowired
     private ObjectMapper objectMapper;
+
 
     @Autowired
     MockMvc mockMvc;
@@ -150,5 +159,62 @@ class AlertControllerTest {
                     .andExpect(jsonPath("$.description").value("Perfil de usuario validado para la transacción."));
 
         }
+    }
+
+    @Test
+    void shouldReturnAlertWhenTransactionHasMoreThanTwoApprovals() throws Exception {
+        // given
+        Long transactionId = 123L;
+        Alert mockAlert = new Alert(transactionId,
+            "Transacción con ID = " + transactionId + " tiene más de 2 aprobaciones");
+
+        when(service.approvalAlert(transactionId)).thenReturn(mockAlert);
+
+        String jsonRequest = "123";
+
+        // when
+        var result = mockMvc.perform(post("/api/alerta-aprobaciones")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(jsonRequest));
+
+        // then
+        result.andExpect(status().isOk())
+            .andExpect(jsonPath("$.userId").value(123))
+            .andExpect(jsonPath("$.description").value("Transacción con ID = 123 tiene más de 2 aprobaciones"));
+
+        verify(service, times(1)).approvalAlert(transactionId);
+    }
+
+    @Test
+    void shouldReturnAlertWhenTransactionIsOutOfTimeRange() throws Exception {
+        // given: historial de transacciones y nueva transacción a testear(esta fuera de rango)
+        String jsonRequest = """
+        {
+          "transactions": [
+            { "id": 1, "dateHour": "2025-08-13T09:30:00" },
+            { "id": 2, "dateHour": "2025-08-13T14:20:00" }
+          ],
+          "newTransaction": { "id": 3, "dateHour": "2025-08-13T23:10:00" }
+        }
+    """;
+
+        // creamos la alerta esperada
+        Alert mockAlert = new Alert(3L, "Transacción con ID = 3, realizada fuera del rango de horas promedio: 9 - 14");
+
+        // devuelvo la alerta
+        when(service.timeRangeAlert(anyList(), any(Transaction.class))).thenReturn(mockAlert);
+
+        // when:
+        var result = mockMvc.perform(post("/api/alerta-horario")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(jsonRequest));
+
+        // then: verificamos que el status y el body sean correctos
+        result.andExpect(status().isOk())
+            .andExpect(jsonPath("$.userId").value(3))
+            .andExpect(jsonPath("$.description").value("Transacción con ID = 3, realizada fuera del rango de horas promedio: 9 - 14"));
+
+        // verificamos que se llamó al servicio exactamente una vez
+        verify(service, times(1)).timeRangeAlert(anyList(), any(Transaction.class));
     }
 }

@@ -152,8 +152,8 @@ class TransactionServiceTest {
         Alert alert = transactionService.getChargebackFraudAlert(1L);
 
         assertNotNull(alert);
-        assertEquals(1L, alert.getUserId());
-        assertEquals("Chargeback fraud detected for user 1", alert.getDescription());
+        assertEquals(1L, alert.userId());
+        assertEquals("Chargeback fraud detected for user 1", alert.description());
         verify(chargebackRepository, times(1)).findByUserId(1L);
         verify(purchaseRepository, times(1)).findByUserId(1L);
     }

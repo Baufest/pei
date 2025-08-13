@@ -1,9 +1,9 @@
 package com.pei.domain;
-
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
-
+import java.util.*;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -37,6 +37,9 @@ public class Transaction {
     @JoinColumn(name = "destination_account", referencedColumnName = "id", nullable = false)
     private Account destinationAccount;
 
+    @OneToMany(mappedBy = "transaction")
+    private List<Approval> approvalList = new ArrayList<>();
+
     public Transaction() {}
 
     public Transaction(BigDecimal amount){
@@ -49,6 +52,15 @@ public class Transaction {
         this.date = date;
         this.sourceAccount = sourceAccount;
         this.destinationAccount = destinationAccount;
+
+    }
+    public Transaction(Long id, BigDecimal amount, LocalDateTime date, Account sourceAccount, Account destinationAccount, List<Approval> approvalList) {
+        this.id = id;
+        this.amount = amount;
+        this.date = date;
+        this.sourceAccount = sourceAccount;
+        this.destinationAccount = destinationAccount;
+        this.approvalList = approvalList;
     }
 
     public Long getId() {
@@ -92,6 +104,14 @@ public class Transaction {
 
     public void setDestinationAccount(Account destinationAccount) {
         this.destinationAccount = destinationAccount;
+    }
+
+    public List<Approval> getApprovalList() {
+        return approvalList;
+    }
+
+    public void setApprovalList(List<Approval> approvalList) {
+        this.approvalList = approvalList;
     }
 
     @Override
