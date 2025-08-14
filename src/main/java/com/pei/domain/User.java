@@ -23,6 +23,7 @@ public class User {
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, orphanRemoval = true)
     private Set<Country> countries = new HashSet<>();
 
+
     public User() {}
 
     public User(Long id) {
@@ -53,8 +54,7 @@ public class User {
     public void setAccounts(List<Account> accounts) {
         this.accounts = accounts;
     }
-    
-    
+
 
     public Set<Device> getDevices() {
         return devices;
