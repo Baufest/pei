@@ -433,3 +433,253 @@ _No aplica, ya que no se expone vía API._
 
 ---
 
+
+---
+
+## 🧑‍💻 Historia de Usuario #222
+
+### 📝 Título
+Alerta por transferencias a cuentas recién creadas
+
+---
+
+### 📌 Descripción Breve
+Se implementa un endpoint que valida si una transferencia se realiza a una cuenta creada hace menos de 48 horas. Si la cuenta destino fue creada en ese rango, se genera una alerta.
+
+---
+
+### ⚙️ Detalles Técnicos
+
+#### 🧩 Clases/Métodos Afectados
+- `AlertController`
+  - Método: `validateNewAccountTransfers(TransferRequest transferReq)`
+- `AccountService`
+  - Método: `validateNewAccountTransfers(Account destinationAccount, Transaction currentTransaction)`
+- `TransferRequest` (DTO)
+- `Alert` (DTO)
+
+#### 🌐 Endpoints Nuevos/Modificados
+| Método HTTP | URL                      | Parámetros (Body)         | Respuesta                      |
+|-------------|--------------------------|---------------------------|--------------------------------|
+| POST        | `/api/alerta-cuenta-nueva` | `TransferRequest`         | `Alert` con mensaje de alerta  |
+
+#### 🗃️ Cambios en Base de Datos
+- No aplica.
+
+---
+
+### 🔍 Impacto en el Sistema
+- Módulo afectado: Alertas y cuentas
+- Dependencias relevantes: `AccountService`, `TransferRequest`, `Alert`
+
+---
+
+### 💻 Ejemplo de Uso
+
+**Request**
+```http
+POST /api/alerta-cuenta-nueva
+Content-Type: application/json
+{
+  "destinationAccount": {
+    "id": 123,
+    "creationDate": "2025-08-12T10:00:00",
+    "type": "Ahorros"
+  },
+  "currentTransaction": {
+    "id": 456,
+    "date": "2025-08-12T12:00:00"
+  }
+}
+```
+
+**Response**
+```json
+{
+  "description": "Alerta: Se transfiere dinero a una cuenta creada hace menos de 48 horas."
+}
+```
+
+---
+
+## 🧪 Pruebas Unitarias
+
+### 🧪 Escenarios Cubiertos
+- `testCuentaCreadaHaceMenosDe48Horas`: Alerta si la cuenta fue creada hace menos de 48 horas.
+- `testCuentaCreadaHaceMasDe48Horas`: Permite transferencia si la cuenta fue creada hace más de 48 horas.
+- `testCuentaCreadaExactamente48Horas`: Permite transferencia si la cuenta fue creada exactamente hace 48 horas.
+- `testCuentaCreadaDespuesDeTransaccion`: Permite transferencia si la cuenta fue creada después de la transacción.
+
+### 🧪 Endpoints Probados
+| Método HTTP | URL                      | Escenario de Test                       | Resultado Esperado |
+|-------------|--------------------------|-----------------------------------------|--------------------|
+| POST        | `/api/alerta-cuenta-nueva` | Cuenta creada hace menos de 48 horas    | Alerta generada    |
+
+---
+
+## ✅ Estado
+✔️ Completado
+
+---
+
+## 🧑‍💻 Historia de Usuario #227
+
+### 📝 Título
+Alerta por cliente de alto riesgo
+
+---
+
+### 📌 Descripción Breve
+Se implementa un endpoint que verifica si un cliente es de alto riesgo consultando su información. Si el cliente tiene la etiqueta "alto" en el campo de riesgo, se genera una alerta.
+
+---
+
+### ⚙️ Detalles Técnicos
+
+#### 🧩 Clases/Métodos Afectados
+- `AlertController`
+  - Método: `validateHighRiskClient(Long userId)`
+- `AccountService`
+  - Método: `validateHighRiskClient(Long userId)`
+- `ClienteService`
+  - Método: `obtenerClienteJson(Long idCliente)`
+- `Alert` (DTO)
+
+#### 🌐 Endpoints Nuevos/Modificados
+| Método HTTP | URL                                 | Parámetros (Path) | Respuesta                      |
+|-------------|-------------------------------------|-------------------|-------------------------------|
+| GET         | `/api/alerta-cliente-alto-riesgo/{userId}` | `userId`          | `Alert` con mensaje de alerta |
+
+#### 🗃️ Cambios en Base de Datos
+- No aplica.
+
+---
+
+### 🔍 Impacto en el Sistema
+- Módulo afectado: Alertas y clientes
+- Dependencias relevantes: `AccountService`, `ClienteService`, `Alert`
+
+---
+
+### 💻 Ejemplo de Uso
+
+**Request**
+```http
+GET /api/alerta-cliente-alto-riesgo/1
+```
+
+**Response**
+```json
+{
+  "userId": 1,
+  "description": "Alerta: El cliente es de alto riesgo."
+}
+```
+
+---
+
+## 🧪 Pruebas Unitarias
+
+### 🧪 Escenarios Cubiertos
+- `testHighRiskUser`: Alerta si el usuario es de alto riesgo.
+- `testLowRiskUser`: Mensaje de verificado si el usuario es de bajo riesgo.
+- `testNotFoundUser`: Alerta si el usuario no es encontrado.
+
+### 🧪 Endpoints Probados
+| Método HTTP | URL                                 | Escenario de Test         | Resultado Esperado |
+|-------------|-------------------------------------|--------------------------|--------------------|
+| GET         | `/api/alerta-cliente-alto-riesgo/1` | Usuario de alto riesgo   | Alerta generada    |
+
+---
+
+## ✅ Estado
+✔️ Completado
+
+---
+
+## 🧑‍💻 Historia de Usuario #217
+
+### 📝 Título
+Alerta por validación de perfil de usuario en transacción
+
+---
+
+### 📌 Descripción Breve
+Se implementa un endpoint que valida si el perfil del usuario corresponde al monto de la transacción realizada. Si el monto excede tres veces el promedio mensual y el perfil es "ahorrista", se genera una alerta.
+
+---
+
+### ⚙️ Detalles Técnicos
+
+#### 🧩 Clases/Métodos Afectados
+- `AlertController`
+  - Método: `validateUserProfileTransaction(UserTransaction userTransaction)`
+- `AccountService`
+  - Método: `validateUserProfileTransaction(User user, Transaction transaction)`
+- `UserTransaction` (DTO)
+- `Alert` (DTO)
+
+#### 🌐 Endpoints Nuevos/Modificados
+| Método HTTP | URL                  | Parámetros (Body)      | Respuesta                      |
+|-------------|----------------------|------------------------|-------------------------------|
+| POST        | `/api/alerta-perfil` | `UserTransaction`      | `Alert` con mensaje de alerta |
+
+#### 🗃️ Cambios en Base de Datos
+- No aplica.
+
+---
+
+### 🔍 Impacto en el Sistema
+- Módulo afectado: Alertas y usuarios
+- Dependencias relevantes: `AccountService`, `UserTransaction`, `Alert`
+
+---
+
+### 💻 Ejemplo de Uso
+
+**Request**
+```http
+POST /api/alerta-perfil
+Content-Type: application/json
+{
+  "user": {
+    "profile": "ahorrista",
+    "averageMonthlySpending": 1000.0
+  },
+  "transaction": {
+    "amount": 3500.0
+  }
+}
+```
+
+**Response**
+```json
+{
+  "description": "Alerta: Monto inusual para perfil."
+}
+```
+
+---
+
+## 🧪 Pruebas Unitarias
+
+### 🧪 Escenarios Cubiertos
+- `testUserNull`: Alerta si el usuario es null.
+- `testUserProfileNull`: Alerta si el perfil del usuario es null.
+- `testTransactionNull`: Alerta si la transacción es null.
+- `testTransactionAmountNull`: Alerta si el monto de la transacción es null.
+- `testAmountExceedsThresholdAndProfileAhorrista`: Alerta si el monto excede el umbral y el perfil es "ahorrista".
+- `testValidAmountAndProfileAhorrista`: Validación correcta si el monto está dentro del rango y el perfil es "ahorrista".
+- `testValidAmountAndProfileOther`: Validación correcta para cualquier perfil distinto de "ahorrista".
+
+### 🧪 Endpoints Probados
+| Método HTTP | URL                  | Escenario de Test                  | Resultado Esperado |
+|-------------|----------------------|------------------------------------|--------------------|
+| POST        | `/api/alerta-perfil` | Monto inusual para perfil ahorrista| Alerta generada    |
+
+---
+
+## ✅ Estado
+✔️ Completado
+
+---
