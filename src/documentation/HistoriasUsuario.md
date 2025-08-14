@@ -165,7 +165,7 @@ mockMvc.perform(post("/api/alerta-money-mule")
 
 ---
 
-## 🧑‍💻 Historia de Usuario #123
+## 🧑‍💻 Historia de Usuario #226
 
 ### 📝 Título
 Alerta de fraude por chargebacks en usuarios
@@ -186,7 +186,7 @@ Implementa la detección automática de fraude por chargebacks. Si un usuario ti
 #### 🌐 Endpoints Nuevos/Modificados
 | Método HTTP |               URL                 |  Parámetros  |        Respuesta        |
 |-------------|-----------------------------------|--------------|-------------------------|
-| GET         | `/api/alerts/chargeback/{userId}` | Path: userId | Alerta de fraude o null |
+| GET         | `/api/alerts-chargeback/{userId}` | Path: userId | Alerta de fraude o null |
 
 #### 🗃️ Cambios en Base de Datos
 - No aplica
@@ -235,53 +235,62 @@ GET /api/alerts/chargeback/123
 
 ---
 
-## 🧑‍💻 Historia de Usuario #124
+## 🧑‍💻 Historia de Usuario #235
 
-### 📝 Título
-Alerta por múltiples transacciones rápidas
-
----
-
-### 📌 Descripción Breve
-Detecta y alerta cuando un usuario realiza más de 10 transacciones en menos de una hora, indicando posible actividad fraudulenta.
+Implementación de endpoint para alerta de transacciones rápidas por tipo de cliente
 
 ---
 
-### ⚙️ Detalles Técnicos
-
-#### 🧩 Clases/Métodos Afectados
-- `TransactionService`
-  - Método: `getFastMultipleTransactionAlert(Long userId)`
-
-#### 🌐 Endpoints Nuevos/Modificados
-| Método HTTP |                  URL                     |  Parámetros  |    Respuesta    |
-|-------------|------------------------------------------|--------------|-----------------|
-| GET         | `/api/alerts/fast-transactions/{userId}` | Path: userId | Alerta de fraude o null |
-
-#### 🗃️ Cambios en Base de Datos
-- No aplica
+## 📌 Resumen Breve
+Se implementó el endpoint `/alerta-fast-multiple-transaction/{userId}` que permite detectar si un usuario realiza más transacciones de las permitidas en un rango de tiempo corto, según su tipo de cliente ("individuo" o "empresa"). El sistema consulta el tipo de cliente y, si es válido, analiza la cantidad de transacciones recientes. Si supera el límite configurado, se genera una alerta.
 
 ---
 
-### 🔍 Impacto en el Sistema
-- Módulo afectado: Transacciones y alertas
-- Dependencias relevantes: `TransactionRepository`
+## ⚙️ Detalles Técnicos
+
+### Clases/Métodos Afectados
+- `com.pei.controller.AlertController`
+    - Método: `getFastMultipleTransactionsAlert(Long userId)`
+- `com.pei.service.ClienteService`
+    - Método: `getClientType(Long userId)`
+- `com.pei.service.TransactionService`
+    - Método: `getFastMultipleTransactionAlert(Long userId, String clientType)`
+- `com.pei.dto.Alert`
+
+### Endpoints Nuevos/Modificados
+| Método HTTP | URL                                         | Parámetros (Path) | Respuesta                                      |
+|-------------|---------------------------------------------|-------------------|------------------------------------------------|
+| GET         | `/api/alerta-fast-multiple-transaction/{userId}` | `userId`          | `Alert` con mensaje si se detecta actividad sospechosa |
+
+### Cambios en Base de Datos
+- No aplica. El endpoint realiza análisis sobre transacciones existentes, sin modificar la estructura ni los datos de la base.
 
 ---
 
-### 💻 Ejemplo de Uso
+## 🔍 Impacto en el Sistema
+- Módulo afectado: `AlertController`
+- Dependencias relevantes: `ClienteService`, `TransactionService`, configuración de límites en `application.yml`
+
+---
+
+## 💻 Ejemplo de Uso
 
 **Request**
 ```http
-GET /api/alerts/fast-transactions/123
+GET /api/alerta-fast-multiple-transaction/123
 ```
 
-**Response**
+**Response (caso positivo)**
 ```json
 {
   "userId": 123,
-  "message": "Más de 10 transacciones en la última hora"
+  "description": "Más de 10 transacciones en la última hora para usuario tipo individuo"
 }
+```
+
+**Response (caso negativo)**
+```http
+404 Not Found
 ```
 
 ---
@@ -289,22 +298,31 @@ GET /api/alerts/fast-transactions/123
 ## 🧪 Pruebas Unitarias
 
 ### 🧪 Escenarios Cubiertos
-- `getFastMultipleTransactionAlert_CuandoSuperaLimite_GeneraAlerta`: Genera alerta si hay más de 10 transacciones en una hora.
-- `getFastMultipleTransactionAlert_CuandoNoSuperaLimite_NoGeneraAlerta`: No genera alerta si no supera el límite.
+- `getFastMultipleTransactionsAlert_CuandoTipoClienteValidoYAlerta_RetornaOk`: Genera alerta si el usuario supera el límite de transacciones según su tipo.
+- `getFastMultipleTransactionsAlert_CuandoTipoClienteNoValido_RetornaNotFound`: No genera alerta si el tipo de cliente es inválido.
+- `getFastMultipleTransactionsAlert_CuandoNoHayAlerta_RetornaNotFound`: No genera alerta si el usuario no supera el límite.
 
 ### 🧪 Endpoints Probados
-| Método HTTP | URL | Escenario de Test | Resultado Esperado |
-|-------------|-----|-------------------|---------------------|
-| GET         | `/api/alerts/fast-transactions/{userId}` | Usuario con actividad sospechosa | Alerta generada |
+| Método HTTP | URL                                         | Escenario de Test                       | Resultado Esperado |
+|-------------|---------------------------------------------|-----------------------------------------|--------------------|
+| GET         | `/api/alerta-fast-multiple-transaction/{userId}` | Usuario supera límite                   | Alerta generada    |
+| GET         | `/api/alerta-fast-multiple-transaction/{userId}` | Usuario no supera límite                | 404 Not Found      |
+| GET         | `/api/alerta-fast-multiple-transaction/{userId}` | Tipo de cliente inválido                | 404 Not Found      |
 
 ---
 
 ## ✅ Estado
-- ✔️ Bloqueado
+✔️ Completado
 
 ---
 
-## 🧑‍💻 Historia de Usuario #125
+## 📦 Documentación de Integraciones Externas
+
+_No aplica para este endpoint. No se utilizan servicios externos._
+
+---
+
+## 🧑‍💻 Historia de Usuario #220
 
 ### 📝 Título
 Alerta por logins desde múltiples países
@@ -325,7 +343,7 @@ Detecta si un usuario inicia sesión desde dos o más países diferentes en la �
 #### 🌐 Endpoints Nuevos/Modificados
 | Método HTTP |                URL                   |  Parámetros  |    Respuesta    |
 |-------------|--------------------------------------|--------------|-----------------|
-| GET         | `/api/alerts/login-country/{userId}` | Path: userId | Alerta de login sospechoso o null |
+| GET         | `/api/alerts-login/{userId}` | Path: userId | Alerta de login sospechoso o null |
 
 #### 🗃️ Cambios en Base de Datos
 - No aplica
@@ -364,7 +382,7 @@ GET /api/alerts/login-country/123
 ### 🧪 Endpoints Probados
 | Método HTTP | URL | Escenario de Test | Resultado Esperado |
 |-------------|-----|-------------------|---------------------|
-| GET         | `/api/alerts/login-country/{userId}` | Usuario con logins sospechosos | Alerta generada |
+| GET         | `/api/alerts-country/{userId}` | Usuario con logins sospechosos | Alerta generada |
 
 ---
 
