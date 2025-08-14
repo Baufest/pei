@@ -22,6 +22,14 @@ public class Logins {
         this.loginTime = loginTime;
     }
 
+    public Logins(Long id, Long userId, String country, LocalDateTime loginTime) {
+        this.id = id;
+        this.userId = userId;
+        this.country = country;
+        this.loginTime = loginTime;
+    }
+
+
     public String getCountry() {
         return country;
     }
