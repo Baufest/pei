@@ -51,6 +51,9 @@ class AlertControllerTest {
     @MockitoBean
     private GeolocalizationService geolocalizationService;
 
+    @MockitoBean
+    private ClienteService clienteService;
+
     @Autowired
     private ObjectMapper objectMapper;
 

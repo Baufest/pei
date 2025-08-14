@@ -14,11 +14,13 @@ public class TransactionService {
     private final ChargebackRepository chargebackRepository;
     private final PurchaseRepository purchaseRepository;
     private final TransactionRepository transactionRepository;
+    private final TransactionVelocityDetectorService transactionVelocityDetectorService;
 
-    public TransactionService(ChargebackRepository chargebackRepository, PurchaseRepository purchaseRepository, TransactionRepository transactionRepository) {
+    public TransactionService(ChargebackRepository chargebackRepository, PurchaseRepository purchaseRepository, TransactionRepository transactionRepository, TransactionVelocityDetectorService transactionVelocityDetectorService) {
         this.chargebackRepository = chargebackRepository;
         this.purchaseRepository = purchaseRepository;
         this.transactionRepository = transactionRepository;
+        this.transactionVelocityDetectorService = transactionVelocityDetectorService;
     }
 
     //TODO: Probablemente tengamos que hacer una Query SQL para obtener las transacciones, sería más performante
@@ -93,11 +95,19 @@ public class TransactionService {
         return transaction.getApprovalList().size();
     }
 
-    public Alert getFastMultipleTransactionAlert(Long userId) {
+    public Alert getFastMultipleTransactionAlert(Long userId, String clientType) {
 
-        LocalDateTime fromDate = LocalDateTime.now().minusHours(1);
-        Long numMaxTransactions = 10L;
-        Long numTransactions = transactionRepository.countTransactionsFromDate(userId, fromDate);
+        Integer minutesRange = clientType.equals("individuo") ? 
+            transactionVelocityDetectorService.getIndividuoMinutesRange() : 
+            transactionVelocityDetectorService.getIndividuoMinutesRange();
+        
+        Integer maxTransactions = clientType.equals("individuo") ? 
+            transactionVelocityDetectorService.getIndividuoMaxTransactions() : 
+            transactionVelocityDetectorService.getEmpresaMaxTransactions();
+
+        LocalDateTime fromDate = LocalDateTime.now().minusMinutes(minutesRange);
+        Integer numMaxTransactions = maxTransactions;
+        Integer numTransactions = transactionRepository.countTransactionsFromDate(userId, fromDate);
 
         if (numTransactions > numMaxTransactions){
             return new Alert(userId, "Fast multiple transactions detected for user " + userId);

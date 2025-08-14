@@ -4,6 +4,8 @@ import com.pei.domain.Transaction;
 import com.pei.dto.Alert;
 import com.pei.dto.TimeRangeRequest;
 import com.pei.service.AlertService;
+import com.pei.service.ClienteService;
+
 import org.springframework.http.ResponseEntity;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,6 +13,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import com.pei.service.GeolocalizationService;
 import com.pei.service.TransactionService;
+import com.pei.service.TransactionVelocityDetectorService;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,14 +30,17 @@ public class AlertController {
     private final GeolocalizationService geolocalizationService;
     private final AlertService alertService;
     private final AccountService accountService;
+    private final ClienteService clienteService;
 
     public AlertController(AlertService alertService,
                 AccountService accountService, TransactionService transactionService,
-                GeolocalizationService geolocalizationService) {
+                GeolocalizationService geolocalizationService, ClienteService clienteService) {
         this.alertService = alertService;
         this.accountService = accountService;
         this.transactionService = transactionService;
         this.geolocalizationService = geolocalizationService;
+        this.clienteService = clienteService;
+        
     }
 
     @PostMapping("/alerta-money-mule")
@@ -130,7 +137,13 @@ public class AlertController {
 
     @GetMapping("/alerta-fast-multiple-transaction/{userId}")
     public ResponseEntity<Alert> getFastMultipleTransactionsAlert(@PathVariable Long userId) {
-        Alert alert = transactionService.getFastMultipleTransactionAlert(userId);
+        
+        String clientType = clienteService.getClientType(userId);
+        if (clientType == null || (!clientType.equals("individuo") && !clientType.equals("empresa"))) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        Alert alert = transactionService.getFastMultipleTransactionAlert(userId, clientType);
 
         if (alert != null) {
             return ResponseEntity.ok(alert);
@@ -149,5 +162,7 @@ public class AlertController {
             }
         return ResponseEntity.notFound().build();
     }
+
+
 
 }

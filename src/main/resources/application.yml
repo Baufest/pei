@@ -6,3 +6,11 @@ cliente:
         perfiles-no-confiables:
             - IRRECUPERABLE     # Perfiles del cliente no confiable
         limite-chargeback: 0
+
+velocity-transaction-params:
+    individuo:
+        minutes-range: 10
+        max-transactions: 5
+    empresa:
+        minutes-range: 10
+        max-transactions: 20

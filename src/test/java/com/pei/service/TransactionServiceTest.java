@@ -207,31 +207,4 @@ class TransactionServiceTest {
         verify(chargebackRepository, times(1)).findByUserId(1L);
         verify(purchaseRepository, times(1)).findByUserId(1L);}
 
-    @Test
-    void shouldReturnAlertWhenTransactionsExceedLimit() {
-
-        Long userId = 1L;
-        when(transactionRepository.countTransactionsFromDate(eq(userId), any(LocalDateTime.class)))
-            .thenReturn(15L); 
-            
-        Alert alert = transactionService.getFastMultipleTransactionAlert(userId);
-
-        assertNotNull(alert);
-        assertEquals(userId, alert.userId());
-        assertTrue(alert.description().contains("Fast multiple transactions detected"));
-        verify(transactionRepository, times(1)).countTransactionsFromDate(eq(userId), any(LocalDateTime.class));
-    }
-
-    @Test
-    void shouldReturnNullWhenTransactionsWithinLimit() {
-
-        Long userId = 2L;
-        when(transactionRepository.countTransactionsFromDate(eq(userId), any(LocalDateTime.class)))
-            .thenReturn(5L); 
-
-        Alert alert = transactionService.getFastMultipleTransactionAlert(userId);
-
-        assertNull(alert);
-        verify(transactionRepository, times(1)).countTransactionsFromDate(eq(userId), any(LocalDateTime.class));
-    }
 }

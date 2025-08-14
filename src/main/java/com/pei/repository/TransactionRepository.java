@@ -12,6 +12,6 @@ import org.springframework.data.repository.query.Param;
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
     @Query("SELECT COUNT(t) FROM Transaction t WHERE t.user.id = :userId AND t.date >= :fromDate")
-    Long countTransactionsFromDate(@Param("userId") Long userId, @Param("fromDate") LocalDateTime fromDate);
+    Integer countTransactionsFromDate(@Param("userId") Long userId, @Param("fromDate") LocalDateTime fromDate);
 
 }
