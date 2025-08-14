@@ -8,6 +8,7 @@
 .project
 .classpath
 .settings/
+.vscode
 
 # OS
 .DS_Store

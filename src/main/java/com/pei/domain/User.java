@@ -1,24 +1,58 @@
 package com.pei.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-@Entity
+import com.pei.dto.Chargeback;
+import com.pei.dto.Purchase;
+
+import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
+
+@Entity @Table(name = "client")
 public class User {
 
-    @Id @GeneratedValue
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToMany(mappedBy = "owner")
-    private List<Account> accounts;
+    @Column(nullable = false)
+    private String name;
 
-    protected User() {}
+    @Column
+    private String email;
+
+    @Column
+    private String phoneNumber;
+
+    @Column(nullable = false)
+    private String risk;
+
+    @Column(nullable = false)
+    private String profile;
+
+    @Column(nullable = false)
+    private BigDecimal averageMonthlySpending;
+
+    @CreationTimestamp
+    private LocalDate creationDate;
+
+    @OneToMany(mappedBy = "owner")
+    private List<Account> accounts = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user")
+    private List<Purchase> purchases = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user")
+    private List<Chargeback> chargebacks = new ArrayList<>();
+
+    @Embedded
+    private TimeRange avgTimeRange;
+
+    public User() {}
 
     public User(Long id) {
         this.id = id;
@@ -33,30 +67,107 @@ public class User {
         return id;
     }
 
-    public List<Account> getAccounts() {
-        return accounts;
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getRisk() {
+        return risk;
+    }
+
+    public void setRisk(String risk) {
+        this.risk = risk;
     }
 
     public void addAccounts(Account account) {
         this.accounts.add(account);
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public List<Account> getAccounts() {
+        return new ArrayList<>(accounts);
     }
+
     public void setAccounts(List<Account> accounts) {
         this.accounts = accounts;
+    }
+
+    public String getProfile() {
+        return profile;
+    }
+
+    public void setProfile(String profile) {
+        this.profile = profile;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public LocalDate getCreationDate() {
+        return creationDate;
+    }
+
+    public void setCreationDate(LocalDate creationDate) {
+        this.creationDate = creationDate;
+    }
+
+    public BigDecimal getAverageMonthlySpending() {
+        return averageMonthlySpending;
+    }
+
+    public void setAverageMonthlySpending(BigDecimal averageMonthlySpending) {
+        this.averageMonthlySpending = averageMonthlySpending;
+    }
+
+    public List<Chargeback> getChargebacks() {
+        return chargebacks;
+    }
+
+    public void addChargebacks(List<Chargeback> chargebacks) {
+        this.chargebacks.addAll(chargebacks);
+    }
+
+    public void addPurchases(List<Purchase> purchases) {
+        this.purchases.addAll(purchases);
+    }
+
+    public List<Purchase> getPurchases() {
+        return purchases;
+    }
+
+    public TimeRange getAvgTimeRange() {
+        return avgTimeRange;
+    }
+
+    public void setAvgTimeRange(TimeRange avgTimeRange) {
+        this.avgTimeRange = avgTimeRange;
     }
 
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
-        return Objects.equals(id, user.id) && Objects.equals(accounts, user.accounts);
+        return Objects.equals(id, user.id) && Objects.equals(name, user.name) && Objects.equals(risk, user.risk) && Objects.equals(profile, user.profile) && Objects.equals(averageMonthlySpending, user.averageMonthlySpending) && Objects.equals(creationDate, user.creationDate) && Objects.equals(accounts, user.accounts) && Objects.equals(purchases, user.purchases) && Objects.equals(chargebacks, user.chargebacks);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, accounts);
+        return Objects.hash(id, name, risk, profile, averageMonthlySpending, creationDate, accounts, purchases, chargebacks);
     }
 }
