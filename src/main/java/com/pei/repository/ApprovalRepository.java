@@ -1,10 +1,9 @@
 package com.pei.repository;
 
+import com.pei.domain.Approval;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.pei.domain.User;
-
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface ApprovalRepository extends JpaRepository<Approval, Long> {
 }

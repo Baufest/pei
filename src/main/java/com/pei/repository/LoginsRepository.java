@@ -8,7 +8,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.pei.dto.Logins;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface LoginsRepository extends JpaRepository<Logins, Long> {
     
     @Query("SELECT l FROM Logins l WHERE l.userId = :userId AND l.loginTime >= :timeLimit")
