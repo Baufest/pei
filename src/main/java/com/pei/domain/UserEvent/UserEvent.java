@@ -16,6 +16,7 @@ public class UserEvent {
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
     private User user;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserEventType type;
 

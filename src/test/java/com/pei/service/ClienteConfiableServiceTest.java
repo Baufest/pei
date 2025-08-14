@@ -1,7 +1,7 @@
 package com.pei.service;
 
 import com.pei.config.ClienteConfiableProperties;
-import com.pei.dto.Chargeback;
+import com.pei.domain.Chargeback;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

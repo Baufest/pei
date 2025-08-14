@@ -1,8 +1,8 @@
 package com.pei.service;
 
 import com.pei.dto.Alert;
-import com.pei.dto.Chargeback;
-import com.pei.dto.Purchase;
+import com.pei.domain.Chargeback;
+import com.pei.domain.Purchase;
 import com.pei.repository.ChargebackRepository;
 import com.pei.repository.PurchaseRepository;
 import com.pei.repository.TransactionRepository;
@@ -165,7 +165,7 @@ class TransactionServiceTest {
 
     @Test
     void givenNoChargebackFraud_thenReturnsNull() {
-        
+
         when(chargebackRepository.findByUserId(1L))
                 .thenReturn(List.of(new Chargeback(1L, user1)));
         when(purchaseRepository.findByUserId(1L))
@@ -191,7 +191,7 @@ class TransactionServiceTest {
 
     @Test
     void givenNoPurchases_thenReturnsNull() {
-        
+
         when(chargebackRepository.findByUserId(1L))
                 .thenReturn(List.of(
                         new Chargeback(1L, user1),
@@ -200,7 +200,7 @@ class TransactionServiceTest {
         when(purchaseRepository.findByUserId(1L))
                 .thenReturn(Collections.emptyList());
 
-    
+
         Alert alert = transactionService.getChargebackFraudAlert(1L);
 
         assertNotNull(alert);
@@ -212,8 +212,8 @@ class TransactionServiceTest {
 
         Long userId = 1L;
         when(transactionRepository.countTransactionsFromDate(eq(userId), any(LocalDateTime.class)))
-            .thenReturn(15L); 
-            
+            .thenReturn(15L);
+
         Alert alert = transactionService.getFastMultipleTransactionAlert(userId);
 
         assertNotNull(alert);
@@ -227,7 +227,7 @@ class TransactionServiceTest {
 
         Long userId = 2L;
         when(transactionRepository.countTransactionsFromDate(eq(userId), any(LocalDateTime.class)))
-            .thenReturn(5L); 
+            .thenReturn(5L);
 
         Alert alert = transactionService.getFastMultipleTransactionAlert(userId);
 

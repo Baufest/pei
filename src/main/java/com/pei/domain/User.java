@@ -6,9 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import com.pei.dto.Chargeback;
-import com.pei.dto.Purchase;
-
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 
