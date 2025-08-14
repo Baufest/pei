@@ -2,7 +2,6 @@ package com.pei.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -18,9 +17,11 @@ public class GeolocalizationService {
     private LoginsRepository loginsRepository;
     private GeoSimService geoSimService;
 
+
     public GeolocalizationService(GeoSimService geoSimService, LoginsRepository loginsRepository) {
         this.geoSimService = geoSimService;
-        this.loginsRepository = loginsRepository;}
+        this.loginsRepository = loginsRepository;
+    }
     
     public Alert getLoginAlert(Long userId) {
         LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
@@ -29,23 +30,14 @@ public class GeolocalizationService {
         Set<String> paises = loginsRecientes.stream()
                 .map(Logins::getCountry)
                 .collect(Collectors.toSet());
+
         if (paises.size() >= 2) {
             return new Alert(userId, "Multiple countries logins detected for user " + userId);
         }
-        return null;
+
+        return null; 
     }
     
-    
-
-    /* Valores de prueba */
-    /* private static final Map<String, String> IP_FOR_COUNTRY = Map.of("200.1.1.1", "AR", "181.45.67.89", "UY",
-            "50.23.45.67", "US");
-    
-    public String getCountryFromIP(String ip) {
-        String ret = IP_FOR_COUNTRY.get(ip);
-        return ret.length() > 1 ? ret : "DESCONOCIDO";
-    } */
-   
     public Alert verifyFraudOfDeviceAndGeolocation(Logins login) {
         
         String countryActual = geoSimService.getCountryFromIP(login.country());

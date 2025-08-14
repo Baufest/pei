@@ -23,103 +23,153 @@ import com.pei.dto.Alert;
 import com.pei.dto.Logins;
 import com.pei.repository.LoginsRepository;
 
+import java.util.Collections;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+
 @ExtendWith(MockitoExtension.class) // no olvidar
-public class GeolocalizationServiceTest {
- 
-    @Mock
-    private GeoSimService geoSimService;
+class GeolocalizationServiceTest {
 
-    @Mock
-    private LoginsRepository loginsRepository;
+        @Mock
+        private GeoSimService geoSimService;
 
-    @InjectMocks
-    private GeolocalizationService geolocalizationService;
+        @Mock
+        private LoginsRepository loginsRepository;
 
-    private Logins login;
+        @InjectMocks
+        private GeolocalizationService geolocalizationService;
 
-    @BeforeEach
-    void setUp() {
-        login = new Logins(
-                100L,
-                1L,
-                "DEVICE-123",
-                "Canada",
-                LocalDateTime.now(),
-                true
-        );
-    }
+        private Logins login;
 
-    @Test
-    void shouldReturnFraudAlertWhenNoPreviousLoginsFound() {
-        // previo
-        when(geoSimService.getCountryFromIP("Canada")).thenReturn("Canada");
-        when(loginsRepository.findLoginsByUserAndCountryAndDevice(1L, "Canada", "DEVICE-123", true))
-                .thenReturn(List.of()); // lista vacía
-        when(loginsRepository.findAll()).thenReturn(List.of(
-                new Logins(50L, 2L, "OTHER", "Canada", LocalDateTime.now(), true)
-        ));
+        @BeforeEach
+        void setUp() {
+                loginsRepository = mock(LoginsRepository.class);
+                geolocalizationService = new GeolocalizationService(geoSimService, loginsRepository);
+                login = new Logins(
+                                100L,
+                                1L,
+                                "DEVICE-123",
+                                "Canada",
+                                LocalDateTime.now(),
+                                true);
+        }
 
-        // act
-        Alert alert = geolocalizationService.verifyFraudOfDeviceAndGeolocation(login);
+        @Test
+        void shouldReturnFraudAlertWhenNoPreviousLoginsFound() {
+                // previo
+                when(geoSimService.getCountryFromIP("Canada")).thenReturn("Canada");
+                when(loginsRepository.findLoginsByUserAndCountryAndDevice(1L, "Canada", "DEVICE-123", true))
+                                .thenReturn(List.of()); // lista vacía
+                when(loginsRepository.findAll()).thenReturn(List.of(
+                                new Logins(50L, 2L, "OTHER", "Canada", LocalDateTime.now(), true)));
 
-        // checks
-        assertEquals(1L, alert.userId());
-        assertEquals("Device and geolocalization problem detected for 1", alert.description());
-        verify(loginsRepository).save(any(Logins.class));
-    }
+                // act
+                Alert alert = geolocalizationService.verifyFraudOfDeviceAndGeolocation(login);
 
-    @Test
-    void shouldReturnNoFraudAlertWhenPreviousLoginsExist() {
-        // previo
-        when(geoSimService.getCountryFromIP("Canada")).thenReturn("Canada");
-        when(loginsRepository.findLoginsByUserAndCountryAndDevice(1L, "Canada", "DEVICE-123", true))
-                .thenReturn(List.of(login)); // lista con un login
-        when(loginsRepository.findAll()).thenReturn(List.of(
-                new Logins(50L, 2L, "OTHER", "Canada", LocalDateTime.now(), true)
-        ));
+                // checks
+                assertEquals(1L, alert.userId());
+                assertEquals("Device and geolocalization problem detected for 1", alert.description());
+                verify(loginsRepository).save(any(Logins.class));
+        }
 
-        // act
-        Alert alert = geolocalizationService.verifyFraudOfDeviceAndGeolocation(login);
+        @Test
+        void shouldReturnNoFraudAlertWhenPreviousLoginsExist() {
+                // previo
+                when(geoSimService.getCountryFromIP("Canada")).thenReturn("Canada");
+                when(loginsRepository.findLoginsByUserAndCountryAndDevice(1L, "Canada", "DEVICE-123", true))
+                                .thenReturn(List.of(login)); // lista con un login
+                when(loginsRepository.findAll()).thenReturn(List.of(
+                                new Logins(50L, 2L, "OTHER", "Canada", LocalDateTime.now(), true)));
 
-        // checksa
-        assertEquals(0L, alert.userId());
-        assertEquals("Something else", alert.description());
-        verify(loginsRepository).save(any(Logins.class));
-    }
+                // act
+                Alert alert = geolocalizationService.verifyFraudOfDeviceAndGeolocation(login);
 
-    @Test
-    void shouldAssignIdOneWhenNoLoginsExistInRepository() {
-        // previo
-        when(geoSimService.getCountryFromIP("Canada")).thenReturn("Canada");
-        when(loginsRepository.findLoginsByUserAndCountryAndDevice(anyLong(), anyString(), anyString(), anyBoolean()))
-                .thenReturn(List.of());
-        when(loginsRepository.findAll()).thenReturn(List.of()); // lista vacía
+                // checksa
+                assertEquals(1L, alert.userId());
+                assertEquals("Something else", alert.description());
+                verify(loginsRepository).save(any(Logins.class));
+        }
 
-        // act
-        geolocalizationService.verifyFraudOfDeviceAndGeolocation(login);
+        @Test
+        void shouldAssignIdOneWhenNoLoginsExistInRepository() {
+                // previo
+                when(geoSimService.getCountryFromIP("Canada")).thenReturn("Canada");
+                when(loginsRepository.findLoginsByUserAndCountryAndDevice(anyLong(), anyString(), anyString(),
+                                anyBoolean()))
+                                .thenReturn(List.of());
+                when(loginsRepository.findAll()).thenReturn(List.of()); // lista vacía
 
-        // checks
-        ArgumentCaptor<Logins> captor = ArgumentCaptor.forClass(Logins.class);
-        verify(loginsRepository).save(captor.capture());
-        assertEquals(1L, captor.getValue().id());
-    }
+                // act
+                geolocalizationService.verifyFraudOfDeviceAndGeolocation(login);
+
+                // checks
+                ArgumentCaptor<Logins> captor = ArgumentCaptor.forClass(Logins.class);
+                verify(loginsRepository).save(captor.capture());
+                assertEquals(1L, captor.getValue().id());
+        }
 
     @Test
     void shouldAssignIdAsLastPlusOneWhenLoginsExist() {
-        // previo
-        when(geoSimService.getCountryFromIP("Canada")).thenReturn("Canada");
-        when(loginsRepository.findLoginsByUserAndCountryAndDevice(anyLong(), anyString(), anyString(), anyBoolean()))
-                .thenReturn(List.of());
-        when(loginsRepository.findAll()).thenReturn(List.of(
-                new Logins(10L, 2L, "OTHER", "Canada", LocalDateTime.now(), true)
-        ));
+            // previo
+            when(geoSimService.getCountryFromIP("Canada")).thenReturn("Canada");
+            when(loginsRepository.findLoginsByUserAndCountryAndDevice(anyLong(), anyString(), anyString(),
+                            anyBoolean()))
+                            .thenReturn(List.of());
+            when(loginsRepository.findAll()).thenReturn(List.of(
+                            new Logins(10L, 2L, "OTHER", "Canada", LocalDateTime.now(), true)));
 
-        // act
-        geolocalizationService.verifyFraudOfDeviceAndGeolocation(login);
+            // act
+            geolocalizationService.verifyFraudOfDeviceAndGeolocation(login);
 
-        // checks
-        ArgumentCaptor<Logins> captor = ArgumentCaptor.forClass(Logins.class);
-        verify(loginsRepository).save(captor.capture());
-        assertEquals(11L, captor.getValue().id());
+            // checks
+            ArgumentCaptor<Logins> captor = ArgumentCaptor.forClass(Logins.class);
+            verify(loginsRepository).save(captor.capture());
+            assertEquals(11L, captor.getValue().id());
     }
+
+        /* CAMBIAR LLAMADO A NEW FALTA VARIABLE SUCCESS */
+        /* @Test
+        void givenDifferentCountries_thenReturnsAlert() {
+                List<Logins> logins = Arrays.asList(
+                                new Logins(1L, null, "Argentina", LocalDateTime.now()),
+                                new Logins(1L, null, "Chile", LocalDateTime.now().minusMinutes(10)));
+
+                when(loginsRepository.findRecentLogins(eq(1L), any(LocalDateTime.class)))
+                                .thenReturn(logins);
+
+                Alert alert = geolocalizationService.getLoginAlert(1L);
+
+                assertNotNull(alert);
+                assertEquals(1L, alert.userId());
+                assertEquals("Multiple countries logins detected for user 1", alert.description());
+        }
+
+        @Test
+        void givenSameCountry_thenReturnsNull() {
+                List<Logins> logins = Arrays.asList(
+                                new Logins(1L, null, "Argentina", LocalDateTime.now()),
+                                new Logins(1L, null, "Argentina", LocalDateTime.now().minusMinutes(20)));
+
+                when(loginsRepository.findRecentLogins(eq(1L), any(LocalDateTime.class)))
+                                .thenReturn(logins);
+
+                Alert alert = geolocalizationService.getLoginAlert(1L);
+
+                assertNull(alert);
+        } */
+
+        @Test
+        void givenNoLogins_thenReturnsNull() {
+                when(loginsRepository.findRecentLogins(eq(1L), any(LocalDateTime.class)))
+                                .thenReturn(Collections.emptyList());
+
+                Alert alert = geolocalizationService.getLoginAlert(1L);
+
+                assertNull(alert);
+                verify(loginsRepository, times(1))
+                                .findRecentLogins(eq(1L), any(LocalDateTime.class));
+        }
 }
