@@ -219,6 +219,55 @@ class AlertControllerTest {
         verify(service, times(1)).timeRangeAlert(anyList(), any(Transaction.class));
     }
 
+    @Test
+    void Should_ReturnEmailAlert_When_CriticalityIsHigh() throws Exception {
+        // Given
+        User originUser = new User();
+        originUser.setName("Juan");
+        originUser.setEmail("juan@mail.com");
+
+        User destinationUser = new User();
+        destinationUser.setName("Pepo");
+        destinationUser.setEmail("pepo@mail.com");
+
+        Transaction transaction = new Transaction();
+        transaction.setAmount(BigDecimal.valueOf(2_000_000));
+        transaction.setUser(originUser);
+        transaction.setDestinationAccount(new Account(destinationUser));
+
+        //When
+        when(service.alertCriticality(any(Transaction.class)))
+            .thenReturn(new Alert(10L, "Transacción de alta criticidad. Se notificará por Mail."));
+
+        // Then
+        mockMvc.perform(post("/api/alerta-canales")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(transaction)))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.userId").value(10))
+            .andExpect(jsonPath("$.description").value("Transacción de alta criticidad. Se notificará por Mail."))
+            .andDo(print());
+
+        verify(service).alertCriticality(any(Transaction.class));
+    }
+
+    @Test
+    void Should_ReturnNotFound_When_CriticalityIsLow() throws Exception {
+        when(service.alertCriticality(any(Transaction.class))).thenReturn(null);
+
+        Transaction transaction = new Transaction();
+        transaction.setAmount(BigDecimal.valueOf(1000)); // monto bajo
+
+        mockMvc.perform(post("/api/alerta-canales")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(transaction)))
+            .andExpect(status().isNotFound())
+            .andDo(print());
+
+        verify(service).alertCriticality(any(Transaction.class));
+    }
+
     @Nested
     @DisplayName("Tests para Evaluar el Account Takeover")
     class EvaluateAccountTakeoverTests {

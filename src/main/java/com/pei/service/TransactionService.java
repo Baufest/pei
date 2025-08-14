@@ -96,6 +96,20 @@ public class TransactionService {
         return transaction.getApprovalList().size();
     }
 
+    public Alert getFastMultipleTransactionAlert(Long userId) {
+
+        LocalDateTime fromDate = LocalDateTime.now().minusHours(1);
+        Long numMaxTransactions = 10L;
+        Long numTransactions = transactionRepository.countTransactionsFromDate(userId, fromDate);
+
+        if (numTransactions > numMaxTransactions){
+            return new Alert(userId, "Fast multiple transactions detected for user " + userId);
+        }
+
+        Alert fastMultipleTransactionAlert = null;
+        return fastMultipleTransactionAlert;
+    }
+
     public Optional<Transaction> getMostRecentTransferByUserId(Long userId) {
         return transactionRepository.findRecentTransferByUserId(userId).stream().findFirst();
     }

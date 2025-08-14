@@ -129,6 +129,28 @@ public class AlertController {
         return ResponseEntity.notFound().build();
     }
 
+    @GetMapping("/alerta-fast-multiple-transaction/{userId}")
+    public ResponseEntity<Alert> getFastMultipleTransactionsAlert(@PathVariable Long userId) {
+        Alert alert = transactionService.getFastMultipleTransactionAlert(userId);
+
+        if (alert != null) {
+            return ResponseEntity.ok(alert);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+
+    }
+
+    @PostMapping("/alerta-canales")
+    public ResponseEntity<Alert> evaluatecriticalityAndSendAlert(@RequestBody Transaction transaction){
+
+        Alert alerta = alertService.alertCriticality(transaction);
+        if (alerta != null) {
+                return ResponseEntity.ok(alerta);
+            }
+        return ResponseEntity.notFound().build();
+    }
+
     @PostMapping("/alerta-account-takeover")
     public ResponseEntity<Alert> evaluateAccountTakeover(@RequestBody List<UserEvent> userEvents) {
         try {
