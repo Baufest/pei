@@ -1183,3 +1183,108 @@ Content-Type: application/json
   - Ubicación: `service/bbva/scoringServiceExterno`
   - Descripción: Consulta el scoring crediticio y de fraude de los clientes.  
   - Dependencia registrada en README.md.
+
+
+-----
+
+## 👨‍💻 Historia de Usuario #218
+
+### 📝 Título  
+Alerta de fraude por dispositivo y geolocalización
+
+---
+
+### 📌 Descripción Breve  
+Se implementa la lógica para detectar posibles fraudes relacionados con el uso de dispositivos y ubicaciones geográficas en los accesos de usuarios. El sistema genera una alerta si se detecta un acceso desde un dispositivo o país no habitual para el usuario, utilizando el servicio externo de geolocalización por IP.
+
+---
+
+### ⚙️ Detalles Técnicos  
+
+#### 🧩 Clases/Métodos Afectados  
+- `AlertController`
+  - Método: `checkDeviceLocalization(Logins login)`
+- `GeolocalizationService`
+  - Método: `verifyFraudOfDeviceAndGeolocation(Logins login)`
+- `GeoSimService` (servicio externo de geolocalización por IP)
+  - Método: `getCountryFromIP(String ip)`
+- `LoginsRepository`
+  - Métodos para consulta y persistencia de accesos
+
+#### 🌐 Endpoints Nuevos/Modificados  
+| Método HTTP | URL                     | Parámetros         | Respuesta                |
+|-------------|-------------------------|--------------------|--------------------------|
+| POST        | `/api/alerta-dispositivo` | `Logins` (JSON)    | `Alert` (JSON)           |
+
+#### 🗃️ Cambios en Base de Datos  
+- Se registra cada acceso en la tabla de logins, incluyendo país y dispositivo.
+
+---
+
+### 🔍 Impacto en el Sistema  
+- Módulo afectado: `com.pei.controller`, `com.pei.service`
+- Dependencias relevantes:  
+  - `GeoSimService` (servicio externo de geolocalización por IP)
+  - `LoginsRepository`
+  - `Alert`
+
+---
+
+### 💻 Ejemplo de Uso  
+
+**Request**  
+```http
+POST /api/alerta-dispositivo
+Content-Type: application/json
+
+{
+  "userId": 12345,
+  "deviceID": "A1B2C3D4",
+  "country": "AR",
+  "timestamp": "2025-08-14T10:00:00"
+}
+```
+
+**Response**
+```json
+{
+  "userId": 12345,
+  "message": "Device and geolocalization problem detected for 12345"
+}
+```
+*Si no hay problema, retorna un mensaje alternativo o 404.*
+
+---
+
+## 🧪 Pruebas Unitarias
+
+### 🧪 Escenarios Cubiertos
+- `checkDeviceLocalization_CuandoDispositivoYPaisNoCoinciden_RetornaAlerta`: Acceso desde dispositivo y país no habitual → **alerta generada**.
+- `checkDeviceLocalization_CuandoDispositivoYPaisCoinciden_NoRetornaAlerta`: Acceso habitual → **no genera alerta**.
+- `checkDeviceLocalization_CuandoLoginNull_RetornaBadRequest`: Login nulo → **400 Bad Request**.
+- `checkDeviceLocalization_CuandoServicioExternoFalla_RetornaError`: Fallo en servicio externo → **error 500**.
+
+### 🧪 Endpoints Probados
+| Método HTTP | URL                     | Escenario de Test                  | Resultado Esperado         |
+|-------------|-------------------------|------------------------------------|---------------------------|
+| POST        | `/api/alerta-dispositivo` | Dispositivo/pais no habitual       | Alerta generada           |
+| POST        | `/api/alerta-dispositivo` | Dispositivo/pais habitual          | Mensaje alternativo/404   |
+| POST        | `/api/alerta-dispositivo` | Login nulo                         | 400 Bad Request           |
+| POST        | `/api/alerta-dispositivo` | Servicio externo no disponible     | Error 500                 |
+
+---
+
+## ✅ Estado
+✔️ Completado
+
+---
+
+## 🔗 Integraciones Externas
+
+- **Servicio de Geolocalización por IP**  
+  - Ubicación: `GeoSimService`
+  - Descripción: Obtiene el país asociado a una dirección IP para validar accesos. GeoSimService accede a una una url que simula geolocalización para obtener esta información.
+  - Dependencia registrada en
+
+----
+
