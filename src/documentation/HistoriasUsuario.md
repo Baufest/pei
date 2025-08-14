@@ -683,3 +683,97 @@ Content-Type: application/json
 ✔️ Completado
 
 ---
+
+## 👨‍💻 Historia de Usuario #223
+
+### 📝 Título
+Detección de "Account Takeover" (Secuestro de Cuenta)
+
+---
+
+### 📌 Descripción Breve
+Se implementa una lógica de detección de posibles secuestros de cuenta (Account Takeover) basada en la ocurrencia de eventos críticos (como cambios de email o teléfono) seguidos de una transacción en menos de una hora. El objetivo es generar una alerta automática ante este patrón sospechoso.
+
+---
+
+### ⚙️ Detalles Técnicos
+
+#### 🧪 Clases/Métodos Afectados
+- `AccountTakeoverController`
+    - Método: `evaluateAccountTakeover(List<UserEvent> userEvents)`
+- `TransactionService`
+    - Métodos: `getMostRecentTransferByUserId(Long userId)`, `isLastTransferInLastHour(Transaction, LocalDateTime)`
+- `User`
+    - Campos agregados:
+        - `email: String`
+        - `phoneNumber: String`
+
+#### 🌐 Endpoints Nuevos/Modificados
+
+| Método HTTP | URL                          | Parámetros                  | Respuesta Esperada |
+|-------------|------------------------------|-----------------------------|---------------------|
+| POST        | `/api/alerta-account-takeover` | `List<UserEvent>` (JSON)    | `Alert` con `userId` y `description` |
+
+#### 🗃️ Cambios en Base de Datos
+- Se agregaron los campos `email` y `phoneNumber` a la entidad `User`.
+
+---
+
+### 🔍 Impacto en el Sistema
+- Módulo afectado: `com.pei.controller`, `com.pei.service`
+- Dependencias relevantes: `UserEvent`, `Transaction`, `Alert`, `User`, `TransactionService`
+
+---
+
+### 💻 Ejemplo de Uso
+
+**Request**
+```http
+POST /api/alerta-account-takeover
+Content-Type: application/json
+
+[
+  {
+    "id": 1,
+    "user": { "id": 1 },
+    "type": "CHANGE_EMAIL",
+    "eventDateHour": "2025-08-13T10:00:00"
+  },
+  {
+    "id": 2,
+    "user": { "id": 2 },
+    "type": "CHANGE_PASSWORD",
+    "eventDateHour": "2025-08-13T10:30:00"
+  }
+]
+```
+
+**Response**
+```json
+{
+  "userId": 2,
+  "description": "Alerta: Posible Account Takeover detectado para el usuario 2"
+}
+```
+
+---
+
+## 🧪 Pruebas Unitarias
+
+### 🧪 Escenarios Cubiertos
+- `evaluateAccountTakeover_CuandoOk_RetornaAlerta`: Verifica que se genera una alerta cuando hay eventos críticos y una transacción en la última hora.
+- `evaluateAccountTakeover_CuandoNoHayEventos_RetornaBadRequest`: Verifica que se retorna error cuando no se proporcionan eventos de usuario.
+
+### 🧪 Endpoints Probados
+
+| Método HTTP | URL                          | Escenario de Test                                | Resultado Esperado |
+|-------------|------------------------------|--------------------------------------------------|---------------------|
+| POST        | `/api/alerta-account-takeover` | Eventos críticos + transacción reciente          | `200 OK` con alerta |
+| POST        | `/api/alerta-account-takeover` | Sin eventos de usuario                           | `400 Bad Request`   |
+
+---
+
+## ✅ Estado
+✔️ Completado
+
+---
