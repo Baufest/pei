@@ -1,11 +1,15 @@
 package com.pei.controller;
 
 import com.pei.domain.Transaction;
+import com.pei.domain.UserEvent.UserEvent;
 import com.pei.dto.Alert;
 import com.pei.dto.TimeRangeRequest;
 import com.pei.service.AlertService;
 import org.springframework.http.ResponseEntity;
+
 import java.util.List;
+import java.util.Optional;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -84,8 +88,6 @@ public class AlertController {
         }
     }
 
-
-
     @GetMapping("/alerta-chargeback/{userId}")
     public ResponseEntity<Alert> getChargebackAlert(@PathVariable Long userId) {
         Alert alert = transactionService.getChargebackFraudAlert(userId);
@@ -118,7 +120,6 @@ public class AlertController {
         return ResponseEntity.notFound().build();
     }
 
-
     @PostMapping("/alerta-horario")
     public ResponseEntity<Alert> evaluateTransactionOutOfTimeRange(@RequestBody TimeRangeRequest request){
         Alert alerta = alertService.timeRangeAlert(request.getTransactions(), request.getNewTransaction());
@@ -139,7 +140,7 @@ public class AlertController {
         }
 
     }
-    
+
     @PostMapping("/alerta-canales")
     public ResponseEntity<Alert> evaluatecriticalityAndSendAlert(@RequestBody Transaction transaction){
 
@@ -148,6 +149,35 @@ public class AlertController {
                 return ResponseEntity.ok(alerta);
             }
         return ResponseEntity.notFound().build();
+    }
+
+    @PostMapping("/alerta-account-takeover")
+    public ResponseEntity<Alert> evaluateAccountTakeover(@RequestBody List<UserEvent> userEvents) {
+        try {
+            // Si tengo algún evento de usuario que sea crítico, entonces se genera una alerta
+            boolean userEventFlag = userEvents.stream()
+                .anyMatch(userEvent -> userEvent.getType().CriticEvent());
+
+            Optional<Transaction> mostRecentTransfer = transactionService.getMostRecentTransferByUserId(userEvents.get(0).getUser().getId());
+
+            boolean lastTransferFlag = mostRecentTransfer.isPresent() &&
+                transactionService.isLastTransferInLastHour(mostRecentTransfer.get(), userEvents.get(0).getEventDateHour());
+
+            if (userEventFlag && lastTransferFlag) {
+                // Crear alerta de account takeover
+                Long userId = mostRecentTransfer.get().getUser().getId();
+                Alert alert = new Alert(
+                    userId,
+                    "Alerta: Posible Account Takeover detectado para el usuario " + userId
+                    );
+                return ResponseEntity.ok(alert);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(new Alert(null, "Error: No se han proporcionado eventos de usuario."));
+        }
     }
 
 }

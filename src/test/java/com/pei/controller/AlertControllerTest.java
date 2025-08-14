@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import com.pei.service.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -267,7 +268,56 @@ class AlertControllerTest {
         verify(service).alertCriticality(any(Transaction.class));
     }
 
+    @Nested
+    @DisplayName("Tests para Evaluar el Account Takeover")
+    class EvaluateAccountTakeoverTests {
+
+        @Test
+        @DisplayName("POST /api/alerta-account-takeover - éxito")
+        void evaluateAccountTakeover_CuandoOk_RetornaAlerta() throws Exception {
+            when(transactionService.getMostRecentTransferByUserId(anyLong()))
+                .thenReturn(Optional.of(new Transaction(new User(2L), new BigDecimal("100.00"), LocalDateTime.now(), new Account(), new Account())));
+
+            when(transactionService.isLastTransferInLastHour(any(Transaction.class), any(LocalDateTime.class)))
+                .thenReturn(true);
+
+            String userEventJson = """
+                [
+                  {
+                    "id": 1,
+                    "user": { "id": 1 },
+                    "type": "CHANGE_EMAIL",
+                    "eventDateHour": "2025-08-13T10:00:00"
+                  },
+                  {
+                    "id": 2,
+                    "user": { "id": 2 },
+                    "type": "CHANGE_PASSWORD",
+                    "eventDateHour": "2025-08-13T10:30:00"
+                  }
+                ]
+            """;
 
 
+            mockMvc.perform(
+                        post("/api/alerta-account-takeover")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(userEventJson))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.userId").value(2))
+                    .andExpect(jsonPath("$.description").value("Alerta: Posible Account Takeover detectado para el usuario 2"));
+        }
 
+        @Test
+        @DisplayName("POST /api/alerta-account-takeover - sin eventos de usuario")
+        void evaluateAccountTakeover_CuandoNoHayEventos_RetornaBadRequest() throws Exception {
+            String userEventJson = "[]";
+
+            mockMvc.perform(post("/api/alerta-account-takeover")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(userEventJson))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.description").value("Error: No se han proporcionado eventos de usuario."));
+        }
+    }
 }
