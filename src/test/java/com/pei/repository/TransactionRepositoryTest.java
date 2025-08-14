@@ -35,6 +35,7 @@ class TransactionRepositoryTest {
         user1.setRisk("LOW");
         user1.setProfile("NORMAL");
         user1.setAverageMonthlySpending(BigDecimal.valueOf(1000));
+
         userRepository.save(user1);
 
         User user2 = new User();
