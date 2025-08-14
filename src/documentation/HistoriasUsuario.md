@@ -1183,6 +1183,3 @@ Content-Type: application/json
   - Ubicación: `service/bbva/scoringServiceExterno`
   - Descripción: Consulta el scoring crediticio y de fraude de los clientes.  
   - Dependencia registrada en README.md.
-
-
-  ----
