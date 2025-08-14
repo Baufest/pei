@@ -2,7 +2,10 @@ package com.pei.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -14,7 +17,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.pei.service.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -33,7 +35,10 @@ import com.pei.domain.Transaction;
 import com.pei.domain.User;
 import com.pei.dto.Alert;
 import com.pei.dto.UserTransaction;
-
+import com.pei.service.AccountService;
+import com.pei.service.AlertService;
+import com.pei.service.GeolocalizationService;
+import com.pei.service.TransactionService;
 
 @WebMvcTest(AlertController.class)
 @ExtendWith(MockitoExtension.class)
@@ -54,47 +59,49 @@ class AlertControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-
     @Autowired
     MockMvc mockMvc;
 
     @Test
     void Should_ReturnOkAlert_When_MoneyMuleDetected() throws Exception {
-        // Aquí puedes simular el comportamiento del servicio y probar la lógica del controlador
+        // Aquí puedes simular el comportamiento del servicio y probar la lógica del
+        // controlador
         // Simular el comportamiento del servicio
         User user = new User(1L);
         Account account = new Account(1L, user);
         LocalDateTime now = LocalDateTime.now();
-        List<Transaction> inputTransactions = List.of(new Transaction(user, new BigDecimal("100.00"), now.minusHours(2), account, account));
+        List<Transaction> inputTransactions = List
+                .of(new Transaction(user, new BigDecimal("100.00"), now.minusHours(2), account, account));
 
         when(service.verifyMoneyMule(anyList())).thenReturn(true);
 
         mockMvc.perform(post("/api/alerta-money-mule")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(inputTransactions))) // Simular una solicitud POST
-            .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$.length()").value(2))
-            .andExpect(jsonPath("$.userId").value(1))
-            .andExpect(jsonPath("$.description").value("Alerta: Posible Money Mule detectado del usuario 1"))
-            .andDo(print());
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$.userId").value(1))
+                .andExpect(jsonPath("$.description").value("Alerta: Posible Money Mule detectado del usuario 1"))
+                .andDo(print());
     }
 
     @Test
     void Should_ReturnNotContent_When_MoneyMuleNotDetected() throws Exception {
-        // Aquí puedes simular el comportamiento del servicio y probar la lógica del controlador
+        // Aquí puedes simular el comportamiento del servicio y probar la lógica del
+        // controlador
         // Simular el comportamiento del servicio
         when(service.verifyMoneyMule(anyList())).thenReturn(false);
 
         mockMvc.perform(post("/api/alerta-money-mule")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("[]"))// Simular una solicitud POST con un cuerpo vacío, ya que esta Mockeado el Service
-            .andExpect(status().isNotFound())
-            .andDo(print());
+                .content("[]"))// Simular una solicitud POST con un cuerpo vacío, ya que esta Mockeado el
+                               // Service
+                .andExpect(status().isNotFound())
+                .andDo(print());
     }
 
-
-    //TEST GONZA
+    // TEST GONZA
     @Nested
     @DisplayName("Tests para validarTransferenciasCuentasRecienCreadas")
     class ValidarTransferenciasCuentasRecienCreadasTests {
@@ -166,7 +173,7 @@ class AlertControllerTest {
         // given
         Long transactionId = 123L;
         Alert mockAlert = new Alert(transactionId,
-            "Transacción con ID = " + transactionId + " tiene más de 2 aprobaciones");
+                "Transacción con ID = " + transactionId + " tiene más de 2 aprobaciones");
 
         when(service.approvalAlert(transactionId)).thenReturn(mockAlert);
 
@@ -174,29 +181,30 @@ class AlertControllerTest {
 
         // when
         var result = mockMvc.perform(post("/api/alerta-aprobaciones")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(jsonRequest));
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonRequest));
 
         // then
         result.andExpect(status().isOk())
-            .andExpect(jsonPath("$.userId").value(123))
-            .andExpect(jsonPath("$.description").value("Transacción con ID = 123 tiene más de 2 aprobaciones"));
+                .andExpect(jsonPath("$.userId").value(123))
+                .andExpect(jsonPath("$.description").value("Transacción con ID = 123 tiene más de 2 aprobaciones"));
 
         verify(service, times(1)).approvalAlert(transactionId);
     }
 
     @Test
     void shouldReturnAlertWhenTransactionIsOutOfTimeRange() throws Exception {
-        // given: historial de transacciones y nueva transacción a testear(esta fuera de rango)
+        // given: historial de transacciones y nueva transacción a testear(esta fuera de
+        // rango)
         String jsonRequest = """
-        {
-          "transactions": [
-            { "id": 1, "dateHour": "2025-08-13T09:30:00" },
-            { "id": 2, "dateHour": "2025-08-13T14:20:00" }
-          ],
-          "newTransaction": { "id": 3, "dateHour": "2025-08-13T23:10:00" }
-        }
-    """;
+                    {
+                      "transactions": [
+                        { "id": 1, "dateHour": "2025-08-13T09:30:00" },
+                        { "id": 2, "dateHour": "2025-08-13T14:20:00" }
+                      ],
+                      "newTransaction": { "id": 3, "dateHour": "2025-08-13T23:10:00" }
+                    }
+                """;
 
         // creamos la alerta esperada
         Alert mockAlert = new Alert(3L, "Transacción con ID = 3, realizada fuera del rango de horas promedio: 9 - 14");
@@ -206,13 +214,14 @@ class AlertControllerTest {
 
         // when:
         var result = mockMvc.perform(post("/api/alerta-horario")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(jsonRequest));
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonRequest));
 
         // then: verificamos que el status y el body sean correctos
         result.andExpect(status().isOk())
-            .andExpect(jsonPath("$.userId").value(3))
-            .andExpect(jsonPath("$.description").value("Transacción con ID = 3, realizada fuera del rango de horas promedio: 9 - 14"));
+                .andExpect(jsonPath("$.userId").value(3))
+                .andExpect(jsonPath("$.description")
+                        .value("Transacción con ID = 3, realizada fuera del rango de horas promedio: 9 - 14"));
 
         // verificamos que se llamó al servicio exactamente una vez
         verify(service, times(1)).timeRangeAlert(anyList(), any(Transaction.class));
@@ -234,19 +243,19 @@ class AlertControllerTest {
         transaction.setUser(originUser);
         transaction.setDestinationAccount(new Account(destinationUser));
 
-        //When
+        // When
         when(service.alertCriticality(any(Transaction.class)))
-            .thenReturn(new Alert(10L, "Transacción de alta criticidad. Se notificará por Mail."));
+                .thenReturn(new Alert(10L, "Transacción de alta criticidad. Se notificará por Mail."));
 
         // Then
         mockMvc.perform(post("/api/alerta-canales")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(transaction)))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$.userId").value(10))
-            .andExpect(jsonPath("$.description").value("Transacción de alta criticidad. Se notificará por Mail."))
-            .andDo(print());
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.userId").value(10))
+                .andExpect(jsonPath("$.description").value("Transacción de alta criticidad. Se notificará por Mail."))
+                .andDo(print());
 
         verify(service).alertCriticality(any(Transaction.class));
     }
@@ -261,13 +270,49 @@ class AlertControllerTest {
         mockMvc.perform(post("/api/alerta-canales")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(transaction)))
-            .andExpect(status().isNotFound())
-            .andDo(print());
+                .andExpect(status().isNotFound())
+                .andDo(print());
 
         verify(service).alertCriticality(any(Transaction.class));
     }
 
+    @Nested
+    @DisplayName("Test para checkear ProcessTransaction con Scoring Service")
+    class ScoringIntegration {
+
+        @Test
+        void checkProccesTransaction_CuandoTransaccionExitosa_RetornaResponseOk() throws Exception {
+            // Arrange
+            Long idCliente = 1L;
+            Alert alertaMock = new Alert(idCliente, "Alerta: Transaccion aprobada para cliente " + idCliente + " con scoring de: 90");
+
+            when(transactionService.processTransaction(idCliente)).thenReturn(alertaMock);
 
 
+    mockMvc.perform(post("/api/alerta-scoring")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.userId").value(idCliente))
+                    .andExpect(jsonPath("$.description").value("Alerta: Transaccion aprobada para cliente " + idCliente + " con scoring de: 90"));
+        }
 
+        @Test
+        void checkProccesTransaction_CuandoAlertNull_RetornaNotFound() throws Exception {
+            // Arrange
+            Long idCliente = 2L;
+            when(transactionService.processTransaction(anyLong()))
+                    .thenReturn(null);
+
+            // Act & Assert
+            mockMvc.perform(post("/api/alerta-scoring")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("2"))
+                    .andExpect(status().isNotFound());
+
+            verify(transactionService).processTransaction(idCliente);
+        }
+        
+        
+    }
 }
