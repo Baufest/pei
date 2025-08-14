@@ -1,10 +1,14 @@
 package com.pei.controller;
 
+import com.pei.dto.Alert;
+import com.pei.domain.Account;
 import com.pei.domain.Transaction;
 import com.pei.domain.UserEvent.UserEvent;
 import com.pei.dto.Alert;
 import com.pei.dto.TimeRangeRequest;
 import com.pei.service.AlertService;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
@@ -21,6 +25,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import com.pei.dto.TransferRequest;
 import com.pei.dto.UserTransaction;
 import com.pei.service.AccountService;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -96,6 +104,35 @@ public class AlertController {
             return ResponseEntity.ok(alert);
         } else {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/alerta-red-transacciones")
+    public ResponseEntity<Alert> checkMultipleAccountsCashNotRelated(@RequestBody List<Transaction> transactions) {
+        try {
+            /* si no viene nada, manda 400 */
+            if (transactions.isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            /* deberia controlar que ninguna transaccion sea nula */
+            if (transactions.stream().anyMatch(t -> t == null)) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            List<Account> alertAccounts = alertService.verifyMultipleAccountsCashNotRelated(transactions);
+
+            if (alertAccounts.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            } else {
+                Long userId = alertAccounts.get(0).getOwner().getId() != null
+                        ? alertAccounts.get(0).getOwner().getId()
+                        : null;
+                return ResponseEntity.ok(new Alert(userId,
+                        "Alert: Multiples transactions not related to the account of " + userId + " detected"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
