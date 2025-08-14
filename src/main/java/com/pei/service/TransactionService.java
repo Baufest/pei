@@ -4,8 +4,11 @@ import com.pei.domain.*;
 import com.pei.repository.*;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+
 import com.pei.dto.Alert;
 
 @Service
@@ -92,4 +95,20 @@ public class TransactionService {
         Transaction transaction =  transactionRepository.findById(transactionId).orElseThrow(() -> new RuntimeException("Transaction not found in database"));
         return transaction.getApprovalList().size();
     }
+
+    public Optional<Transaction> getMostRecentTransferByUserId(Long userId) {
+        return transactionRepository.findRecentTransferByUserId(userId).stream().findFirst();
+    }
+
+    public boolean isLastTransferInLastHour(Transaction transaction, LocalDateTime eventDateHour) {
+        // Fecha de la transferencia
+        LocalDateTime transferDate = transaction.getDate();
+
+        // Calcula la diferencia en minutos entre el evento y la transferencia
+        long minutesDifference = Duration.between(eventDateHour, transferDate).toMinutes();
+
+        // Considera sospechoso si la transferencia es posterior al evento y dentro de 60 minutos
+        return minutesDifference >= 0 && minutesDifference <= 60;
+    }
+
 }
