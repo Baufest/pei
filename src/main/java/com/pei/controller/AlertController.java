@@ -110,8 +110,8 @@ public class AlertController {
     @PostMapping("/alerta-red-transacciones")
     public ResponseEntity<Alert> checkMultipleAccountsCashNotRelated(@RequestBody List<Transaction> transactions) {
         try {
-            /* si no viene nada, manda 404 */
-            if (transactions == null) {
+            /* si no viene nada, manda 400 */
+            if (transactions.isEmpty()) {
                 return ResponseEntity.badRequest().build();
             }
 

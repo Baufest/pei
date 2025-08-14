@@ -88,7 +88,7 @@ class AlertControllerTest {
         LocalDateTime now = LocalDateTime.now();
         List<Transaction> inputTransactions = List.of(new Transaction(user, new BigDecimal("100.00"), now.minusHours(2), account, account));
 
-        when(service.verifyMoneyMule(anyList())).thenReturn(true);
+        when(alertService.verifyMoneyMule(anyList())).thenReturn(true);
 
         mockMvc.perform(post("/api/alerta-money-mule")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -105,7 +105,7 @@ class AlertControllerTest {
     void Should_ReturnNotContent_When_MoneyMuleNotDetected() throws Exception {
         // Aquí puedes simular el comportamiento del servicio y probar la lógica del controlador
         // Simular el comportamiento del servicio
-        when(service.verifyMoneyMule(anyList())).thenReturn(false);
+        when(alertService.verifyMoneyMule(anyList())).thenReturn(false);
 
         mockMvc.perform(post("/api/alerta-money-mule")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -161,11 +161,7 @@ class AlertControllerTest {
             when(alertService.verifyMultipleAccountsCashNotRelated(List.of()))
                     .thenReturn(List.of());
 
-        mockMvc.perform(post("/api/alerta-money-mule")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("[]"))// Simular una solicitud POST con un cuerpo vacío, ya que esta Mockeado el Service
-            .andExpect(status().isNotFound())
-            .andDo(print());
+
             mockMvc.perform(post("/api/alerta-red-transacciones")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(List.of())))
@@ -184,8 +180,8 @@ class AlertControllerTest {
                     .thenReturn(List.of());
 
             mockMvc.perform(post("/api/alerta-red-transacciones")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(allTransactions)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(allTransactions)))
                     .andExpect(status().isNotFound());
         }
     }
@@ -265,7 +261,7 @@ class AlertControllerTest {
         Alert mockAlert = new Alert(transactionId,
             "Transacción con ID = " + transactionId + " tiene más de 2 aprobaciones");
 
-        when(service.approvalAlert(transactionId)).thenReturn(mockAlert);
+        when(alertService.approvalAlert(transactionId)).thenReturn(mockAlert);
 
         String jsonRequest = "123";
 
@@ -279,7 +275,7 @@ class AlertControllerTest {
             .andExpect(jsonPath("$.userId").value(123))
             .andExpect(jsonPath("$.description").value("Transacción con ID = 123 tiene más de 2 aprobaciones"));
 
-        verify(service, times(1)).approvalAlert(transactionId);
+        verify(alertService, times(1)).approvalAlert(transactionId);
     }
 
     @Test
@@ -299,7 +295,7 @@ class AlertControllerTest {
         Alert mockAlert = new Alert(3L, "Transacción con ID = 3, realizada fuera del rango de horas promedio: 9 - 14");
 
         // devuelvo la alerta
-        when(service.timeRangeAlert(anyList(), any(Transaction.class))).thenReturn(mockAlert);
+        when(alertService.timeRangeAlert(anyList(), any(Transaction.class))).thenReturn(mockAlert);
 
         // when:
         var result = mockMvc.perform(post("/api/alerta-horario")
@@ -312,7 +308,7 @@ class AlertControllerTest {
             .andExpect(jsonPath("$.description").value("Transacción con ID = 3, realizada fuera del rango de horas promedio: 9 - 14"));
 
         // verificamos que se llamó al servicio exactamente una vez
-        verify(service, times(1)).timeRangeAlert(anyList(), any(Transaction.class));
+        verify(alertService, times(1)).timeRangeAlert(anyList(), any(Transaction.class));
     }
 
     @Test
@@ -332,7 +328,7 @@ class AlertControllerTest {
         transaction.setDestinationAccount(new Account(destinationUser));
 
         //When
-        when(service.alertCriticality(any(Transaction.class)))
+        when(alertService.alertCriticality(any(Transaction.class)))
             .thenReturn(new Alert(10L, "Transacción de alta criticidad. Se notificará por Mail."));
 
         // Then
@@ -345,12 +341,12 @@ class AlertControllerTest {
             .andExpect(jsonPath("$.description").value("Transacción de alta criticidad. Se notificará por Mail."))
             .andDo(print());
 
-        verify(service).alertCriticality(any(Transaction.class));
+        verify(alertService).alertCriticality(any(Transaction.class));
     }
 
     @Test
     void Should_ReturnNotFound_When_CriticalityIsLow() throws Exception {
-        when(service.alertCriticality(any(Transaction.class))).thenReturn(null);
+        when(alertService.alertCriticality(any(Transaction.class))).thenReturn(null);
 
         Transaction transaction = new Transaction();
         transaction.setAmount(BigDecimal.valueOf(1000)); // monto bajo
@@ -361,7 +357,7 @@ class AlertControllerTest {
             .andExpect(status().isNotFound())
             .andDo(print());
 
-        verify(service).alertCriticality(any(Transaction.class));
+        verify(alertService).alertCriticality(any(Transaction.class));
     }
 
     @Nested

@@ -1,20 +1,16 @@
 package com.pei.repository;
 
-import com.pei.domain.Account;
 import com.pei.domain.Transaction;
 
 import java.time.LocalDateTime;
 
 
-
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
@@ -30,7 +26,4 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     ORDER BY t.date DESC
     """)
     List<Transaction> findRecentTransferByUserId(@Param("userId") Long userId);
-
-    List<Transaction> findByDestinationAccountAndTransactionDateBetween(Account destinationAccount, LocalDateTime start,
-            LocalDateTime end);
 }
