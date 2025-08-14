@@ -9,13 +9,7 @@ import java.util.Objects;
 import com.pei.dto.Chargeback;
 import com.pei.dto.Purchase;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 @Entity @Table(name = "client")
@@ -48,6 +42,12 @@ public class User {
 
     @OneToMany(mappedBy = "user")
     private List<Chargeback> chargebacks = new ArrayList<>();
+
+    @Column(nullable = false, unique = true) // email único y obligatorio
+    private String email;
+
+    @Embedded
+    private TimeRange avgTimeRange;
 
     public User() {}
 
@@ -130,6 +130,13 @@ public class User {
 
     public List<Purchase> getPurchases() {
         return purchases;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+    public void setEmail(String mail) {
+        this.email = mail;
     }
 
     @Override
