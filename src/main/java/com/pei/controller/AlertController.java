@@ -128,6 +128,18 @@ public class AlertController {
         return ResponseEntity.notFound().build();
     }
 
+    @GetMapping("/alerta-fast-multiple-transaction/{userId}")
+    public ResponseEntity<Alert> getFastMultipleTransactionsAlert(@PathVariable Long userId) {
+        Alert alert = transactionService.getFastMultipleTransactionAlert(userId);
+
+        if (alert != null) {
+            return ResponseEntity.ok(alert);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+
+    }
+    
     @PostMapping("/alerta-canales")
     public ResponseEntity<Alert> evaluatecriticalityAndSendAlert(@RequestBody Transaction transaction){
 
