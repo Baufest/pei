@@ -19,7 +19,7 @@ public class ClienteConfiablePropertiesTest {
     void testCargaDesdeYaml() {
         assertAll(
             () -> assertEquals("MES", config.getAntiguedad().getMedicion()),
-            () -> assertEquals(24.0, config.getAntiguedad().getMinima()),
+            () -> assertEquals(24.0, config.getAntiguedad().getMinimoMedicion()),
             () -> assertEquals(List.of("IRRECUPERABLE"), config.getPerfilesNoConfiables()),
             () -> assertEquals(0, config.getLimiteChargeback())
         );

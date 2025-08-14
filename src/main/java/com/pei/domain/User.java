@@ -38,7 +38,7 @@ public class User {
     private BigDecimal averageMonthlySpending;
 
     @CreationTimestamp
-    private LocalDate userSince;
+    private LocalDate creationDate;
 
     @OneToMany(mappedBy = "owner")
     private List<Account> accounts = new ArrayList<>();
@@ -100,12 +100,12 @@ public class User {
         this.profile = profile;
     }
 
-    public LocalDate getUserSince() {
-        return userSince;
+    public LocalDate getCreationDate() {
+        return creationDate;
     }
 
-    public void setUserSince(LocalDate userSince) {
-        this.userSince = userSince;
+    public void setCreationDate(LocalDate creationDate) {
+        this.creationDate = creationDate;
     }
 
     public BigDecimal getAverageMonthlySpending() {
@@ -136,11 +136,11 @@ public class User {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
-        return Objects.equals(id, user.id) && Objects.equals(name, user.name) && Objects.equals(risk, user.risk) && Objects.equals(profile, user.profile) && Objects.equals(averageMonthlySpending, user.averageMonthlySpending) && Objects.equals(userSince, user.userSince) && Objects.equals(accounts, user.accounts) && Objects.equals(purchases, user.purchases) && Objects.equals(chargebacks, user.chargebacks);
+        return Objects.equals(id, user.id) && Objects.equals(name, user.name) && Objects.equals(risk, user.risk) && Objects.equals(profile, user.profile) && Objects.equals(averageMonthlySpending, user.averageMonthlySpending) && Objects.equals(creationDate, user.creationDate) && Objects.equals(accounts, user.accounts) && Objects.equals(purchases, user.purchases) && Objects.equals(chargebacks, user.chargebacks);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, risk, profile, averageMonthlySpending, userSince, accounts, purchases, chargebacks);
+        return Objects.hash(id, name, risk, profile, averageMonthlySpending, creationDate, accounts, purchases, chargebacks);
     }
 }

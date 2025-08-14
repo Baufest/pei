@@ -18,19 +18,25 @@ public class ClienteConfiableService {
     public ClienteConfiableService(ClienteConfiableProperties config) {
         this.config = config;
 
-        // Registramos los filtros usando lambdas
+        // Registramos los filtros usando lambdas - esto permite una sintaxis más limpia
+        // y evita la necesidad de crear clases anónimas o métodos adicionales.
         filtros.add(this::filtroAntiguedad);
         filtros.add(this::filtroChargeback);
         filtros.add(this::filtroPerfil);
     }
 
+    // Metodo que verifica si un cliente es confiable
+    // según los filtros definidos en la configuración.
     public boolean esClienteConfiable(User cliente) {
         return filtros.stream().allMatch(f -> f.aplica(cliente));
     }
 
+
+    // Filtros específicos que se aplican a los clientes.
+    // Cada filtro verifica una condición específica
     private boolean filtroAntiguedad(User cliente) {
-        LocalDate fechaAlta = cliente.getUserSince(); // Debe existir en User
-        double minima = config.getAntiguedad().getMinima();
+        LocalDate fechaAlta = cliente.getCreationDate(); // Debe existir en User
+        double minima = config.getAntiguedad().getMinimoMedicion();
 
         ChronoUnit unidad = mapearUnidad(config.getAntiguedad().getMedicion());
         long diferencia = unidad.between(fechaAlta, LocalDate.now());

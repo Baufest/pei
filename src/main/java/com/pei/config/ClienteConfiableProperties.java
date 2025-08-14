@@ -14,7 +14,7 @@ public class ClienteConfiableProperties {
 
     public static class Antiguedad {
         private String medicion; // MES, AÑO, DIA, SEMANA
-        private double minima;
+        private double minimoMedicion; // Valor mínimo de la medición en días, semanas, meses o años
 
         public String getMedicion() {
             return medicion;
@@ -24,12 +24,12 @@ public class ClienteConfiableProperties {
             this.medicion = medicion;
         }
 
-        public double getMinima() {
-            return minima;
+        public double getMinimoMedicion() {
+            return minimoMedicion;
         }
 
-        public void setMinima(double minima) {
-            this.minima = minima;
+        public void setMinimoMedicion(double minimoMedicion) {
+            this.minimoMedicion = minimoMedicion;
         }
     }
 

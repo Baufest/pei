@@ -31,7 +31,7 @@ class ClienteConfiableServiceTest {
             // Configuración simulada
             ClienteConfiableProperties.Antiguedad antiguedad = new ClienteConfiableProperties.Antiguedad();
             antiguedad.setMedicion("MES");
-            antiguedad.setMinima(24);
+            antiguedad.setMinimoMedicion(24);
             config.setAntiguedad(antiguedad);
 
             config.setPerfilesNoConfiables(List.of("IRRECUPERABLE", "ALTO RIESGO"));
@@ -43,7 +43,7 @@ class ClienteConfiableServiceTest {
         @Test
         void clienteCumpleTodosLosFiltros() {
             User cliente = new User();
-            cliente.setUserSince(LocalDate.now().minusMonths(36)); // 3 años
+            cliente.setCreationDate(LocalDate.now().minusMonths(36)); // 3 años
             cliente.setProfile("ahorrista");
             cliente.setRisk("normal");
             cliente.setAverageMonthlySpending(BigDecimal.valueOf(5000));
@@ -55,7 +55,7 @@ class ClienteConfiableServiceTest {
         @Test
         void clienteFallaPorAntiguedad() {
             User cliente = new User();
-            cliente.setUserSince(LocalDate.now().minusMonths(12)); // solo 1 año
+            cliente.setCreationDate(LocalDate.now().minusMonths(12)); // solo 1 año
             cliente.setProfile("ahorrista");
             cliente.setRisk("normal");
 
@@ -65,7 +65,7 @@ class ClienteConfiableServiceTest {
         @Test
         void clienteFallaPorChargebacks() {
             User cliente = new User();
-            cliente.setUserSince(LocalDate.now().minusMonths(36));
+            cliente.setCreationDate(LocalDate.now().minusMonths(36));
             cliente.setProfile("ahorrista");
             cliente.setRisk("normal");
             cliente.addChargebacks(List.of(new Chargeback(), new Chargeback())); // 2 chargebacks
@@ -76,7 +76,7 @@ class ClienteConfiableServiceTest {
         @Test
         void clienteFallaPorPerfil() {
             User cliente = new User();
-            cliente.setUserSince(LocalDate.now().minusMonths(36));
+            cliente.setCreationDate(LocalDate.now().minusMonths(36));
             cliente.setProfile("IRRECUPERABLE");
             cliente.setRisk("alto");
             cliente.addChargebacks(List.of(new Chargeback(), new Chargeback()));
