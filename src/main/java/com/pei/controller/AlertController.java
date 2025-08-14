@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,14 +19,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.pei.domain.Account;
-import com.pei.domain.Transaction;
+
 import com.pei.domain.UserEvent.UserEvent;
-import com.pei.dto.Alert;
-import com.pei.dto.TimeRangeRequest;
+
 import com.pei.dto.TransferRequest;
 import com.pei.dto.UserTransaction;
 import com.pei.service.AccountService;
-import com.pei.service.AlertService;
 import com.pei.service.GeolocalizationService;
 import com.pei.service.TransactionService;
 

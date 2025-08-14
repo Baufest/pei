@@ -7,12 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-
-import net.bytebuddy.utility.nullability.NeverNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -22,19 +19,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-import com.pei.domain.Account;
-import com.pei.domain.Transaction;
-import com.pei.domain.User;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.when;
 
-@SpringBootTest
+
 @ExtendWith(MockitoExtension.class)
 class AlertServiceTest {
     @InjectMocks
@@ -142,7 +130,7 @@ class AlertServiceTest {
             // Transferencias desde las Cuentas del Usuario A (A1 y A2) a la Cuenta del Usuario C
             Transaction transfer1 = new Transaction(userA, new BigDecimal("50.00"), LocalDateTime.now().minusDays(7), accountA1, accountC1);
 
-            List<Transaction> transactions = List.of(
+            List<Transaction> transactions = List.of( // TODO:Unused
                 deposit1,
                 transfer1
             );
