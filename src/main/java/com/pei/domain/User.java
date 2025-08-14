@@ -3,13 +3,14 @@ package com.pei.domain;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
 import com.pei.dto.Chargeback;
 import com.pei.dto.Purchase;
-
 import jakarta.persistence.*;
+
 import org.hibernate.annotations.CreationTimestamp;
 
 @Entity @Table(name = "client")
@@ -49,8 +50,15 @@ public class User {
     @OneToMany(mappedBy = "user")
     private List<Chargeback> chargebacks = new ArrayList<>();
 
+    /* @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, orphanRemoval = true)
+    private Set<Device> devices = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, orphanRemoval = true)
+    private Set<Country> countries = new HashSet<>(); */
+
     @Embedded
     private TimeRange avgTimeRange;
+
 
     public User() {}
 

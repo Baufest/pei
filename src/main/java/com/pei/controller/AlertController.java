@@ -1,5 +1,12 @@
 package com.pei.controller;
 
+import com.pei.domain.Transaction;
+import com.pei.dto.Alert;
+import com.pei.dto.Logins;
+import com.pei.dto.TimeRangeRequest;
+import com.pei.service.AlertService;
+import org.springframework.http.ResponseEntity;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -164,6 +171,20 @@ public class AlertController {
             return ResponseEntity.ok(alerta);
         }
         return ResponseEntity.notFound().build();
+    }
+    
+    @PostMapping("/alerta-dispositivo")
+    public ResponseEntity<Alert> checkDeviceLocalization(@RequestBody Logins login) {
+        try {
+            if (login == null) {
+                return ResponseEntity.badRequest().build();
+            }
+            Alert alerta = geolocalizationService.verifyFraudOfDeviceAndGeolocation(login);
+            return ResponseEntity.ok(alerta);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
     }
 
     @GetMapping("/alerta-fast-multiple-transaction/{userId}")

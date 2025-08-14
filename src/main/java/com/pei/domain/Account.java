@@ -1,5 +1,10 @@
 package com.pei.domain;
 
+import jakarta.persistence.*;
+
+import java.util.Objects;
+
+
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -81,5 +86,4 @@ public class Account {
     public int hashCode() {
         return Objects.hash(id, owner);
     }
-
 }

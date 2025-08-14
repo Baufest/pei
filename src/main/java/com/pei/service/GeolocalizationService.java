@@ -15,9 +15,13 @@ import com.pei.repository.LoginsRepository;
 public class GeolocalizationService {
     
     private LoginsRepository loginsRepository;
+    private GeoSimService geoSimService;
 
-    public GeolocalizationService(LoginsRepository loginsRepository) {
-        this.loginsRepository = loginsRepository;}
+
+    public GeolocalizationService(GeoSimService geoSimService, LoginsRepository loginsRepository) {
+        this.geoSimService = geoSimService;
+        this.loginsRepository = loginsRepository;
+    }
     
     public Alert getLoginAlert(Long userId) {
         LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
@@ -34,4 +38,24 @@ public class GeolocalizationService {
         return null; 
     }
     
+    public Alert verifyFraudOfDeviceAndGeolocation(Logins login) {
+        
+        String countryActual = geoSimService.getCountryFromIP(login.country());
+
+        List<Logins> loginsDelUser = loginsRepository.findLoginsByUserAndCountryAndDevice(login.userId(),
+                countryActual, login.deviceID(), true);
+
+        List<Logins> allLogins = loginsRepository.findAll();
+        Long lastLoginsId = allLogins.isEmpty() ? 1 : allLogins.get(allLogins.size() - 1).id() + 1;
+
+        loginsRepository.save(new Logins(lastLoginsId, login.userId(), login.deviceID(), login.country(),
+                LocalDateTime.now(), false));
+
+        boolean loginsMatch = loginsDelUser.isEmpty();
+        
+        if (loginsMatch) {
+            return new Alert(login.userId(), "Device and geolocalization problem detected for " + login.userId());
+        }
+        return new Alert(login.userId(), "Something else");
     }
+}

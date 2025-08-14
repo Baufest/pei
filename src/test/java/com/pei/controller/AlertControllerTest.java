@@ -35,7 +35,11 @@ import com.pei.domain.Account;
 import com.pei.domain.Transaction;
 import com.pei.domain.User;
 import com.pei.dto.Alert;
+import com.pei.dto.Logins;
 import com.pei.dto.UserTransaction;
+
+import com.pei.repository.LoginsRepository;
+
 import com.pei.service.AccountService;
 import com.pei.service.AlertService;
 import com.pei.service.GeolocalizationService;
@@ -45,23 +49,81 @@ import com.pei.service.TransactionService;
 @ExtendWith(MockitoExtension.class)
 class AlertControllerTest {
 
-    @MockitoBean
-    private AlertService alertService;
+        @MockitoBean
+        private GeolocalizationService geolocalizationService;
 
-    @MockitoBean
-    private AccountService accountService;
+        @MockitoBean
+        private GeoSimService geoSimService;
 
-    @MockitoBean
-    private TransactionService transactionService;
+        @MockitoBean
+        private LoginsRepository loginsRepository;
+        
+        @MockitoBean
+        private AlertService service;
+    
+        @MockitoBean
+        private AccountService accountService;
+    
+        @MockitoBean
+        private TransactionService transactionService;
 
-    @MockitoBean
-    private GeolocalizationService geolocalizationService;
+        @Autowired
+        private ObjectMapper objectMapper;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+        @Autowired
+        MockMvc mockMvc;
 
-    @Autowired
-    MockMvc mockMvc;
+        @Nested
+        @DisplayName("Tests para validar fraude geolocalizacion y dispositivo")
+        class ValidarFraudeGeoDisp {
+
+                /* solo probamos el controller que funcione corretamente */
+                @Test
+                void shouldReturnAlertWhenNoPreviousLoginsFound() throws Exception {
+                        Logins login = new Logins(1L, 1L, "qwertasdfgh", "Canada", LocalDateTime.now(), true);
+
+                        when(geolocalizationService.verifyFraudOfDeviceAndGeolocation(login))
+                                        .thenReturn(new Alert(login.userId(),
+                                                        "Device and geolocalization problem detected for "
+                                                                        + login.userId()));
+
+                        mockMvc.perform(post("/api/alerta-dispositivo")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(objectMapper.writeValueAsString(login)))
+                                        .andExpect(status().isOk())
+                                        .andExpect(jsonPath("$.userId").value(1))
+                                        .andExpect(jsonPath("$.description")
+                                                        .value("Device and geolocalization problem detected for 1"));
+                }
+
+                /* probamos que devuelva something else, correctamente */
+                @Test
+                void shouldReturnAlertOkWhenPreviousLoginsFound() throws Exception {
+                        Logins login = new Logins(1L, 1L, "qwertasdfgh", "Canada", LocalDateTime.now(), true);
+
+                        when(geolocalizationService.verifyFraudOfDeviceAndGeolocation(login))
+                                        .thenReturn(new Alert(1L, "Something Else"));
+
+                        mockMvc.perform(post("/api/alerta-dispositivo")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(objectMapper.writeValueAsString(login)))
+                                        .andExpect(status().isOk())
+                                        .andExpect(jsonPath("$.userId").value(1))
+                                        .andExpect(jsonPath("$.description")
+                                                        .value("Something Else"));
+                }
+
+                @Test
+                void shouldReturn404WhenLoginNull() throws Exception {
+                        Logins login = null;
+
+                        mockMvc.perform(post("/api/alerta-dispositivo")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(objectMapper.writeValueAsString(login)))
+                                        .andExpect(status().isBadRequest());
+                }
+        }
+
 
     @Test
     void Should_ReturnOkAlert_When_MoneyMuleDetected() throws Exception {
