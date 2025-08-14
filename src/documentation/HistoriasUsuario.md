@@ -1288,3 +1288,113 @@ Content-Type: application/json
 
 ----
 
+## 👨‍💻 Historia de Usuario #224
+
+### 📝 Título  
+Alerta por red de transacciones entre cuentas no relacionadas
+
+---
+
+### 📌 Descripción Breve  
+Se implementa la lógica para detectar posibles fraudes mediante la identificación de transacciones entre múltiples cuentas que no tienen relación directa. El sistema genera una alerta si se detecta un patrón sospechoso, permitiendo la trazabilidad y prevención de actividades ilícitas como lavado de dinero o movimientos no autorizados.
+
+---
+
+### ⚙️ Detalles Técnicos  
+
+#### 🧩 Clases/Métodos Afectados  
+- `AlertController`
+  - Método: `checkMultipleAccountsCashNotRelated(List<Transaction> transactions)`
+- `AlertService`
+  - Método: `verifyMultipleAccountsCashNotRelated(List<Transaction> transactions)`
+- `Account`
+  - Entidad para cuentas involucradas
+- `Transaction`
+  - Entidad para transacciones analizadas
+- `Alert`
+  - DTO para respuesta de alerta
+
+#### 🌐 Endpoints Nuevos/Modificados  
+| Método HTTP | URL                           | Parámetros                | Respuesta                |
+|-------------|-------------------------------|---------------------------|--------------------------|
+| POST        | `/api/alerta-red-transacciones` | `List<Transaction>` (JSON) | `Alert` (JSON)           |
+
+#### 🗃️ Cambios en Base de Datos  
+- No se realizaron cambios estructurales en la base de datos.
+
+---
+
+### 🔍 Impacto en el Sistema  
+- Módulo afectado: `com.pei.controller`, `com.pei.service`
+- Dependencias relevantes:  
+  - `AlertService`
+  - `Account`
+  - `Transaction`
+  - `Alert`
+
+---
+
+### 💻 Ejemplo de Uso  
+
+**Request**  
+```http
+POST /api/alerta-red-transacciones
+Content-Type: application/json
+
+[
+  {
+    "id": 1,
+    "amount": 5000,
+    "account": { "id": 101, "owner": { "id": 123 } },
+    "user": { "id": 123 }
+  },
+  {
+    "id": 2,
+    "amount": 7000,
+    "account": { "id": 102, "owner": { "id": 124 } },
+    "user": { "id": 124 }
+  }
+]
+```
+
+**Response**
+```json
+{
+  "userId": 123,
+  "message": "Alert: Multiples transactions not related to the account of 123 detected"
+}
+```
+*Si no se detecta fraude, retorna 404 Not Found.*
+
+---
+
+## 🧪 Pruebas Unitarias
+
+### 🧪 Escenarios Cubiertos
+- `checkMultipleAccountsCashNotRelated_CuandoTransaccionesNoRelacionadas_RetornaAlerta`: Transacciones entre cuentas no relacionadas → **alerta generada**.
+- `checkMultipleAccountsCashNotRelated_CuandoTransaccionesRelacionadas_NoRetornaAlerta`: Transacciones legítimas → **no genera alerta**.
+- `checkMultipleAccountsCashNotRelated_CuandoListaVacia_RetornaBadRequest`: Lista vacía → **400 Bad Request**.
+- `checkMultipleAccountsCashNotRelated_CuandoTransaccionNula_RetornaBadRequest`: Transacción nula en la lista → **400 Bad Request**.
+- `checkMultipleAccountsCashNotRelated_CuandoServicioFalla_RetornaError`: Error interno → **500 Internal Server Error**.
+
+### 🧪 Endpoints Probados
+| Método HTTP | URL                           | Escenario de Test                  | Resultado Esperado         |
+|-------------|-------------------------------|------------------------------------|---------------------------|
+| POST        | `/api/alerta-red-transacciones` | Transacciones no relacionadas      | Alerta generada           |
+| POST        | `/api/alerta-red-transacciones` | Transacciones legítimas            | 404 Not Found             |
+| POST        | `/api/alerta-red-transacciones` | Lista vacía                        | 400 Bad Request           |
+| POST        | `/api/alerta-red-transacciones` | Transacción nula                   | 400 Bad Request           |
+| POST        | `/api/alerta-red-transacciones` | Servicio falla                     | 500 Internal Server Error |
+
+---
+
+## ✅ Estado
+✔️ Completado
+
+---
+
+## 🔗 Integraciones Externas
+
+- **Servicio de Alertas**  
+  - Ubicación: `AlertService`
+  - Descripción: Lógica de negocio para detección de patrones sospechosos en transacciones entre cuentas no relacionadas.  
