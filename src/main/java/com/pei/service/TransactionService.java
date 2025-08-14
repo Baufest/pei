@@ -99,7 +99,7 @@ public class TransactionService {
 
         Integer minutesRange = clientType.equals("individuo") ? 
             transactionVelocityDetectorService.getIndividuoMinutesRange() : 
-            transactionVelocityDetectorService.getIndividuoMinutesRange();
+            transactionVelocityDetectorService.getEmpresaMinutesRange();
         
         Integer maxTransactions = clientType.equals("individuo") ? 
             transactionVelocityDetectorService.getIndividuoMaxTransactions() : 

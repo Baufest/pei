@@ -270,7 +270,4 @@ class AlertControllerTest {
         verify(service).alertCriticality(any(Transaction.class));
     }
 
-
-
-
 }
