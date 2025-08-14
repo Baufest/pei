@@ -128,4 +128,14 @@ public class AlertController {
         return ResponseEntity.notFound().build();
     }
 
+    @PostMapping("/alerta-canales")
+    public ResponseEntity<Alert> evaluatecriticalityAndSendAlert(@RequestBody Transaction transaction){
+
+        Alert alerta = alertService.alertCriticality(transaction);
+        if (alerta != null) {
+                return ResponseEntity.ok(alerta);
+            }
+        return ResponseEntity.notFound().build();
+    }
+
 }
