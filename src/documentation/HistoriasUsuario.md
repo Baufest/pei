@@ -1071,3 +1071,100 @@ Para probar correctamente el sistema de envío de mails se utilizó Ethereal, un
 8. El mensaje enviado debería aparecer en la sección **Messages** de Ethereal si todo funcionó correctamente.
 
 ---
+
+
+## 👨‍💻 Historia de Usuario #232
+
+### 📝 Título  
+Integración y alerta de scoring externo BBVA
+
+---
+
+### 📌 Descripción Breve  
+Se implementa la lógica para consultar el scoring de un cliente utilizando el servicio externo de BBVA (`scoringServiceExterno`). El sistema genera una alerta si el scoring recibido indica riesgo relevante. Esta integración permite evaluar el perfil crediticio y de fraude de los usuarios en tiempo real, facilitando la toma de decisiones automatizadas y la trazabilidad de dependencias externas.
+
+---
+
+### ⚙️ Detalles Técnicos  
+
+#### 🧩 Clases/Métodos Afectados  
+- `AlertController`
+  - Método: `checkProccesTransaction(Long idCliente)`
+- `ScoringController`
+  - Métodos principales para consulta y gestión de scoring
+- `ScoringServiceExterno` (ubicado en `service/bbva/scoringServiceExterno`)
+  - Método: `consultarScoring(Long idCliente)`
+- `Alert`
+  - DTO para respuesta de alerta
+
+#### 🌐 Endpoints Nuevos/Modificados  
+| Método HTTP | URL                      | Parámetros         | Respuesta                |
+|-------------|--------------------------|--------------------|--------------------------|
+| POST        | `/api/alerta-scoring`    | `Long idCliente`   | `Alert` (JSON)           |
+| POST        | `/api/scoring/consultar` | `Long idCliente`   | `ScoringResponse` (JSON) |
+
+#### 🗃️ Cambios en Base de Datos  
+- No se realizaron cambios estructurales en la base de datos.
+
+---
+
+### 🔍 Impacto en el Sistema  
+- Módulo afectado: `com.pei.controller`, `com.pei.service.bbva`
+- Dependencias relevantes:  
+  - `ScoringServiceExterno` (servicio externo BBVA)
+  - `Alert`
+  - `ScoringController`
+
+---
+
+### 💻 Ejemplo de Uso  
+
+**Request**  
+```http
+POST /api/alerta-scoring
+Content-Type: application/json
+
+12345
+```
+
+**Response**
+```json
+{
+  "userId": 12345,
+  "message": "Alerta: Scoring bajo detectado para el usuario 12345"
+}
+```
+*Si el scoring es aceptable, retorna 404 (no hay alerta).*
+
+---
+
+## 🧪 Pruebas Unitarias
+
+### 🧪 Escenarios Cubiertos
+- `checkProccesTransaction_CuandoScoringBajo_RetornaAlerta`: Cliente con scoring bajo → **alerta generada**.
+- `checkProccesTransaction_CuandoScoringAlto_NoRetornaAlerta`: Cliente con scoring alto → **no genera alerta**.
+- `checkProccesTransaction_CuandoServicioExternoFalla_RetornaError`: Fallo en servicio externo → **error interno**.
+
+### 🧪 Endpoints Probados
+| Método HTTP | URL                | Escenario de Test                  | Resultado Esperado         |
+|-------------|--------------------|------------------------------------|---------------------------|
+| POST        | `/api/alerta-scoring` | Scoring bajo                       | Alerta generada           |
+| POST        | `/api/alerta-scoring` | Scoring alto                       | 404 Not Found             |
+| POST        | `/api/alerta-scoring` | Servicio externo no disponible     | Error 500                 |
+
+---
+
+## ✅ Estado
+✔️ Completado
+
+---
+
+## 🔗 Integraciones Externas
+
+- **Servicio de Scoring BBVA**  
+  - Ubicación: `service/bbva/scoringServiceExterno`
+  - Descripción: Consulta el scoring crediticio y de fraude de los clientes.  
+  - Dependencia registrada en README.md.
+
+
+  ----
