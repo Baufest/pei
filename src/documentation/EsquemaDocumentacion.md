@@ -152,3 +152,213 @@ _No aplica, ya que no se expone vía API._
 
 ---
 
+# 📘 Historias de Usuario - Proyecto PEI
+
+---
+
+## 🧑‍💻 Historia de Usuario #123
+
+### 📝 Título
+Alerta de fraude por chargebacks en usuarios
+
+---
+
+### 📌 Descripción Breve
+Implementa la detección automática de fraude por chargebacks. Si un usuario tiene chargebacks sin compras, o una proporción de chargebacks sobre compras mayor al 10%, se genera una alerta de fraude.
+
+---
+
+### ⚙️ Detalles Técnicos
+
+#### 🧩 Clases/Métodos Afectados
+- `TransactionService`
+  - Método: `getChargebackFraudAlert(Long userId)`
+
+#### 🌐 Endpoints Nuevos/Modificados
+| Método HTTP |               URL                 |  Parámetros  |        Respuesta        |
+|-------------|-----------------------------------|--------------|-------------------------|
+| GET         | `/api/alerts/chargeback/{userId}` | Path: userId | Alerta de fraude o null |
+
+#### 🗃️ Cambios en Base de Datos
+- No aplica
+
+---
+
+### 🔍 Impacto en el Sistema
+- Módulo afectado: Transacciones y alertas
+- Dependencias relevantes: `ChargebackRepository`, `PurchaseRepository`
+
+---
+
+### 💻 Ejemplo de Uso
+
+**Request**
+```http
+GET /api/alerts/chargeback/123
+```
+
+**Response**
+```json
+{
+  "userId": 123,
+  "message": "Fraude detectado: chargebacks sin compras o proporción elevada"
+}
+```
+
+---
+
+## 🧪 Pruebas Unitarias
+
+### 🧪 Escenarios Cubiertos
+- `getChargebackFraudAlert_CuandoNoHayComprasYHayChargebacks_GeneraAlerta`: Detecta alerta cuando hay chargebacks y cero compras.
+- `getChargebackFraudAlert_CuandoProporcionChargebacksMayor10_GeneraAlerta`: Detecta alerta cuando la proporción supera el 10%.
+- `getChargebackFraudAlert_CuandoNoCumpleCondiciones_NoGeneraAlerta`: No genera alerta si no se cumplen condiciones.
+
+### 🧪 Endpoints Probados
+| Método HTTP | URL | Escenario de Test | Resultado Esperado |
+|-------------|-----|-------------------|---------------------|
+| GET         | `/api/alerts/chargeback/{userId}` | Usuario con fraude | Alerta generada |
+
+---
+
+## ✅ Estado
+- ✔️ Completado
+
+---
+
+## 🧑‍💻 Historia de Usuario #124
+
+### 📝 Título
+Alerta por múltiples transacciones rápidas
+
+---
+
+### 📌 Descripción Breve
+Detecta y alerta cuando un usuario realiza más de 10 transacciones en menos de una hora, indicando posible actividad fraudulenta.
+
+---
+
+### ⚙️ Detalles Técnicos
+
+#### 🧩 Clases/Métodos Afectados
+- `TransactionService`
+  - Método: `getFastMultipleTransactionAlert(Long userId)`
+
+#### 🌐 Endpoints Nuevos/Modificados
+| Método HTTP |                  URL                     |  Parámetros  |    Respuesta    |
+|-------------|------------------------------------------|--------------|-----------------|
+| GET         | `/api/alerts/fast-transactions/{userId}` | Path: userId | Alerta de fraude o null |
+
+#### 🗃️ Cambios en Base de Datos
+- No aplica
+
+---
+
+### 🔍 Impacto en el Sistema
+- Módulo afectado: Transacciones y alertas
+- Dependencias relevantes: `TransactionRepository`
+
+---
+
+### 💻 Ejemplo de Uso
+
+**Request**
+```http
+GET /api/alerts/fast-transactions/123
+```
+
+**Response**
+```json
+{
+  "userId": 123,
+  "message": "Más de 10 transacciones en la última hora"
+}
+```
+
+---
+
+## 🧪 Pruebas Unitarias
+
+### 🧪 Escenarios Cubiertos
+- `getFastMultipleTransactionAlert_CuandoSuperaLimite_GeneraAlerta`: Genera alerta si hay más de 10 transacciones en una hora.
+- `getFastMultipleTransactionAlert_CuandoNoSuperaLimite_NoGeneraAlerta`: No genera alerta si no supera el límite.
+
+### 🧪 Endpoints Probados
+| Método HTTP | URL | Escenario de Test | Resultado Esperado |
+|-------------|-----|-------------------|---------------------|
+| GET         | `/api/alerts/fast-transactions/{userId}` | Usuario con actividad sospechosa | Alerta generada |
+
+---
+
+## ✅ Estado
+- ✔️ Bloqueado
+
+---
+
+## 🧑‍💻 Historia de Usuario #125
+
+### 📝 Título
+Alerta por logins desde múltiples países
+
+---
+
+### 📌 Descripción Breve
+Detecta si un usuario inicia sesión desde dos o más países diferentes en la última hora y genera una alerta de posible acceso no autorizado.
+
+---
+
+### ⚙️ Detalles Técnicos
+
+#### 🧩 Clases/Métodos Afectados
+- `GeolocalizationService`
+  - Método: `getLoginAlert(Long userId)`
+
+#### 🌐 Endpoints Nuevos/Modificados
+| Método HTTP |                URL                   |  Parámetros  |    Respuesta    |
+|-------------|--------------------------------------|--------------|-----------------|
+| GET         | `/api/alerts/login-country/{userId}` | Path: userId | Alerta de login sospechoso o null |
+
+#### 🗃️ Cambios en Base de Datos
+- No aplica
+
+---
+
+### 🔍 Impacto en el Sistema
+- Módulo afectado: Seguridad y alertas
+- Dependencias relevantes: `LoginsRepository`
+
+---
+
+### 💻 Ejemplo de Uso
+
+**Request**
+```http
+GET /api/alerts/login-country/123
+```
+
+**Response**
+```json
+{
+  "userId": 123,
+  "message": "Multiple countries logins detected for user 123"
+}
+```
+
+---
+
+## 🧪 Pruebas Unitarias
+
+### 🧪 Escenarios Cubiertos
+- `getLoginAlert_CuandoHayLoginsDeVariosPaises_GeneraAlerta`: Genera alerta si hay logins desde más de un país.
+- `getLoginAlert_CuandoTodosLosLoginsSonDelMismoPais_NoGeneraAlerta`: No genera alerta si todos los logins son del mismo país.
+
+### 🧪 Endpoints Probados
+| Método HTTP | URL | Escenario de Test | Resultado Esperado |
+|-------------|-----|-------------------|---------------------|
+| GET         | `/api/alerts/login-country/{userId}` | Usuario con logins sospechosos | Alerta generada |
+
+---
+
+## ✅ Estado
+-
+
