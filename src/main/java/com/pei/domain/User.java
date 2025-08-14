@@ -28,6 +28,12 @@ public class User {
     @Column(nullable = false)
     private String name;
 
+    @Column
+    private String email;
+
+    @Column
+    private String phoneNumber;
+
     @Column(nullable = false)
     private String risk;
 
@@ -98,6 +104,22 @@ public class User {
 
     public void setProfile(String profile) {
         this.profile = profile;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
     }
 
     public LocalDate getCreationDate() {
