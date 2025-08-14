@@ -92,4 +92,18 @@ public class TransactionService {
         Transaction transaction =  transactionRepository.findById(transactionId).orElseThrow(() -> new RuntimeException("Transaction not found in database"));
         return transaction.getApprovalList().size();
     }
+
+    public Alert getFastMultipleTransactionAlert(Long userId) {
+
+        LocalDateTime fromDate = LocalDateTime.now().minusHours(1);
+        Long numMaxTransactions = 10L;
+        Long numTransactions = transactionRepository.countTransactionsFromDate(userId, fromDate);
+
+        if (numTransactions > numMaxTransactions){
+            return new Alert(userId, "Fast multiple transactions detected for user " + userId);
+        } 
+
+        Alert fastMultipleTransactionAlert = null;
+        return fastMultipleTransactionAlert;
+    }
 }
