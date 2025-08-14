@@ -9,15 +9,8 @@ import java.util.Objects;
 
 import com.pei.dto.Chargeback;
 import com.pei.dto.Purchase;
+import jakarta.persistence.*;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 
 @Entity @Table(name = "client")
@@ -29,6 +22,12 @@ public class User {
 
     @Column(nullable = false)
     private String name;
+
+    @Column
+    private String email;
+
+    @Column
+    private String phoneNumber;
 
     @Column(nullable = false)
     private String risk;
@@ -56,6 +55,10 @@ public class User {
 
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, orphanRemoval = true)
     private Set<Country> countries = new HashSet<>(); */
+
+    @Embedded
+    private TimeRange avgTimeRange;
+
 
     public User() {}
 
@@ -108,6 +111,22 @@ public class User {
         this.profile = profile;
     }
 
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
     public LocalDate getCreationDate() {
         return creationDate;
     }
@@ -138,6 +157,14 @@ public class User {
 
     public List<Purchase> getPurchases() {
         return purchases;
+    }
+
+    public TimeRange getAvgTimeRange() {
+        return avgTimeRange;
+    }
+
+    public void setAvgTimeRange(TimeRange avgTimeRange) {
+        this.avgTimeRange = avgTimeRange;
     }
 
     @Override

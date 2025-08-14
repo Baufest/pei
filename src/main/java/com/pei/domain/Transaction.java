@@ -118,12 +118,12 @@ public class Transaction {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         Transaction that = (Transaction) o;
-        return Objects.equals(id, that.id) && Objects.equals(user, that.user) && Objects.equals(amount, that.amount) && Objects.equals(date, that.date) && Objects.equals(sourceAccount, that.sourceAccount) && Objects.equals(destinationAccount, that.destinationAccount);
+        return Objects.equals(id, that.id) && Objects.equals(user, that.user) && Objects.equals(amount, that.amount) && Objects.equals(date, that.date) && Objects.equals(sourceAccount, that.sourceAccount) && Objects.equals(destinationAccount, that.destinationAccount) && Objects.equals(approvalList, that.approvalList);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, user, amount, date, sourceAccount, destinationAccount);
+        return Objects.hash(id, user, amount, date, sourceAccount, destinationAccount, approvalList);
     }
 }
 
