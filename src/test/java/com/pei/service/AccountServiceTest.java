@@ -46,7 +46,7 @@ class AccountServiceTest {
             // Simula un usuario de alto riesgo
             String json = "{\"id\":1,\"name\":\"Juan\",\"risk\":\"alto\",\"accounts\":[]}";
             try (MockedStatic<ClienteService> mock = mockStatic(ClienteService.class)) {
-                mock.when(() -> ClienteService.obtenerClienteJson(userId)).thenReturn(json);
+                mock.when(() -> ClienteService.obtenerClienteJson(userId.intValue())).thenReturn(json);
                 Alert alert = accountService.validateHighRiskClient(userId);
                 assertNotNull(alert);
                 assertEquals("Alerta: El cliente es de alto riesgo.", alert.description());
@@ -60,7 +60,7 @@ class AccountServiceTest {
             // Simula un usuario de bajo riesgo
             String json = "{\"id\":2,\"name\":\"Ana\",\"risk\":\"bajo\",\"accounts\":[]}";
             try (MockedStatic<ClienteService> mock = mockStatic(ClienteService.class)) {
-                mock.when(() -> ClienteService.obtenerClienteJson(userId)).thenReturn(json);
+                mock.when(() -> ClienteService.obtenerClienteJson(userId.intValue())).thenReturn(json);
                 Alert alert = accountService.validateHighRiskClient(userId);
                 assertNotNull(alert);
                 assertEquals("Cliente verificado como de bajo riesgo.", alert.description());
@@ -74,7 +74,7 @@ class AccountServiceTest {
             // Simula un JSON vacío o inválido
             String json = "{}";
             try (MockedStatic<ClienteService> mock = mockStatic(ClienteService.class)) {
-                mock.when(() -> ClienteService.obtenerClienteJson(userId)).thenReturn(json);
+                mock.when(() -> ClienteService.obtenerClienteJson(userId.intValue())).thenReturn(json);
                 Alert alert = accountService.validateHighRiskClient(userId);
                 assertNotNull(alert);
                 assertEquals("Alerta: Usuario no encontrado.", alert.description());

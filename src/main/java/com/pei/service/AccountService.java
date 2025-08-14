@@ -36,7 +36,7 @@ public class AccountService {
     }
 
     public Alert validateHighRiskClient(Long userId) {
-        String clientJson = ClienteService.obtenerClienteJson(userId);
+        String clientJson = ClienteService.obtenerClienteJson(userId.intValue());
         User user = null;
         try {
             user = objectMapper.readValue(clientJson, User.class);
