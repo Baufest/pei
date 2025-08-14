@@ -5,6 +5,7 @@ import com.pei.dto.Chargeback;
 import com.pei.dto.Purchase;
 import com.pei.repository.ChargebackRepository;
 import com.pei.repository.PurchaseRepository;
+import com.pei.repository.TransactionRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,8 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
@@ -34,6 +37,8 @@ class TransactionServiceTest {
     Account account1, account2;
     @Mock
     private ChargebackRepository chargebackRepository;
+    @Mock
+    private TransactionRepository transactionRepository;
     @Mock
     private PurchaseRepository purchaseRepository;
     @InjectMocks
@@ -201,4 +206,32 @@ class TransactionServiceTest {
         assertNotNull(alert);
         verify(chargebackRepository, times(1)).findByUserId(1L);
         verify(purchaseRepository, times(1)).findByUserId(1L);}
+
+    @Test
+    void shouldReturnAlertWhenTransactionsExceedLimit() {
+
+        Long userId = 1L;
+        when(transactionRepository.countTransactionsFromDate(eq(userId), any(LocalDateTime.class)))
+            .thenReturn(15L); 
+            
+        Alert alert = transactionService.getFastMultipleTransactionAlert(userId);
+
+        assertNotNull(alert);
+        assertEquals(userId, alert.userId());
+        assertTrue(alert.description().contains("Fast multiple transactions detected"));
+        verify(transactionRepository, times(1)).countTransactionsFromDate(eq(userId), any(LocalDateTime.class));
+    }
+
+    @Test
+    void shouldReturnNullWhenTransactionsWithinLimit() {
+
+        Long userId = 2L;
+        when(transactionRepository.countTransactionsFromDate(eq(userId), any(LocalDateTime.class)))
+            .thenReturn(5L); 
+
+        Alert alert = transactionService.getFastMultipleTransactionAlert(userId);
+
+        assertNull(alert);
+        verify(transactionRepository, times(1)).countTransactionsFromDate(eq(userId), any(LocalDateTime.class));
+    }
 }

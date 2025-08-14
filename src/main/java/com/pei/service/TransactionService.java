@@ -1,6 +1,7 @@
 package com.pei.service;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -10,6 +11,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.pei.domain.TimeRange;
 import com.pei.domain.Transaction;
+import java.util.Optional;
+
 import com.pei.dto.Alert;
 import com.pei.repository.ChargebackRepository;
 import com.pei.repository.PurchaseRepository;
@@ -138,4 +141,33 @@ public class TransactionService {
         }
         return new Alert(idCliente, msj);
     }
+    public Alert getFastMultipleTransactionAlert(Long userId) {
+
+        LocalDateTime fromDate = LocalDateTime.now().minusHours(1);
+        Long numMaxTransactions = 10L;
+        Long numTransactions = transactionRepository.countTransactionsFromDate(userId, fromDate);
+
+        if (numTransactions > numMaxTransactions){
+            return new Alert(userId, "Fast multiple transactions detected for user " + userId);
+        }
+
+        Alert fastMultipleTransactionAlert = null;
+        return fastMultipleTransactionAlert;
+    }
+
+    public Optional<Transaction> getMostRecentTransferByUserId(Long userId) {
+        return transactionRepository.findRecentTransferByUserId(userId).stream().findFirst();
+    }
+
+    public boolean isLastTransferInLastHour(Transaction transaction, LocalDateTime eventDateHour) {
+        // Fecha de la transferencia
+        LocalDateTime transferDate = transaction.getDate();
+
+        // Calcula la diferencia en minutos entre el evento y la transferencia
+        long minutesDifference = Duration.between(eventDateHour, transferDate).toMinutes();
+
+        // Considera sospechoso si la transferencia es posterior al evento y dentro de 60 minutos
+        return minutesDifference >= 0 && minutesDifference <= 60;
+    }
+
 }

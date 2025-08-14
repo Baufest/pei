@@ -4,9 +4,9 @@ import jakarta.persistence.*;
 
 @Embeddable
 public class TimeRange {
-    @Column(name = "min_hour", nullable = false)
+    @Column(name = "min_hour")
     private int minHour;
-    @Column(name = "max_hour", nullable = false)
+    @Column(name = "max_hour")
     private int maxHour;
 
     protected TimeRange() {
