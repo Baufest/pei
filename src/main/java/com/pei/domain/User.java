@@ -8,8 +8,8 @@ import java.util.Objects;
 
 import com.pei.dto.Chargeback;
 import com.pei.dto.Purchase;
-
 import jakarta.persistence.*;
+
 import org.hibernate.annotations.CreationTimestamp;
 
 @Entity @Table(name = "client")
@@ -21,6 +21,9 @@ public class User {
 
     @Column(nullable = false)
     private String name;
+
+    @Column
+    private String phoneNumber;
 
     @Column(nullable = false)
     private String risk;
@@ -48,8 +51,18 @@ public class User {
     @Column(nullable = false, unique = true) // email único y obligatorio
     private String email;
 
+    //@Column
+    //private String email;
+    
+    /* @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, orphanRemoval = true)
+    private Set<Device> devices = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, orphanRemoval = true)
+    private Set<Country> countries = new HashSet<>(); */
+
     @Embedded
     private TimeRange avgTimeRange;
+
 
     public User() {}
 
@@ -102,6 +115,22 @@ public class User {
         this.profile = profile;
     }
 
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
     public LocalDate getCreationDate() {
         return creationDate;
     }
@@ -142,11 +171,12 @@ public class User {
         return purchases;
     }
 
-    public String getEmail() {
-        return email;
+    public TimeRange getAvgTimeRange() {
+        return avgTimeRange;
     }
-    public void setEmail(String mail) {
-        this.email = mail;
+
+    public void setAvgTimeRange(TimeRange avgTimeRange) {
+        this.avgTimeRange = avgTimeRange;
     }
 
     @Override
