@@ -243,6 +243,8 @@ class AlertControllerTest {
 }
 
 // TEST GONZA
+@WebMvcTest(AlertController.class)
+@ExtendWith(MockitoExtension.class)
 @Nested
 @DisplayName("Tests para validarTransferenciasCuentasRecienCreadas")
 class ValidarTransferenciasCuentasRecienCreadasTests {
