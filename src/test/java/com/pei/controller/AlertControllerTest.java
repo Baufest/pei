@@ -49,7 +49,7 @@ import com.pei.service.TransactionService;
 
 @WebMvcTest(AlertController.class)
 @ExtendWith(MockitoExtension.class)
-class AlertControllerTest2 {
+class AlertControllerTest {
 
         @MockitoBean
         private GeolocalizationService geolocalizationService;
