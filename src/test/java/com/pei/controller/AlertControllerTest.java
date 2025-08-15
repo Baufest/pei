@@ -78,7 +78,6 @@ class AlertControllerTest {
         @DisplayName("Tests para validar fraude geolocalizacion y dispositivo")
         class ValidarFraudeGeoDisp {
 
-
                 /* solo probamos el controller que funcione corretamente */
                 @Test
                 void shouldReturnAlertWhenNoPreviousLoginsFound() throws Exception {
@@ -125,7 +124,6 @@ class AlertControllerTest {
                                         .andExpect(status().isBadRequest());
                 }
         }
-
 
         @Test
         void Should_ReturnOkAlert_When_MoneyMuleDetected() throws Exception {
@@ -240,301 +238,283 @@ class AlertControllerTest {
                                         .andExpect(status().isNotFound());
                 }
         }
-}
-
-// TEST GONZA
-@WebMvcTest(AlertController.class)
-@ExtendWith(MockitoExtension.class)
-@Nested
-@DisplayName("Tests para validarTransferenciasCuentasRecienCreadas")
-class ValidarTransferenciasCuentasRecienCreadasTests {
-
-        @MockitoBean
-        private AlertService alertService;
-
-        @MockitoBean
-        private AccountService accountService;
-
-        @MockitoBean
-        private TransactionService transactionService;
-
-        @MockitoBean
-        private GeolocalizationService geolocalizationService;
-
-        @Autowired
-        private ObjectMapper objectMapper;
-
-        @Autowired
-        MockMvc mockMvc;
-
-        @BeforeEach
-        void setUp() {
-                objectMapper = new ObjectMapper();
-        }
-
-        @Test
-        @DisplayName("POST /api/alerta-cuenta-nueva - éxito")
-        void validarTransferenciasCuentasRecienCreadas_CuandoOk_RetornaAlerta() throws Exception {
-                Account cuenta = new Account();
-                Transaction transaccion = new Transaction();
-                Alert alertaEsperada = new Alert(null, "Alerta de prueba");
-
-                when(accountService.validateNewAccountTransfers(any(Account.class), any(Transaction.class)))
-                                .thenReturn(alertaEsperada);
-
-                String cuentaJson = objectMapper.writeValueAsString(cuenta);
-                String transaccionJson = objectMapper.writeValueAsString(transaccion);
-                String requestBody = "{" +
-                                "\"destinationAccount\":" + cuentaJson + "," +
-                                "\"currentTransaction\":" + transaccionJson +
-                                "}";
-
-                mockMvc.perform(post("/api/alerta-cuenta-nueva")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody))
-                                .andExpect(status().isOk());
-        }
-
-        @Test
-        @DisplayName("GET /api/alerta-cliente-alto-riesgo/{userId} - éxito")
-        void validarClienteAltoRiesgo_CuandoOk_RetornaAlerta() throws Exception {
-                Long userId = 1L;
-                Alert alertaEsperada = new Alert(userId, "Alerta: El cliente es de alto riesgo.");
-
-                when(accountService.validateHighRiskClient(userId)).thenReturn(alertaEsperada);
-
-                mockMvc.perform(get("/api/alerta-cliente-alto-riesgo/{userId}", userId)
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isOk());
-        }
-
-        @Test
-        @DisplayName("POST /api/alerta-perfil - éxito")
-        void validateUserProfileTransaction() throws Exception {
-                UserTransaction userTransaction = new UserTransaction();
-                userTransaction.setTransaction(new Transaction());
-                userTransaction.setUser(new User());
-
-                Alert alertaEsperada = new Alert(null, "Perfil de usuario validado para la transacción.");
-
-                when(accountService.validateUserProfileTransaction(any(User.class), any(Transaction.class)))
-                                .thenReturn(alertaEsperada);
-
-                mockMvc.perform(post("/api/alerta-perfil")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(userTransaction)))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.description")
-                                                .value("Perfil de usuario validado para la transacción."));
-
-        }
-
-        @Test
-        void shouldReturnAlertWhenTransactionHasMoreThanTwoApprovals() throws Exception {
-                // given
-                Long transactionId = 123L;
-                Alert mockAlert = new Alert(transactionId,
-                                "Transacción con ID = " + transactionId + " tiene más de 2 aprobaciones");
-
-                when(alertService.approvalAlert(transactionId)).thenReturn(mockAlert);
-
-                String jsonRequest = "123";
-
-                // when
-                var result = mockMvc.perform(post("/api/alerta-aprobaciones")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(jsonRequest));
-
-                // then
-                result.andExpect(status().isOk())
-                                .andExpect(jsonPath("$.userId").value(123))
-                                .andExpect(jsonPath("$.description")
-                                                .value("Transacción con ID = 123 tiene más de 2 aprobaciones"));
-
-                verify(alertService, times(1)).approvalAlert(transactionId);
-        }
-
-        @Test
-        void shouldReturnAlertWhenTransactionIsOutOfTimeRange() throws Exception {
-                // given: historial de transacciones y nueva transacción a testear(esta fuera de
-                // rango)
-                String jsonRequest = """
-                                    {
-                                      "transactions": [
-                                        { "id": 1, "dateHour": "2025-08-13T09:30:00" },
-                                        { "id": 2, "dateHour": "2025-08-13T14:20:00" }
-                                      ],
-                                      "newTransaction": { "id": 3, "dateHour": "2025-08-13T23:10:00" }
-                                    }
-                                """;
-
-                // creamos la alerta esperada
-                Alert mockAlert = new Alert(3L,
-                                "Transacción con ID = 3, realizada fuera del rango de horas promedio: 9 - 14");
-
-                // devuelvo la alerta
-                when(alertService.timeRangeAlert(anyList(), any(Transaction.class))).thenReturn(mockAlert);
-
-                // when:
-                var result = mockMvc.perform(post("/api/alerta-horario")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(jsonRequest));
-
-                // then: verificamos que el status y el body sean correctos
-                result.andExpect(status().isOk())
-                                .andExpect(jsonPath("$.userId").value(3))
-                                .andExpect(jsonPath("$.description")
-                                                .value("Transacción con ID = 3, realizada fuera del rango de horas promedio: 9 - 14"));
-
-                // verificamos que se llamó al servicio exactamente una vez
-                verify(alertService, times(1)).timeRangeAlert(anyList(), any(Transaction.class));
-        }
-
-        @Test
-        void Should_ReturnEmailAlert_When_CriticalityIsHigh() throws Exception {
-                // Given
-                User originUser = new User();
-                originUser.setName("Juan");
-                originUser.setEmail("juan@mail.com");
-
-                User destinationUser = new User();
-                destinationUser.setName("Pepo");
-                destinationUser.setEmail("pepo@mail.com");
-
-                Transaction transaction = new Transaction();
-                transaction.setAmount(BigDecimal.valueOf(2_000_000));
-                transaction.setUser(originUser);
-                transaction.setDestinationAccount(new Account(destinationUser));
-
-                // When
-                when(alertService.alertCriticality(any(Transaction.class)))
-                                .thenReturn(new Alert(10L, "Transacción de alta criticidad. Se notificará por Mail."));
-
-                // Then
-                mockMvc.perform(post("/api/alerta-canales")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(transaction)))
-                                .andExpect(status().isOk())
-                                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(jsonPath("$.userId").value(10))
-                                .andExpect(
-                                                jsonPath("$.description").value(
-                                                                "Transacción de alta criticidad. Se notificará por Mail."))
-                                .andDo(print());
-
-                verify(alertService).alertCriticality(any(Transaction.class));
-        }
-
-        @Test
-        void Should_ReturnNotFound_When_CriticalityIsLow() throws Exception {
-                when(alertService.alertCriticality(any(Transaction.class))).thenReturn(null);
-
-                Transaction transaction = new Transaction();
-                transaction.setAmount(BigDecimal.valueOf(1000)); // monto bajo
-
-                mockMvc.perform(post("/api/alerta-canales")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(transaction)))
-                                .andExpect(status().isNotFound())
-                                .andDo(print());
-
-                verify(alertService).alertCriticality(any(Transaction.class));
-        }
 
         @Nested
-        @DisplayName("Test para checkear ProcessTransaction con Scoring Service")
-        class ScoringIntegration {
+        @DisplayName("Tests para validarTransferenciasCuentasRecienCreadas")
+        class ValidarTransferenciasCuentasRecienCreadasTests {
+
+                @BeforeEach
+                void setUp() {
+                        objectMapper = new ObjectMapper();
+                }
 
                 @Test
-                void checkProccesTransaction_CuandoTransaccionExitosa_RetornaResponseOk() throws Exception {
-                        // Arrange
-                        Long idCliente = 1L;
-                        Alert alertaMock = new Alert(idCliente,
-                                        "Alerta: Transaccion aprobada para cliente " + idCliente
-                                                        + " con scoring de: 90");
+                @DisplayName("POST /api/alerta-cuenta-nueva - éxito")
+                void validarTransferenciasCuentasRecienCreadas_CuandoOk_RetornaAlerta() throws Exception {
+                        Account cuenta = new Account();
+                        Transaction transaccion = new Transaction();
+                        Alert alertaEsperada = new Alert(null, "Alerta de prueba");
 
-                        when(transactionService.processTransaction(idCliente)).thenReturn(alertaMock);
+                        when(accountService.validateNewAccountTransfers(any(Account.class), any(Transaction.class)))
+                                        .thenReturn(alertaEsperada);
 
-                        mockMvc.perform(post("/api/alerta-scoring")
+                        String cuentaJson = objectMapper.writeValueAsString(cuenta);
+                        String transaccionJson = objectMapper.writeValueAsString(transaccion);
+                        String requestBody = "{" +
+                                        "\"destinationAccount\":" + cuentaJson + "," +
+                                        "\"currentTransaction\":" + transaccionJson +
+                                        "}";
+
+                        mockMvc.perform(post("/api/alerta-cuenta-nueva")
                                         .contentType(MediaType.APPLICATION_JSON)
-                                        .content("1"))
+                                        .content(requestBody))
+                                        .andExpect(status().isOk());
+                }
+
+                @Test
+                @DisplayName("GET /api/alerta-cliente-alto-riesgo/{userId} - éxito")
+                void validarClienteAltoRiesgo_CuandoOk_RetornaAlerta() throws Exception {
+                        Long userId = 1L;
+                        Alert alertaEsperada = new Alert(userId, "Alerta: El cliente es de alto riesgo.");
+
+                        when(accountService.validateHighRiskClient(userId)).thenReturn(alertaEsperada);
+
+                        mockMvc.perform(get("/api/alerta-cliente-alto-riesgo/{userId}", userId)
+                                        .contentType(MediaType.APPLICATION_JSON))
+                                        .andExpect(status().isOk());
+                }
+
+                @Test
+                @DisplayName("POST /api/alerta-perfil - éxito")
+                void validateUserProfileTransaction() throws Exception {
+                        UserTransaction userTransaction = new UserTransaction();
+                        userTransaction.setTransaction(new Transaction());
+                        userTransaction.setUser(new User());
+
+                        Alert alertaEsperada = new Alert(null, "Perfil de usuario validado para la transacción.");
+
+                        when(accountService.validateUserProfileTransaction(any(User.class), any(Transaction.class)))
+                                        .thenReturn(alertaEsperada);
+
+                        mockMvc.perform(post("/api/alerta-perfil")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(objectMapper.writeValueAsString(userTransaction)))
                                         .andExpect(status().isOk())
-                                        .andExpect(jsonPath("$.userId").value(idCliente))
-                                        .andExpect(jsonPath("$.description").value(
-                                                        "Alerta: Transaccion aprobada para cliente " + idCliente
-                                                                        + " con scoring de: 90"));
+                                        .andExpect(jsonPath("$.description")
+                                                        .value("Perfil de usuario validado para la transacción."));
+
                 }
 
                 @Test
-                void checkProccesTransaction_CuandoAlertNull_RetornaNotFound() throws Exception {
-                        // Arrange
-                        Long idCliente = 2L;
-                        when(transactionService.processTransaction(anyLong()))
-                                        .thenReturn(null);
+                void shouldReturnAlertWhenTransactionHasMoreThanTwoApprovals() throws Exception {
+                        // given
+                        Long transactionId = 123L;
+                        Alert mockAlert = new Alert(transactionId,
+                                        "Transacción con ID = " + transactionId + " tiene más de 2 aprobaciones");
 
-                        // Act & Assert
-                        mockMvc.perform(post("/api/alerta-scoring")
+                        when(alertService.approvalAlert(transactionId)).thenReturn(mockAlert);
+
+                        String jsonRequest = "123";
+
+                        // when
+                        var result = mockMvc.perform(post("/api/alerta-aprobaciones")
                                         .contentType(MediaType.APPLICATION_JSON)
-                                        .content("2"))
-                                        .andExpect(status().isNotFound());
+                                        .content(jsonRequest));
 
-                        verify(transactionService).processTransaction(idCliente);
+                        // then
+                        result.andExpect(status().isOk())
+                                        .andExpect(jsonPath("$.userId").value(123))
+                                        .andExpect(jsonPath("$.description")
+                                                        .value("Transacción con ID = 123 tiene más de 2 aprobaciones"));
+
+                        verify(alertService, times(1)).approvalAlert(transactionId);
                 }
-        }
-
-        @DisplayName("Tests para Evaluar el Account Takeover")
-        class EvaluateAccountTakeoverTests {
 
                 @Test
-                @DisplayName("POST /api/alerta-account-takeover - éxito")
-                void evaluateAccountTakeover_CuandoOk_RetornaAlerta() throws Exception {
-                        when(transactionService.getMostRecentTransferByUserId(anyLong()))
-                                        .thenReturn(Optional.of(new Transaction(new User(2L), new BigDecimal("100.00"),
-                                                        LocalDateTime.now(), new Account(), new Account())));
-
-                        when(transactionService.isLastTransferInLastHour(any(Transaction.class),
-                                        any(LocalDateTime.class)))
-                                        .thenReturn(true);
-
-                        String userEventJson = """
-                                            [
-                                              {
-                                                "id": 1,
-                                                "user": { "id": 1 },
-                                                "type": "CHANGE_EMAIL",
-                                                "eventDateHour": "2025-08-13T10:00:00"
-                                              },
-                                              {
-                                                "id": 2,
-                                                "user": { "id": 2 },
-                                                "type": "CHANGE_PASSWORD",
-                                                "eventDateHour": "2025-08-13T10:30:00"
-                                              }
-                                            ]
+                void shouldReturnAlertWhenTransactionIsOutOfTimeRange() throws Exception {
+                        // given: historial de transacciones y nueva transacción a testear(esta fuera de
+                        // rango)
+                        String jsonRequest = """
+                                            {
+                                              "transactions": [
+                                                { "id": 1, "dateHour": "2025-08-13T09:30:00" },
+                                                { "id": 2, "dateHour": "2025-08-13T14:20:00" }
+                                              ],
+                                              "newTransaction": { "id": 3, "dateHour": "2025-08-13T23:10:00" }
+                                            }
                                         """;
 
-                        mockMvc.perform(
-                                        post("/api/alerta-account-takeover")
-                                                        .contentType(MediaType.APPLICATION_JSON)
-                                                        .content(userEventJson))
-                                        .andExpect(status().isOk())
-                                        .andExpect(jsonPath("$.userId").value(2))
+                        // creamos la alerta esperada
+                        Alert mockAlert = new Alert(3L,
+                                        "Transacción con ID = 3, realizada fuera del rango de horas promedio: 9 - 14");
+
+                        // devuelvo la alerta
+                        when(alertService.timeRangeAlert(anyList(), any(Transaction.class))).thenReturn(mockAlert);
+
+                        // when:
+                        var result = mockMvc.perform(post("/api/alerta-horario")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(jsonRequest));
+
+                        // then: verificamos que el status y el body sean correctos
+                        result.andExpect(status().isOk())
+                                        .andExpect(jsonPath("$.userId").value(3))
                                         .andExpect(jsonPath("$.description")
-                                                        .value("Alerta: Posible Account Takeover detectado para el usuario 2"));
+                                                        .value("Transacción con ID = 3, realizada fuera del rango de horas promedio: 9 - 14"));
+
+                        // verificamos que se llamó al servicio exactamente una vez
+                        verify(alertService, times(1)).timeRangeAlert(anyList(), any(Transaction.class));
                 }
 
                 @Test
-                @DisplayName("POST /api/alerta-account-takeover - sin eventos de usuario")
-                void evaluateAccountTakeover_CuandoNoHayEventos_RetornaBadRequest() throws Exception {
-                        String userEventJson = "[]";
+                void Should_ReturnEmailAlert_When_CriticalityIsHigh() throws Exception {
+                        // Given
+                        User originUser = new User();
+                        originUser.setName("Juan");
+                        originUser.setEmail("juan@mail.com");
 
-                        mockMvc.perform(post("/api/alerta-account-takeover")
+                        User destinationUser = new User();
+                        destinationUser.setName("Pepo");
+                        destinationUser.setEmail("pepo@mail.com");
+
+                        Transaction transaction = new Transaction();
+                        transaction.setAmount(BigDecimal.valueOf(2_000_000));
+                        transaction.setUser(originUser);
+                        transaction.setDestinationAccount(new Account(destinationUser));
+
+                        // When
+                        when(alertService.alertCriticality(any(Transaction.class)))
+                                        .thenReturn(new Alert(10L,
+                                                        "Transacción de alta criticidad. Se notificará por Mail."));
+
+                        // Then
+                        mockMvc.perform(post("/api/alerta-canales")
                                         .contentType(MediaType.APPLICATION_JSON)
-                                        .content(userEventJson))
-                                        .andExpect(status().isBadRequest())
-                                        .andExpect(jsonPath("$.description")
-                                                        .value("Error: No se han proporcionado eventos de usuario."));
+                                        .content(objectMapper.writeValueAsString(transaction)))
+                                        .andExpect(status().isOk())
+                                        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                                        .andExpect(jsonPath("$.userId").value(10))
+                                        .andExpect(
+                                                        jsonPath("$.description").value(
+                                                                        "Transacción de alta criticidad. Se notificará por Mail."))
+                                        .andDo(print());
+
+                        verify(alertService).alertCriticality(any(Transaction.class));
                 }
 
+                @Test
+                void Should_ReturnNotFound_When_CriticalityIsLow() throws Exception {
+                        when(alertService.alertCriticality(any(Transaction.class))).thenReturn(null);
+
+                        Transaction transaction = new Transaction();
+                        transaction.setAmount(BigDecimal.valueOf(1000)); // monto bajo
+
+                        mockMvc.perform(post("/api/alerta-canales")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(objectMapper.writeValueAsString(transaction)))
+                                        .andExpect(status().isNotFound())
+                                        .andDo(print());
+
+                        verify(alertService).alertCriticality(any(Transaction.class));
+                }
+
+                @Nested
+                @DisplayName("Test para checkear ProcessTransaction con Scoring Service")
+                class ScoringIntegration {
+
+                        @Test
+                        void checkProccesTransaction_CuandoTransaccionExitosa_RetornaResponseOk() throws Exception {
+                                // Arrange
+                                Long idCliente = 1L;
+                                Alert alertaMock = new Alert(idCliente,
+                                                "Alerta: Transaccion aprobada para cliente " + idCliente
+                                                                + " con scoring de: 90");
+
+                                when(transactionService.processTransaction(idCliente)).thenReturn(alertaMock);
+
+                                mockMvc.perform(post("/api/alerta-scoring")
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content("1"))
+                                                .andExpect(status().isOk())
+                                                .andExpect(jsonPath("$.userId").value(idCliente))
+                                                .andExpect(jsonPath("$.description").value(
+                                                                "Alerta: Transaccion aprobada para cliente " + idCliente
+                                                                                + " con scoring de: 90"));
+                        }
+
+                        @Test
+                        void checkProccesTransaction_CuandoAlertNull_RetornaNotFound() throws Exception {
+                                // Arrange
+                                Long idCliente = 2L;
+                                when(transactionService.processTransaction(anyLong()))
+                                                .thenReturn(null);
+
+                                // Act & Assert
+                                mockMvc.perform(post("/api/alerta-scoring")
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content("2"))
+                                                .andExpect(status().isNotFound());
+
+                                verify(transactionService).processTransaction(idCliente);
+                        }
+                }
+
+                @DisplayName("Tests para Evaluar el Account Takeover")
+                class EvaluateAccountTakeoverTests {
+
+                        @Test
+                        @DisplayName("POST /api/alerta-account-takeover - éxito")
+                        void evaluateAccountTakeover_CuandoOk_RetornaAlerta() throws Exception {
+                                when(transactionService.getMostRecentTransferByUserId(anyLong()))
+                                                .thenReturn(Optional.of(new Transaction(new User(2L),
+                                                                new BigDecimal("100.00"),
+                                                                LocalDateTime.now(), new Account(), new Account())));
+
+                                when(transactionService.isLastTransferInLastHour(any(Transaction.class),
+                                                any(LocalDateTime.class)))
+                                                .thenReturn(true);
+
+                                String userEventJson = """
+                                                    [
+                                                      {
+                                                        "id": 1,
+                                                        "user": { "id": 1 },
+                                                        "type": "CHANGE_EMAIL",
+                                                        "eventDateHour": "2025-08-13T10:00:00"
+                                                      },
+                                                      {
+                                                        "id": 2,
+                                                        "user": { "id": 2 },
+                                                        "type": "CHANGE_PASSWORD",
+                                                        "eventDateHour": "2025-08-13T10:30:00"
+                                                      }
+                                                    ]
+                                                """;
+
+                                mockMvc.perform(
+                                                post("/api/alerta-account-takeover")
+                                                                .contentType(MediaType.APPLICATION_JSON)
+                                                                .content(userEventJson))
+                                                .andExpect(status().isOk())
+                                                .andExpect(jsonPath("$.userId").value(2))
+                                                .andExpect(jsonPath("$.description")
+                                                                .value("Alerta: Posible Account Takeover detectado para el usuario 2"));
+                        }
+
+                        @Test
+                        @DisplayName("POST /api/alerta-account-takeover - sin eventos de usuario")
+                        void evaluateAccountTakeover_CuandoNoHayEventos_RetornaBadRequest() throws Exception {
+                                String userEventJson = "[]";
+
+                                mockMvc.perform(post("/api/alerta-account-takeover")
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content(userEventJson))
+                                                .andExpect(status().isBadRequest())
+                                                .andExpect(jsonPath("$.description")
+                                                                .value("Error: No se han proporcionado eventos de usuario."));
+                        }
+
+                }
         }
+
 }

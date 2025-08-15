@@ -9,16 +9,13 @@ import com.pei.domain.Account;
 import com.pei.domain.Transaction;
 import com.pei.domain.User;
 import com.pei.dto.Alert;
-import com.pei.repository.UserRepository;
 
 @Service
 public class AccountService {
 
-    private UserRepository userRepository;
     private ObjectMapper objectMapper;
 
-    public AccountService(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public AccountService() {
         this.objectMapper = new ObjectMapper();
     }
 

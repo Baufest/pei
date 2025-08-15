@@ -1,7 +1,6 @@
 package com.pei.service;
 
 import com.pei.domain.UserEvent.UserEvent;
-import com.pei.domain.UserEvent.UserEventType;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
