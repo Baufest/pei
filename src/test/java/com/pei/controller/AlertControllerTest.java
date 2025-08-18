@@ -1,5 +1,7 @@
 package com.pei.controller;
+
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -83,20 +85,20 @@ public class AlertControllerTest {
 
         // When
         when(alertService.alertCriticality(any(Transaction.class)))
-            .thenReturn(new Alert(10L,
-                "Transacción de alta criticidad. Se notificará por Mail."));
+                .thenReturn(new Alert(10L,
+                        "Transacción de alta criticidad. Se notificará por Mail."));
 
         // Then
         mockMvc.perform(post("/api/alerta-canales")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(transaction)))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$.userId").value(10))
-            .andExpect(
-                jsonPath("$.description").value(
-                    "Transacción de alta criticidad. Se notificará por Mail."))
-            .andDo(print());
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.userId").value(10))
+                .andExpect(
+                        jsonPath("$.description").value(
+                                "Transacción de alta criticidad. Se notificará por Mail."))
+                .andDo(print());
 
         verify(alertService).alertCriticality(any(Transaction.class));
     }
@@ -111,9 +113,46 @@ public class AlertControllerTest {
         mockMvc.perform(post("/api/alerta-canales")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(transaction)))
-            .andExpect(status().isNotFound())
-            .andDo(print());
+                .andExpect(status().isNotFound())
+                .andDo(print());
 
         verify(alertService).alertCriticality(any(Transaction.class));
     }
+
+    @Test
+    void checkProccesTransaction_CuandoTransaccionExitosa_RetornaResponseOk() throws Exception {
+        // Arrange
+        Long idCliente = 1L;
+        Alert alertaMock = new Alert(idCliente,
+                "Alerta: Transaccion aprobada para cliente " + idCliente
+                        + " con scoring de: 90");
+
+        when(transactionService.processTransaction(idCliente)).thenReturn(alertaMock);
+
+        mockMvc.perform(post("/api/alerta-scoring")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(idCliente))
+                .andExpect(jsonPath("$.description").value(
+                        "Alerta: Transaccion aprobada para cliente " + idCliente
+                                + " con scoring de: 90"));
+    }
+
+    @Test
+    void checkProccesTransaction_CuandoAlertNull_RetornaNotFound() throws Exception {
+        // Arrange
+        Long idCliente = 2L;
+        when(transactionService.processTransaction(anyLong()))
+                .thenReturn(null);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/alerta-scoring")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("2"))
+                .andExpect(status().isNotFound());
+
+        verify(transactionService).processTransaction(idCliente);
+    }
+
 }

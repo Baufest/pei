@@ -49,12 +49,12 @@ public class AlertController {
 
     @GetMapping("/alerta-fast-multiple-transaction/{userId}")
     public ResponseEntity<Alert> getFastMultipleTransactionsAlert(@PathVariable Long userId) {
-        
+
         String clientType = clienteService.getClientType(userId);
         if (clientType == null || (!clientType.equals("individuo") && !clientType.equals("empresa"))) {
             return ResponseEntity.notFound().build();
         }
-        
+
         Alert alert = transactionService.getFastMultipleTransactionAlert(userId, clientType);
 
         if (alert != null) {
@@ -63,5 +63,19 @@ public class AlertController {
             return ResponseEntity.notFound().build();
         }
 
+    }
+
+    @PostMapping("/alerta-scoring")
+    public ResponseEntity<Alert> checkProccesTransaction(@RequestBody Long idCliente) {
+        try {
+            Alert alerta = transactionService.processTransaction(idCliente);
+            if (alerta != null) {
+                return ResponseEntity.ok(alerta);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new Alert(null, "Error interno del servidor."));
+        }
     }
 }
