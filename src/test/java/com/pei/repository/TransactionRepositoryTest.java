@@ -34,6 +34,7 @@ class TransactionRepositoryTest {
         user1.setName("Juan");
         user1.setRisk("LOW");
         user1.setProfile("NORMAL");
+        user1.setEmail("juan@mail.com");
         user1.setAverageMonthlySpending(BigDecimal.valueOf(1000));
 
         userRepository.save(user1);
@@ -42,6 +43,7 @@ class TransactionRepositoryTest {
         user2.setName("Pedro");
         user2.setRisk("LOW");
         user2.setProfile("NORMAL");
+        user2.setEmail("pedro@mail.com");
         user2.setAverageMonthlySpending(BigDecimal.valueOf(2000));
         userRepository.save(user2);
 
@@ -105,6 +107,7 @@ class TransactionRepositoryTest {
         user1.setRisk("LOW");
         user1.setProfile("NORMAL");
         user1.setAverageMonthlySpending(BigDecimal.valueOf(1000));
+        user1.setEmail("juan@mail.com");
         userRepository.save(user1);
 
         User user2 = new User();
@@ -112,6 +115,7 @@ class TransactionRepositoryTest {
         user2.setRisk("LOW");
         user2.setProfile("NORMAL");
         user2.setAverageMonthlySpending(BigDecimal.valueOf(2000));
+        user2.setEmail("pedro@mail.com");
         userRepository.save(user2);
 
         // Crear cuentas
@@ -174,12 +178,14 @@ class TransactionRepositoryTest {
         user1.setRisk("LOW");
         user1.setProfile("NORMAL");
         user1.setAverageMonthlySpending(BigDecimal.valueOf(1000));
+        user1.setEmail("juan@mail.com");
         userRepository.save(user1);
 
         User user2 = new User();
         user2.setName("Pedro");
         user2.setRisk("LOW");
         user2.setProfile("NORMAL");
+        user2.setEmail("pedro@mail.com");
         user2.setAverageMonthlySpending(BigDecimal.valueOf(2000));
         userRepository.save(user2);
 

@@ -3,11 +3,20 @@ package com.pei.service;
 import java.time.LocalDate;
 import java.util.Random;
 
+import org.springframework.stereotype.Service;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.pei.repository.UserRepository;
 
+@Service
 public class ClienteService {
+
+    private UserRepository userRepository;
+
+    public ClienteService(UserRepository userRepository) {
+        this.userRepository = userRepository;}
 
     private static final String[] NOMBRES = {"Juan", "María", "Pedro", "Ana", "Luis", "Carmen"};
     private static final String[] APELLIDOS = {"Gómez", "Pérez", "Rodríguez", "Fernández", "López", "Martínez"};
@@ -38,7 +47,7 @@ public class ClienteService {
             cliente.put("fechaAlta", LocalDate.now().minusDays(random.nextInt(2000)).toString());
             cliente.put("gastoPromedioMensual", random.nextInt(9000) + 1000);
             cliente.put("risk", RIESGO[random.nextInt(PERFILES.length)]);
-            cliente.put("tipoCliente", TIPOCLIENTE[random.nextInt(TIPOCLIENTE.length)]);
+            cliente.put("clientType", TIPOCLIENTE[random.nextInt(TIPOCLIENTE.length)]);
             cliente.set("chargebacks", generarChargebacks());
 
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(cliente);
@@ -84,4 +93,9 @@ public class ClienteService {
         LocalDate fechaNacimiento = hoy.minusYears(edad).minusDays(random.nextInt(365));
         return fechaNacimiento.toString();
     }
+
+    public String getClientType (Long userId) {
+        return userRepository.findClientTypeById(userId);
+    }
+
 }

@@ -42,6 +42,7 @@ import com.pei.repository.LoginsRepository;
 
 import com.pei.service.AccountService;
 import com.pei.service.AlertService;
+import com.pei.service.ClienteService;
 import com.pei.service.GeoSimService;
 import com.pei.service.GeolocalizationService;
 import com.pei.service.TransactionService;
@@ -64,6 +65,9 @@ class AlertControllerTest {
 
         @MockitoBean
         private AccountService accountService;
+
+        @MockitoBean
+        private ClienteService clienteService;
 
         @MockitoBean
         private TransactionService transactionService;

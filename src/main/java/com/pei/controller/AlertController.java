@@ -5,6 +5,8 @@ import com.pei.dto.Alert;
 import com.pei.dto.Logins;
 import com.pei.dto.TimeRangeRequest;
 import com.pei.service.AlertService;
+import com.pei.service.ClienteService;
+
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
@@ -13,10 +15,13 @@ import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RestController;
+import com.pei.service.GeolocalizationService;
+import com.pei.service.TransactionService;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 import com.pei.domain.Account;
 
@@ -25,10 +30,6 @@ import com.pei.domain.UserEvent.UserEvent;
 import com.pei.dto.TransferRequest;
 import com.pei.dto.UserTransaction;
 import com.pei.service.AccountService;
-import com.pei.service.GeolocalizationService;
-import com.pei.service.TransactionService;
-
-
 
 @RestController
 @RequestMapping("/api")
@@ -38,14 +39,17 @@ public class AlertController {
     private final GeolocalizationService geolocalizationService;
     private final AlertService alertService;
     private final AccountService accountService;
+    private final ClienteService clienteService;
 
     public AlertController(AlertService alertService,
-            AccountService accountService, TransactionService transactionService,
-            GeolocalizationService geolocalizationService) {
+                AccountService accountService, TransactionService transactionService,
+                GeolocalizationService geolocalizationService, ClienteService clienteService) {
         this.alertService = alertService;
         this.accountService = accountService;
         this.transactionService = transactionService;
         this.geolocalizationService = geolocalizationService;
+        this.clienteService = clienteService;
+        
     }
 
     @PostMapping("/alerta-money-mule")
@@ -186,7 +190,13 @@ public class AlertController {
 
     @GetMapping("/alerta-fast-multiple-transaction/{userId}")
     public ResponseEntity<Alert> getFastMultipleTransactionsAlert(@PathVariable Long userId) {
-        Alert alert = transactionService.getFastMultipleTransactionAlert(userId);
+        
+        String clientType = clienteService.getClientType(userId);
+        if (clientType == null || (!clientType.equals("individuo") && !clientType.equals("empresa"))) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        Alert alert = transactionService.getFastMultipleTransactionAlert(userId, clientType);
 
         if (alert != null) {
             return ResponseEntity.ok(alert);

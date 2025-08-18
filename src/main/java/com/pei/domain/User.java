@@ -23,9 +23,6 @@ public class User {
     private String name;
 
     @Column
-    private String email;
-
-    @Column
     private String phoneNumber;
 
     @Column(nullable = false)
@@ -49,6 +46,11 @@ public class User {
     @OneToMany(mappedBy = "user")
     private List<Chargeback> chargebacks = new ArrayList<>();
 
+    private String clientType;
+
+    @Column(nullable = false, unique = true) // email único y obligatorio
+    private String email;
+    
     /* @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, orphanRemoval = true)
     private Set<Device> devices = new HashSet<>();
 
@@ -132,6 +134,14 @@ public class User {
 
     public void setCreationDate(LocalDate creationDate) {
         this.creationDate = creationDate;
+    }
+
+    public void setClientType(String clientType) {
+        this.clientType = clientType;
+    }
+
+    public String getClientType() {
+        return clientType;
     }
 
     public BigDecimal getAverageMonthlySpending() {
