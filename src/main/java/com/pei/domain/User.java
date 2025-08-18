@@ -48,14 +48,8 @@ public class User {
 
     private String clientType;
 
-    @Column(unique = true) // email único pero no obligatorio asi pasan los test
+    @Column(nullable = false, unique = true) // email único y obligatorio
     private String email;
-
-    //@Column(nullable = false, unique = true) // email único y obligatorio
-    //private String email;
-
-    //@Column
-    //private String email;
     
     /* @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, orphanRemoval = true)
     private Set<Device> devices = new HashSet<>();
