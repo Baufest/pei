@@ -12,11 +12,11 @@ import com.pei.service.ScoringServiceInterno;
 
 @RestController
 @RequestMapping("/api/scorings")
-public class ScoringController {
+public class ScoringControllerInterno {
 
     private final ScoringServiceInterno scoringService;
 
-    public ScoringController(ScoringServiceInterno scoringService) {
+    public ScoringControllerInterno(ScoringServiceInterno scoringService) {
         this.scoringService = scoringService;
     }
 

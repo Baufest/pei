@@ -13,8 +13,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.pei.service.ScoringServiceInterno;
 
-@WebMvcTest(ScoringController.class)
-class ScoringControllerTest {
+@WebMvcTest(ScoringControllerInterno.class)
+class ScoringControllerInternoTest {
 
     @Autowired
     private MockMvc mockMvc;

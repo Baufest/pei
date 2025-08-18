@@ -24,7 +24,7 @@ import com.pei.domain.Scoring;
 import com.pei.repository.ScoringRepository;
 
 @ExtendWith(MockitoExtension.class)
-class ScoringServiceTest {
+class ScoringServiceInternoTest {
 
     @Mock
     private ScoringRepository scoringRepository;

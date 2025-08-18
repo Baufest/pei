@@ -31,7 +31,7 @@ class TransactionServiceTest {
     @Mock
     private TransactionVelocityDetectorService transactionVelocityDetectorService;
     @Mock
-    private ScoringServiceInterno scoringService;
+    private ScoringServiceInterno scoringServiceInterno;
     @Mock
     private Gson gson;
     @InjectMocks
@@ -168,7 +168,7 @@ class TransactionServiceTest {
 
             when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
 
-            when(scoringService.getScoringColorBasedInUserScore(scoringCliente))
+            when(scoringServiceInterno.getScoringColorBasedInUserScore(scoringCliente))
                     .thenReturn("Verde");
 
             Alert result = transactionService.processTransaction(idCliente);
@@ -200,7 +200,7 @@ class TransactionServiceTest {
 
             when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
 
-            when(scoringService.getScoringColorBasedInUserScore(scoringCliente))
+            when(scoringServiceInterno.getScoringColorBasedInUserScore(scoringCliente))
                     .thenReturn("Amarillo");
 
             Alert result = transactionService.processTransaction(idCliente);
@@ -233,7 +233,7 @@ class TransactionServiceTest {
 
             when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
 
-            when(scoringService.getScoringColorBasedInUserScore(scoringCliente))
+            when(scoringServiceInterno.getScoringColorBasedInUserScore(scoringCliente))
                     .thenReturn("Rojo");
 
             Alert result = transactionService.processTransaction(idCliente);

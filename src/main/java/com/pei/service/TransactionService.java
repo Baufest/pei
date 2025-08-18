@@ -16,15 +16,16 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final TransactionVelocityDetectorService transactionVelocityDetectorService;
 
-    private final ScoringServiceInterno scoringService;
+    private final ScoringServiceInterno scoringServiceInterno;
     private final Gson gson;
 
     public TransactionService(TransactionRepository transactionRepository, 
-            TransactionVelocityDetectorService transactionVelocityDetectorService, ScoringServiceInterno scoringService,
+            TransactionVelocityDetectorService transactionVelocityDetectorService,
+            ScoringServiceInterno scoringServiceInterno,
             Gson gson) {
         this.transactionRepository = transactionRepository;
         this.transactionVelocityDetectorService = transactionVelocityDetectorService;
-        this.scoringService = scoringService;
+        this.scoringServiceInterno = scoringServiceInterno;
         this.gson = gson;
     }
     
@@ -61,7 +62,7 @@ public class TransactionService {
         }
         int scoringCliente = responseScoringService.get("scoring").getAsInt();
 
-        String color = scoringService.getScoringColorBasedInUserScore(scoringCliente);
+        String color = scoringServiceInterno.getScoringColorBasedInUserScore(scoringCliente);
 
         String msj = null;
         switch (color) {
