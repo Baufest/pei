@@ -134,12 +134,12 @@ public class TransactionService {
                         + " con scoring de: " + scoringCliente;
                 break;
             case "Amarillo":
-                msj = "Alerta: Transaccion aprobada para cliente " + idCliente
+                msj = "Alerta: Transaccion en revision para cliente " + idCliente
                         + " con scoring de: " + scoringCliente;
 
                 break;
             case "Rojo":
-                msj = "Alerta: Transaccion aprobada para cliente " + idCliente
+                msj = "Alerta: Transaccion rechazada para cliente " + idCliente
                         + " con scoring de: " + scoringCliente;
                 break;
         }

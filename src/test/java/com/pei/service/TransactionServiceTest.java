@@ -6,12 +6,15 @@ import com.pei.dto.Purchase;
 import com.pei.repository.ChargebackRepository;
 import com.pei.repository.PurchaseRepository;
 import com.pei.repository.TransactionRepository;
+import com.pei.service.bbva.ScoringServiceExterno;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
@@ -26,6 +29,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.pei.domain.Account;
 import com.pei.domain.Transaction;
 import com.pei.domain.User;
@@ -43,6 +48,10 @@ class TransactionServiceTest {
     private PurchaseRepository purchaseRepository;
     @Mock
     private TransactionVelocityDetectorService transactionVelocityDetectorService;
+    @Mock
+    private ScoringService scoringService;
+    @Mock
+    private Gson gson;
     @InjectMocks
     private TransactionService transactionService;
 
@@ -58,9 +67,15 @@ class TransactionServiceTest {
     void Should_GetLast24HoursTransactions_Correct() {
         // Given
         LocalDateTime now = LocalDateTime.now();
-        Transaction t1 = new Transaction(user1, new BigDecimal("100.00"), now.minusHours(2), account1, account1); // dentro de 24h
-        Transaction t2 = new Transaction(user1, new BigDecimal("200.00"), now.minusDays(2), account1, account1); // fuera de 24h
-        Transaction t3 = new Transaction(user2, new BigDecimal("300.00"), now.minusHours(10), account2, account2); // dentro de 24h
+        Transaction t1 = new Transaction(user1, new BigDecimal("100.00"), now.minusHours(2), account1, account1); // dentro
+                                                                                                                  // de
+                                                                                                                  // 24h
+        Transaction t2 = new Transaction(user1, new BigDecimal("200.00"), now.minusDays(2), account1, account1); // fuera
+                                                                                                                 // de
+                                                                                                                 // 24h
+        Transaction t3 = new Transaction(user2, new BigDecimal("300.00"), now.minusHours(10), account2, account2); // dentro
+                                                                                                                   // de
+                                                                                                                   // 24h
         List<Transaction> transactions = List.of(t1, t2, t3);
 
         List<Transaction> expected = List.of(t1, t3);
@@ -81,10 +96,13 @@ class TransactionServiceTest {
     @Test
     void Should_ReturnTotalDeposits_When_ContainsDeposits() {
         // Deposito: destinationAccount.owner == user
-        Transaction deposito1 = new Transaction(user1, new BigDecimal("100.00"), LocalDateTime.now(), account2, account1);
-        Transaction deposito2 = new Transaction(user1, new BigDecimal("50.00"), LocalDateTime.now(), account2, account1);
+        Transaction deposito1 = new Transaction(user1, new BigDecimal("100.00"), LocalDateTime.now(), account2,
+                account1);
+        Transaction deposito2 = new Transaction(user1, new BigDecimal("50.00"), LocalDateTime.now(), account2,
+                account1);
         // Transferencia: destinationAccount.owner != user
-        Transaction transferencia = new Transaction(user1, new BigDecimal("200.00"), LocalDateTime.now(), account1, account2);
+        Transaction transferencia = new Transaction(user1, new BigDecimal("200.00"), LocalDateTime.now(), account1,
+                account2);
         List<Transaction> transactions = List.of(deposito1, deposito2, transferencia);
         BigDecimal total = transactionService.totalDeposits(transactions);
         assertEquals(new BigDecimal("150.00"), total);
@@ -98,7 +116,8 @@ class TransactionServiceTest {
 
     @Test
     void Should_ReturnZeroDeposits_When_NotContainsDeposits() {
-        Transaction transferencia = new Transaction(user1, new BigDecimal("200.00"), LocalDateTime.now(), account1, account2);
+        Transaction transferencia = new Transaction(user1, new BigDecimal("200.00"), LocalDateTime.now(), account1,
+                account2);
         List<Transaction> transactions = List.of(transferencia);
         BigDecimal total = transactionService.totalDeposits(transactions);
         assertEquals(BigDecimal.ZERO, total);
@@ -107,10 +126,13 @@ class TransactionServiceTest {
     @Test
     void Should_ReturnTotalTransfers_When_ContainsTransfers() {
         // Transferencia: destinationAccount.owner != user
-        Transaction transferencia1 = new Transaction(user1, new BigDecimal("200.00"), LocalDateTime.now(), account1, account2);
-        Transaction transferencia2 = new Transaction(user1, new BigDecimal("50.00"), LocalDateTime.now(), account1, account2);
+        Transaction transferencia1 = new Transaction(user1, new BigDecimal("200.00"), LocalDateTime.now(), account1,
+                account2);
+        Transaction transferencia2 = new Transaction(user1, new BigDecimal("50.00"), LocalDateTime.now(), account1,
+                account2);
         // Deposito: destinationAccount.owner == user
-        Transaction deposito = new Transaction(user1, new BigDecimal("100.00"), LocalDateTime.now(), account2, account1);
+        Transaction deposito = new Transaction(user1, new BigDecimal("100.00"), LocalDateTime.now(), account2,
+                account1);
         List<Transaction> transactions = List.of(transferencia1, transferencia2, deposito);
         BigDecimal total = transactionService.totalTransfers(transactions);
         assertEquals(new BigDecimal("250.00"), total);
@@ -124,7 +146,8 @@ class TransactionServiceTest {
 
     @Test
     void Should_ReturnZeroTransfers_When_NotContainsTransfers() {
-        Transaction deposito = new Transaction(user1, new BigDecimal("100.00"), LocalDateTime.now(), account2, account1);
+        Transaction deposito = new Transaction(user1, new BigDecimal("100.00"), LocalDateTime.now(), account2,
+                account1);
         List<Transaction> transactions = List.of(deposito);
         BigDecimal actualTotal = transactionService.totalTransfers(transactions);
         assertEquals(BigDecimal.ZERO, actualTotal);
@@ -135,8 +158,7 @@ class TransactionServiceTest {
         when(chargebackRepository.findByUserId(1L))
                 .thenReturn(List.of(
                         new Chargeback(1L, user1),
-                        new Chargeback(2L, user1)
-                ));
+                        new Chargeback(2L, user1)));
         when(purchaseRepository.findByUserId(1L))
                 .thenReturn(List.of(
                         new Purchase(1L, user1),
@@ -153,8 +175,7 @@ class TransactionServiceTest {
                         new Purchase(12L, user1),
                         new Purchase(13L, user1),
                         new Purchase(14L, user1),
-                        new Purchase(15L, user1)
-                ));
+                        new Purchase(15L, user1)));
 
         Alert alert = transactionService.getChargebackFraudAlert(1L);
 
@@ -167,7 +188,7 @@ class TransactionServiceTest {
 
     @Test
     void givenNoChargebackFraud_thenReturnsNull() {
-        
+
         when(chargebackRepository.findByUserId(1L))
                 .thenReturn(List.of(new Chargeback(1L, user1)));
         when(purchaseRepository.findByUserId(1L))
@@ -181,8 +202,7 @@ class TransactionServiceTest {
                         new Purchase(7L, user1),
                         new Purchase(8L, user1),
                         new Purchase(9L, user1),
-                        new Purchase(10L, user1)
-                ));
+                        new Purchase(10L, user1)));
 
         Alert alert = transactionService.getChargebackFraudAlert(1L);
 
@@ -193,21 +213,20 @@ class TransactionServiceTest {
 
     @Test
     void givenNoPurchases_thenReturnsNull() {
-        
+
         when(chargebackRepository.findByUserId(1L))
                 .thenReturn(List.of(
                         new Chargeback(1L, user1),
-                        new Chargeback(2L, user1)
-                ));
+                        new Chargeback(2L, user1)));
         when(purchaseRepository.findByUserId(1L))
                 .thenReturn(Collections.emptyList());
 
-    
         Alert alert = transactionService.getChargebackFraudAlert(1L);
 
         assertNotNull(alert);
         verify(chargebackRepository, times(1)).findByUserId(1L);
-        verify(purchaseRepository, times(1)).findByUserId(1L);}
+        verify(purchaseRepository, times(1)).findByUserId(1L);
+    }
 
     @Test
     void getFastMultipleTransactionAlert_Individuo_ExceedsMax_ReturnsAlert() {
@@ -219,7 +238,8 @@ class TransactionServiceTest {
 
         when(transactionVelocityDetectorService.getIndividuoMinutesRange()).thenReturn(minutesRange);
         when(transactionVelocityDetectorService.getIndividuoMaxTransactions()).thenReturn(maxTransactions);
-        when(transactionRepository.countTransactionsFromDate(eq(userId), any(LocalDateTime.class))).thenReturn(numTransactions);
+        when(transactionRepository.countTransactionsFromDate(eq(userId), any(LocalDateTime.class)))
+                .thenReturn(numTransactions);
 
         Alert alert = transactionService.getFastMultipleTransactionAlert(userId, clientType);
 
@@ -241,7 +261,8 @@ class TransactionServiceTest {
 
         when(transactionVelocityDetectorService.getIndividuoMinutesRange()).thenReturn(minutesRange);
         when(transactionVelocityDetectorService.getIndividuoMaxTransactions()).thenReturn(maxTransactions);
-        when(transactionRepository.countTransactionsFromDate(eq(userId), any(LocalDateTime.class))).thenReturn(numTransactions);
+        when(transactionRepository.countTransactionsFromDate(eq(userId), any(LocalDateTime.class)))
+                .thenReturn(numTransactions);
 
         Alert alert = transactionService.getFastMultipleTransactionAlert(userId, clientType);
 
@@ -261,9 +282,9 @@ class TransactionServiceTest {
 
         when(transactionVelocityDetectorService.getEmpresaMinutesRange()).thenReturn(minutesRange);
         when(transactionVelocityDetectorService.getEmpresaMaxTransactions()).thenReturn(maxTransactions);
-        when(transactionRepository.countTransactionsFromDate(eq(userId), any(LocalDateTime.class))).thenReturn(numTransactions);
-        
-        
+        when(transactionRepository.countTransactionsFromDate(eq(userId), any(LocalDateTime.class)))
+                .thenReturn(numTransactions);
+
         Alert alert = transactionService.getFastMultipleTransactionAlert(userId, clientType);
 
         assertNotNull(alert);
@@ -284,7 +305,8 @@ class TransactionServiceTest {
 
         when(transactionVelocityDetectorService.getEmpresaMinutesRange()).thenReturn(minutesRange);
         when(transactionVelocityDetectorService.getEmpresaMaxTransactions()).thenReturn(maxTransactions);
-        when(transactionRepository.countTransactionsFromDate(eq(userId), any(LocalDateTime.class))).thenReturn(numTransactions);
+        when(transactionRepository.countTransactionsFromDate(eq(userId), any(LocalDateTime.class)))
+                .thenReturn(numTransactions);
 
         Alert alert = transactionService.getFastMultipleTransactionAlert(userId, clientType);
 
@@ -292,5 +314,127 @@ class TransactionServiceTest {
         verify(transactionVelocityDetectorService).getEmpresaMinutesRange();
         verify(transactionVelocityDetectorService).getEmpresaMaxTransactions();
         verify(transactionRepository).countTransactionsFromDate(eq(userId), any(LocalDateTime.class));
+    }
+
+    @Test
+    void processTransaction_CuandoStatusDistintoDe200_RetornaAlertRechazada() {
+        Long idCliente = 1L;
+        String scoringJson = "{\"status\":500,\"mensaje\":\"Error interno del servidor de scoring\",\"timestamp\":2025-08-18T10:00:00Z}";
+
+        try (MockedStatic<ScoringServiceExterno> mocked = Mockito.mockStatic(ScoringServiceExterno.class)) {
+            mocked.when(() -> ScoringServiceExterno.consultarScoring(idCliente.intValue()))
+                    .thenReturn(scoringJson);
+
+            JsonObject fakeJson = new JsonObject();
+            fakeJson.addProperty("status", 500);
+            fakeJson.addProperty("mensaje", "Error interno del servidor de scoring");
+            fakeJson.addProperty("timestamp", "2025-08-18T10:00:00Z");
+
+            when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
+
+            Alert result = transactionService.processTransaction(idCliente);
+
+            assertNotNull(result);
+            assertEquals(idCliente, result.userId());
+            assertTrue(result.description().contains("rechazada"));
+        }
+    }
+
+    @Test
+    void processTransaction_CuandoColorVerde_RetornaAlertAprobada() {
+        Long idCliente = 2L;
+        int scoringCliente = 70;
+
+        String scoringJson = "{\"status\":200,\"mensaje\":\"Consulta exitosa\",\"idCliente\":2,\"scoring\":" +
+                scoringCliente + ",\"timestamp\":\"2025-08-18T10:00:00Z\"}";
+
+        try (MockedStatic<ScoringServiceExterno> mocked = Mockito.mockStatic(ScoringServiceExterno.class)) {
+            mocked.when(() -> ScoringServiceExterno.consultarScoring(idCliente.intValue()))
+                    .thenReturn(scoringJson);
+
+            JsonObject fakeJson = new JsonObject();
+            fakeJson.addProperty("status", 200);
+            fakeJson.addProperty("mensaje", "Consulta exitosa");
+            fakeJson.addProperty("idCliente", idCliente.intValue());
+            fakeJson.addProperty("scoring", scoringCliente);
+            fakeJson.addProperty("timestamp", "2025-08-18T10:00:00Z");
+
+            when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
+
+            when(scoringService.getScoringColorBasedInUserScore(scoringCliente))
+                    .thenReturn("Verde");
+
+            Alert result = transactionService.processTransaction(idCliente);
+
+            assertNotNull(result);
+            assertEquals(idCliente, result.userId());
+            assertTrue(result.description().contains("aprobada"));
+            assertTrue(result.description().contains(String.valueOf(scoringCliente)));
+        }
+    }
+
+    @Test
+    void processTransaction_CuandoColorAmarillo_RetornaAlertRevision() {
+        Long idCliente = 3L;
+        int scoringCliente = 60;
+        String scoringJson = "{\"status\":200,\"mensaje\":\"Consulta exitosa\",\"idCliente\":3,\"scoring\":" +
+                scoringCliente + ",\"timestamp\":\"2025-08-18T10:00:00Z\"}";
+
+        try (MockedStatic<ScoringServiceExterno> mocked = Mockito.mockStatic(ScoringServiceExterno.class)) {
+            mocked.when(() -> ScoringServiceExterno.consultarScoring(idCliente.intValue()))
+                    .thenReturn(scoringJson);
+
+            JsonObject fakeJson = new JsonObject();
+            fakeJson.addProperty("status", 200);
+            fakeJson.addProperty("mensaje", "Consulta exitosa");
+            fakeJson.addProperty("idCliente", idCliente.intValue());
+            fakeJson.addProperty("scoring", scoringCliente);
+            fakeJson.addProperty("timestamp", "2025-08-18T10:00:00Z");
+
+            when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
+
+            when(scoringService.getScoringColorBasedInUserScore(scoringCliente))
+                    .thenReturn("Amarillo");
+
+            Alert result = transactionService.processTransaction(idCliente);
+
+            assertNotNull(result);
+            assertEquals(idCliente, result.userId());
+            assertTrue(result.description().contains("revision"));
+            assertTrue(result.description().contains(String.valueOf(scoringCliente)));
+        }
+    }
+
+    @Test
+    void processTransaction_CuandoColorRojo_RetornaAlertRechazada() {
+        Long idCliente = 4L;
+        int scoringCliente = 20;
+
+        String scoringJson = "{\"status\":200,\"mensaje\":\"Consulta exitosa\",\"idCliente\":4,\"scoring\":" +
+                scoringCliente + ",\"timestamp\":\"2025-08-18T10:00:00Z\"}";
+
+        try (MockedStatic<ScoringServiceExterno> mocked = Mockito.mockStatic(ScoringServiceExterno.class)) {
+            mocked.when(() -> ScoringServiceExterno.consultarScoring(idCliente.intValue()))
+                    .thenReturn(scoringJson);
+
+            JsonObject fakeJson = new JsonObject();
+            fakeJson.addProperty("status", 200);
+            fakeJson.addProperty("mensaje", "Consulta exitosa");
+            fakeJson.addProperty("idCliente", idCliente.intValue());
+            fakeJson.addProperty("scoring", scoringCliente);
+            fakeJson.addProperty("timestamp", "2025-08-18T10:00:00Z");
+
+            when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
+
+            when(scoringService.getScoringColorBasedInUserScore(scoringCliente))
+                    .thenReturn("Rojo");
+
+            Alert result = transactionService.processTransaction(idCliente);
+
+            assertNotNull(result);
+            assertEquals(idCliente, result.userId());
+            assertTrue(result.description().contains("rechazada"));
+            assertTrue(result.description().contains(String.valueOf(scoringCliente)));
+        }
     }
 }
