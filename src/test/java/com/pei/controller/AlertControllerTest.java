@@ -10,6 +10,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.math.BigDecimal;
+
+import com.pei.service.ClienteService;
+import com.pei.service.TransactionService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +39,12 @@ public class AlertControllerTest {
 
     @MockitoBean
     private AlertService alertService;
+
+    @MockitoBean
+    private TransactionService transactionService;
+
+    @MockitoBean
+    private ClienteService clienteService;
 
     @Autowired
     private ObjectMapper objectMapper;
