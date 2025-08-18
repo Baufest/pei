@@ -1,20 +1,31 @@
 package com.pei.controller;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.math.BigDecimal;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pei.domain.Account;
+import com.pei.domain.Transaction;
+import com.pei.domain.User;
 import com.pei.dto.Alert;
 import com.pei.service.AccountService;
+import com.pei.service.AlertService;
 
 @WebMvcTest(AlertController.class)
 @ExtendWith(MockitoExtension.class)
@@ -22,6 +33,12 @@ public class AlertControllerTest {
 
     @MockitoBean
     private AccountService accountService;
+
+    @MockitoBean
+    private AlertService alertService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Autowired
     MockMvc mockMvc;
@@ -37,5 +54,57 @@ public class AlertControllerTest {
         mockMvc.perform(get("/api/alerta-cliente-alto-riesgo/{userId}", userId)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void Should_ReturnEmailAlert_When_CriticalityIsHigh() throws Exception {
+        // Given
+        User originUser = new User();
+        originUser.setName("Juan");
+        originUser.setEmail("juan@mail.com");
+
+        User destinationUser = new User();
+        destinationUser.setName("Pepo");
+        destinationUser.setEmail("pepo@mail.com");
+
+        Transaction transaction = new Transaction();
+        transaction.setAmount(BigDecimal.valueOf(2_000_000));
+        transaction.setUser(originUser);
+        transaction.setDestinationAccount(new Account(destinationUser));
+
+        // When
+        when(alertService.alertCriticality(any(Transaction.class)))
+            .thenReturn(new Alert(10L,
+                "Transacción de alta criticidad. Se notificará por Mail."));
+
+        // Then
+        mockMvc.perform(post("/api/alerta-canales")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(transaction)))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.userId").value(10))
+            .andExpect(
+                jsonPath("$.description").value(
+                    "Transacción de alta criticidad. Se notificará por Mail."))
+            .andDo(print());
+
+        verify(alertService).alertCriticality(any(Transaction.class));
+    }
+
+    @Test
+    void Should_ReturnNotFound_When_CriticalityIsLow() throws Exception {
+        when(alertService.alertCriticality(any(Transaction.class))).thenReturn(null);
+
+        Transaction transaction = new Transaction();
+        transaction.setAmount(BigDecimal.valueOf(1000)); // monto bajo
+
+        mockMvc.perform(post("/api/alerta-canales")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(transaction)))
+            .andExpect(status().isNotFound())
+            .andDo(print());
+
+        verify(alertService).alertCriticality(any(Transaction.class));
     }
 }

@@ -47,7 +47,10 @@ public class User {
     @OneToMany(mappedBy = "owner")
     private List<Account> accounts = new ArrayList<>();
 
-    public User() { }
+    @Column(nullable = false, unique = true) // email único y obligatorio
+    private String email;
+
+    public User() {}
 
     public User(String profile, BigDecimal averageMonthlySpending, String risk, LocalDate creationDate, String clientType) {
         this.profile = profile;
@@ -124,5 +127,10 @@ public class User {
     public void setAccounts(List<Account> accounts) {
         this.accounts = new ArrayList<>(accounts);
     }
+    public String getEmail() {
+        return email;
+    }
 
+    public void setEmail(String mail) {
+    }
 }

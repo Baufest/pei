@@ -1,6 +1,7 @@
 package com.pei.service;
 
 import com.pei.config.ClienteConfiableProperties;
+import com.pei.domain.User;
 import com.pei.dto.Chargeback;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -8,7 +9,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.pei.domain.User;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.math.BigDecimal;
