@@ -17,7 +17,7 @@ import com.pei.dto.Alert;
 import com.pei.repository.ChargebackRepository;
 import com.pei.repository.PurchaseRepository;
 import com.pei.repository.TransactionRepository;
-import com.pei.service.bbva.ScoringServiceExterno;
+import com.pei.service.bbva.ScoringService;
 
 @Service
 public class TransactionService {
@@ -26,19 +26,19 @@ public class TransactionService {
     private final PurchaseRepository purchaseRepository;
     private final TransactionRepository transactionRepository;
     private final TransactionVelocityDetectorService transactionVelocityDetectorService;
-    private final ScoringService scoringService;
+    private final ScoringServiceInterno scoringServiceInterno;
     private final Gson gson;
 
     public TransactionService(ChargebackRepository chargebackRepository, 
     PurchaseRepository purchaseRepository, TransactionRepository transactionRepository, 
     TransactionVelocityDetectorService transactionVelocityDetectorService,
-    Gson gson, ScoringService scoringService) {
+            Gson gson, ScoringServiceInterno scoringServiceInterno) {
         this.chargebackRepository = chargebackRepository;
         this.purchaseRepository = purchaseRepository;
         this.transactionRepository = transactionRepository;
         this.transactionVelocityDetectorService = transactionVelocityDetectorService;
         this.gson = gson;
-        this.scoringService = scoringService;
+        this.scoringServiceInterno = scoringServiceInterno;
     }
 
     // TODO: Probablemente tengamos que hacer una Query SQL para obtener las
@@ -115,7 +115,7 @@ public class TransactionService {
     }
 
     public Alert processTransaction(Long idCliente) {
-        String scoringJson = ScoringServiceExterno.consultarScoring(idCliente.intValue());
+        String scoringJson = ScoringService.consultarScoring(idCliente.intValue());
 
         JsonObject responseScoringService = gson.fromJson(scoringJson, JsonObject.class);
         int status = responseScoringService.get("status").getAsInt();
@@ -125,7 +125,7 @@ public class TransactionService {
         }
         int scoringCliente = responseScoringService.get("scoring").getAsInt();
 
-        String color = scoringService.getScoringColorBasedInUserScore(scoringCliente);
+        String color = scoringServiceInterno.getScoringColorBasedInUserScore(scoringCliente);
 
         String msj = null;
         switch (color) {

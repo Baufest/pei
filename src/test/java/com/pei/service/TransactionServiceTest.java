@@ -6,7 +6,7 @@ import com.pei.dto.Purchase;
 import com.pei.repository.ChargebackRepository;
 import com.pei.repository.PurchaseRepository;
 import com.pei.repository.TransactionRepository;
-import com.pei.service.bbva.ScoringServiceExterno;
+import com.pei.service.bbva.ScoringService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,7 +49,7 @@ class TransactionServiceTest {
     @Mock
     private TransactionVelocityDetectorService transactionVelocityDetectorService;
     @Mock
-    private ScoringService scoringService;
+    private ScoringServiceInterno scoringServiceInterno;
     @Mock
     private Gson gson;
     @InjectMocks
@@ -321,8 +321,8 @@ class TransactionServiceTest {
         Long idCliente = 1L;
         String scoringJson = "{\"status\":500,\"mensaje\":\"Error interno del servidor de scoring\",\"timestamp\":2025-08-18T10:00:00Z}";
 
-        try (MockedStatic<ScoringServiceExterno> mocked = Mockito.mockStatic(ScoringServiceExterno.class)) {
-            mocked.when(() -> ScoringServiceExterno.consultarScoring(idCliente.intValue()))
+        try (MockedStatic<ScoringService> mocked = Mockito.mockStatic(ScoringService.class)) {
+                mocked.when(() -> ScoringService.consultarScoring(idCliente.intValue()))
                     .thenReturn(scoringJson);
 
             JsonObject fakeJson = new JsonObject();
@@ -348,8 +348,8 @@ class TransactionServiceTest {
         String scoringJson = "{\"status\":200,\"mensaje\":\"Consulta exitosa\",\"idCliente\":2,\"scoring\":" +
                 scoringCliente + ",\"timestamp\":\"2025-08-18T10:00:00Z\"}";
 
-        try (MockedStatic<ScoringServiceExterno> mocked = Mockito.mockStatic(ScoringServiceExterno.class)) {
-            mocked.when(() -> ScoringServiceExterno.consultarScoring(idCliente.intValue()))
+        try (MockedStatic<ScoringService> mocked = Mockito.mockStatic(ScoringService.class)) {
+                mocked.when(() -> ScoringService.consultarScoring(idCliente.intValue()))
                     .thenReturn(scoringJson);
 
             JsonObject fakeJson = new JsonObject();
@@ -361,7 +361,7 @@ class TransactionServiceTest {
 
             when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
 
-            when(scoringService.getScoringColorBasedInUserScore(scoringCliente))
+            when(scoringServiceInterno.getScoringColorBasedInUserScore(scoringCliente))
                     .thenReturn("Verde");
 
             Alert result = transactionService.processTransaction(idCliente);
@@ -380,8 +380,8 @@ class TransactionServiceTest {
         String scoringJson = "{\"status\":200,\"mensaje\":\"Consulta exitosa\",\"idCliente\":3,\"scoring\":" +
                 scoringCliente + ",\"timestamp\":\"2025-08-18T10:00:00Z\"}";
 
-        try (MockedStatic<ScoringServiceExterno> mocked = Mockito.mockStatic(ScoringServiceExterno.class)) {
-            mocked.when(() -> ScoringServiceExterno.consultarScoring(idCliente.intValue()))
+        try (MockedStatic<ScoringService> mocked = Mockito.mockStatic(ScoringService.class)) {
+                mocked.when(() -> ScoringService.consultarScoring(idCliente.intValue()))
                     .thenReturn(scoringJson);
 
             JsonObject fakeJson = new JsonObject();
@@ -393,7 +393,7 @@ class TransactionServiceTest {
 
             when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
 
-            when(scoringService.getScoringColorBasedInUserScore(scoringCliente))
+            when(scoringServiceInterno.getScoringColorBasedInUserScore(scoringCliente))
                     .thenReturn("Amarillo");
 
             Alert result = transactionService.processTransaction(idCliente);
@@ -413,8 +413,8 @@ class TransactionServiceTest {
         String scoringJson = "{\"status\":200,\"mensaje\":\"Consulta exitosa\",\"idCliente\":4,\"scoring\":" +
                 scoringCliente + ",\"timestamp\":\"2025-08-18T10:00:00Z\"}";
 
-        try (MockedStatic<ScoringServiceExterno> mocked = Mockito.mockStatic(ScoringServiceExterno.class)) {
-            mocked.when(() -> ScoringServiceExterno.consultarScoring(idCliente.intValue()))
+        try (MockedStatic<ScoringService> mocked = Mockito.mockStatic(ScoringService.class)) {
+                mocked.when(() -> ScoringService.consultarScoring(idCliente.intValue()))
                     .thenReturn(scoringJson);
 
             JsonObject fakeJson = new JsonObject();
@@ -426,7 +426,7 @@ class TransactionServiceTest {
 
             when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
 
-            when(scoringService.getScoringColorBasedInUserScore(scoringCliente))
+            when(scoringServiceInterno.getScoringColorBasedInUserScore(scoringCliente))
                     .thenReturn("Rojo");
 
             Alert result = transactionService.processTransaction(idCliente);

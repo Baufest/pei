@@ -11,16 +11,16 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.pei.service.ScoringService;
+import com.pei.service.ScoringServiceInterno;
 
-@WebMvcTest(ScoringController.class)
-class ScoringControllerTest {
+@WebMvcTest(ScoringControllerInterno.class)
+class ScoringControllerInternoTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private ScoringService scoringService;
+    private ScoringServiceInterno scoringServiceInterno;
 
     @Test
     void createPeriod_CuandoDatosValidos_RetornaOk() throws Exception {
@@ -38,7 +38,7 @@ class ScoringControllerTest {
                 .param("verdeEnd", "100"))
             .andExpect(status().isOk());
 
-        verify(scoringService).createPeriodScorings(
+        verify(scoringServiceInterno).createPeriodScorings(
             LocalDateTime.parse(startDateStr),
             LocalDateTime.parse(endDateStr),
             0, 49, 50, 69, 70, 100

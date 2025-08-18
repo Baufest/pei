@@ -8,16 +8,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.pei.service.ScoringService;
+import com.pei.service.ScoringServiceInterno;
 
 @RestController
 @RequestMapping("/api/scorings")
-public class ScoringController {
+public class ScoringControllerInterno {
 
-    private final ScoringService scoringService;
+    private final ScoringServiceInterno scoringServiceInterno;
 
-    public ScoringController(ScoringService scoringService) {
-        this.scoringService = scoringService;
+    public ScoringControllerInterno(ScoringServiceInterno scoringServiceInterno) {
+        this.scoringServiceInterno = scoringServiceInterno;
     }
 
     @PostMapping("")
@@ -34,7 +34,7 @@ public class ScoringController {
             LocalDateTime startDate = LocalDateTime.parse(startDateStr);
             LocalDateTime endDate = LocalDateTime.parse(endDateStr);
 
-            scoringService.createPeriodScorings(startDate, endDate,
+            scoringServiceInterno.createPeriodScorings(startDate, endDate,
                     rojoStart, rojoEnd, amarilloStart, amarilloEnd, verdeStart, verdeEnd);
 
             return ResponseEntity.ok().build();

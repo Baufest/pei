@@ -24,13 +24,13 @@ import com.pei.domain.Scoring;
 import com.pei.repository.ScoringRepository;
 
 @ExtendWith(MockitoExtension.class)
-class ScoringServiceTest {
+class ScoringServiceInternoTest {
 
     @Mock
     private ScoringRepository scoringRepository;
 
     @InjectMocks
-    private ScoringService scoringService;
+    private ScoringServiceInterno scoringServiceInterno;
 
     @Test
     void getScoringColorBasedInUserScore_CuandoExisteScoring_RetornaColor() {
@@ -40,7 +40,7 @@ class ScoringServiceTest {
                 any(), any(), eq(80), eq(80)))
             .thenReturn(Optional.of(scoring));
 
-        String color = scoringService.getScoringColorBasedInUserScore(80);
+        String color = scoringServiceInterno.getScoringColorBasedInUserScore(80);
 
         assertEquals("Verde", color);
         verify(scoringRepository).findByStartDateBeforeAndEndDateAfterAndScoreStartLessThanEqualAndScoreEndGreaterThanEqual(any(), any(), eq(80), eq(80));
@@ -52,7 +52,7 @@ class ScoringServiceTest {
                 any(), any(), anyInt(), anyInt()))
             .thenReturn(Optional.empty());
 
-        String color = scoringService.getScoringColorBasedInUserScore(50);
+        String color = scoringServiceInterno.getScoringColorBasedInUserScore(50);
 
         assertEquals("Sin scoring asignado", color);
     }
@@ -65,7 +65,7 @@ class ScoringServiceTest {
         when(scoringRepository.existsByColorAndStartDateLessThanEqualAndEndDateGreaterThanEqual(anyString(), any(), any()))
             .thenReturn(false);
 
-        scoringService.createPeriodScorings(start, end, 0, 49, 50, 69, 70, 100);
+        scoringServiceInterno.createPeriodScorings(start, end, 0, 49, 50, 69, 70, 100);
 
         verify(scoringRepository, times(3)).save(any(Scoring.class));
     }
@@ -79,7 +79,7 @@ class ScoringServiceTest {
             .thenReturn(true);
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-            scoringService.createPeriodScorings(start, end, 0, 49, 50, 69, 70, 100)
+        scoringServiceInterno.createPeriodScorings(start, end, 0, 49, 50, 69, 70, 100)
         );
 
         assertTrue(ex.getMessage().contains("Rojo"));

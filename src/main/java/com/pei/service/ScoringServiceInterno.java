@@ -10,11 +10,11 @@ import com.pei.domain.Scoring;
 import com.pei.repository.ScoringRepository;
 
 @Service
-public class ScoringService {
+public class ScoringServiceInterno {
 
     private final ScoringRepository scoringRepository;
 
-    public ScoringService(ScoringRepository scoringRepository) {
+    public ScoringServiceInterno(ScoringRepository scoringRepository) {
         this.scoringRepository = scoringRepository;
     }
 

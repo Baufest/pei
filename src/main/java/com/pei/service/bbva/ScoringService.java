@@ -1,3 +1,7 @@
+/* 
+ * simula servicio externo 
+ * En nuestro codigo lo denominamos: scoringService o scoringServiceExterno 
+*/
 package com.pei.service.bbva;
 
 import java.time.Instant;
@@ -7,7 +11,7 @@ import java.util.Random;
 
 import com.google.gson.Gson;
 
-public class ScoringServiceExterno {
+public class ScoringService {
 
     private static final Random random = new Random();
     private static final Gson gson = new Gson();
