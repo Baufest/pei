@@ -1,19 +1,30 @@
 package com.pei.domain;
 
-import com.pei.dto.Chargeback;
-import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.hibernate.annotations.CreationTimestamp;
+
+import com.pei.dto.Chargeback;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 @Entity @Table(name = "Client")
 public class User {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false)
+    private String name;
 
     @Column(nullable = false)
     private String profile;
@@ -32,6 +43,9 @@ public class User {
 
     @OneToMany(mappedBy = "user")
     private List<Chargeback> chargebacks = new ArrayList<>();
+
+    @OneToMany(mappedBy = "owner")
+    private List<Account> accounts = new ArrayList<>();
 
     public User() { }
 
@@ -93,6 +107,22 @@ public class User {
 
     public void addChargebacks(List<Chargeback> chargebacks) {
         this.chargebacks.addAll(chargebacks);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public List<Account> getAccounts() {
+        return accounts;
+    }
+
+    public void setAccounts(List<Account> accounts) {
+        this.accounts = new ArrayList<>(accounts);
     }
 
 }
