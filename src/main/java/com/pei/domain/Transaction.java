@@ -31,7 +31,10 @@ public class Transaction {
     private LocalDateTime date;
 
     @Column
-    private String currency;
+    private String currency; // Moneda
+
+    @Column(name = "codigo_coelsa", length = 22)
+    private String codCoelsa; // Código Coelsa alfanumérico de longitud de 22 para cada transacción
 
     @ManyToOne
     @JoinColumn(name = "source_account", referencedColumnName = "id", nullable = false)
@@ -129,9 +132,11 @@ public class Transaction {
     public TransactionDTO transactionToDto() {
         return new TransactionDTO(
             this.id,
+            this.codCoelsa != null ? this.codCoelsa : "",
             this.amount,
             this.destinationAccount != null ? this.getCurrency() : null,
-            this.destinationAccount != null ? this.destinationAccount.getId() : null
+            this.destinationAccount != null ? this.destinationAccount.getId() : null,
+            this.date != null ? this.date : LocalDateTime.now()
         );
     }
 
