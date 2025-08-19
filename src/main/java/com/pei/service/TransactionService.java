@@ -29,22 +29,17 @@ public class TransactionService {
     private final TransactionVelocityDetectorService transactionVelocityDetectorService;
     private final ScoringServiceInterno scoringServiceInterno;
     private final Gson gson;
-    private final LimitAmountTransactionService limitAmountTransactionService;
-    private final ClienteService clienteService;
 
     public TransactionService(ChargebackRepository chargebackRepository,
             PurchaseRepository purchaseRepository, TransactionRepository transactionRepository,
             TransactionVelocityDetectorService transactionVelocityDetectorService,
-            Gson gson, ScoringServiceInterno scoringServiceInterno,
-            LimitAmountTransactionService limitAmountTransactionService, ClienteService clienteService) {
+            Gson gson, ScoringServiceInterno scoringServiceInterno) {
         this.chargebackRepository = chargebackRepository;
         this.purchaseRepository = purchaseRepository;
         this.transactionRepository = transactionRepository;
         this.transactionVelocityDetectorService = transactionVelocityDetectorService;
         this.gson = gson;
         this.scoringServiceInterno = scoringServiceInterno;
-        this.limitAmountTransactionService = limitAmountTransactionService;
-        this.clienteService = clienteService;
     }
 
     // TODO: Probablemente tengamos que hacer una Query SQL para obtener las
@@ -190,11 +185,10 @@ public class TransactionService {
         return minutesDifference >= 0 && minutesDifference <= 60;
     }
 
-    public Alert getAmountLimitAlert(Long userId) {
+    public Alert getAmountLimitAlert(Long userId, BigDecimal limitAmount, Boolean isANewUser) {
         BigDecimal totalAmountToday = getTotalAmountByUserAndDate(userId);
-        BigDecimal limitAmount = limitAmountTransactionService.getAvailableAmount(userId);
         
-        if (clienteService.isANewUser(userId)) { 
+        if (isANewUser) { 
             limitAmount = limitAmount.multiply(BigDecimal.valueOf(0.5)); }
         if (totalAmountToday.compareTo(limitAmount) > 0) {
             return new Alert(userId, "Amount limit exceeded for user " + userId);

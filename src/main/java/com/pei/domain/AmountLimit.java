@@ -26,6 +26,8 @@ public class AmountLimit {
             LocalDateTime expirationDate) {
     }
 
+    public AmountLimit() {}
+
     public BigDecimal getAmount() {
         return amount;
     }

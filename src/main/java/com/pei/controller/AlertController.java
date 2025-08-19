@@ -9,6 +9,7 @@ import com.pei.service.ClienteService;
 
 import org.springframework.http.ResponseEntity;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import com.pei.service.GeolocalizationService;
+import com.pei.service.LimitAmountTransactionService;
 import com.pei.service.TransactionService;
 
 import org.springframework.web.bind.annotation.PostMapping;
@@ -40,15 +42,18 @@ public class AlertController {
     private final AlertService alertService;
     private final AccountService accountService;
     private final ClienteService clienteService;
+    private final LimitAmountTransactionService limitAmountTransactionService;
 
     public AlertController(AlertService alertService,
                 AccountService accountService, TransactionService transactionService,
-                GeolocalizationService geolocalizationService, ClienteService clienteService) {
+                GeolocalizationService geolocalizationService, ClienteService clienteService,
+                LimitAmountTransactionService limitAmountTransactionService) {
         this.alertService = alertService;
         this.accountService = accountService;
         this.transactionService = transactionService;
         this.geolocalizationService = geolocalizationService;
         this.clienteService = clienteService;
+        this.limitAmountTransactionService = limitAmountTransactionService;
         
     }
 
@@ -261,8 +266,11 @@ public class AlertController {
 
     @GetMapping("/alerta-amount-limit/{userId}")
     public ResponseEntity<Alert> getAmountLimitAlert(@PathVariable Long userId) {
+        
+        BigDecimal limitAmount = limitAmountTransactionService.getAvailableAmount(userId);
+        Boolean isANewUser = clienteService.isANewUser(userId);
         try {
-            Alert totalAmountAlert = transactionService.getAmountLimitAlert(userId);
+            Alert totalAmountAlert = transactionService.getAmountLimitAlert(userId, limitAmount, isANewUser);
             if (totalAmountAlert == null) {
                 return ResponseEntity.notFound().build();
             } else { 
