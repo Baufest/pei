@@ -14,3 +14,11 @@ velocity-transaction-params:
     empresa:
         minutes-range: 10
         max-transactions: 20
+
+transferencias:
+  internacionales:
+    paises-riesgo:
+      - Venezuela
+      - Rusia
+      - Iran
+    monto-alerta: 50000.00

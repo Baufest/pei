@@ -1,18 +1,5 @@
 package com.pei.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,12 +10,24 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pei.domain.Account;
@@ -37,9 +36,7 @@ import com.pei.domain.User;
 import com.pei.dto.Alert;
 import com.pei.dto.Logins;
 import com.pei.dto.UserTransaction;
-
 import com.pei.repository.LoginsRepository;
-
 import com.pei.service.AccountService;
 import com.pei.service.AlertService;
 import com.pei.service.ClienteService;
@@ -434,7 +431,7 @@ class AlertControllerTest {
                                                 "Alerta: Transaccion aprobada para cliente " + idCliente
                                                                 + " con scoring de: 90");
 
-                                when(transactionService.processTransaction(idCliente)).thenReturn(alertaMock);
+                                when(transactionService.processTransactionScoring(idCliente)).thenReturn(alertaMock);
 
                                 mockMvc.perform(post("/api/alerta-scoring")
                                                 .contentType(MediaType.APPLICATION_JSON)
@@ -450,7 +447,7 @@ class AlertControllerTest {
                         void checkProccesTransaction_CuandoAlertNull_RetornaNotFound() throws Exception {
                                 // Arrange
                                 Long idCliente = 2L;
-                                when(transactionService.processTransaction(anyLong()))
+                                when(transactionService.processTransactionScoring(anyLong()))
                                                 .thenReturn(null);
 
                                 // Act & Assert
@@ -459,7 +456,7 @@ class AlertControllerTest {
                                                 .content("2"))
                                                 .andExpect(status().isNotFound());
 
-                                verify(transactionService).processTransaction(idCliente);
+                                verify(transactionService).processTransactionScoring(idCliente);
                         }
                 }
 
@@ -521,4 +518,45 @@ class AlertControllerTest {
                 }
         }
 
+        @Nested
+        @DisplayName("POST /api/alerta-transaccion-internacional")
+        class AlertaTransaccionInternacionalControllerTest {
+
+                @Test
+                @DisplayName("Retorna 200 OK y alerta cuando la transacción internacional genera alerta")
+                void postAlertaTransaccionInternacional_CuandoAlerta_RetornaOk() throws Exception {
+                        Transaction transaction = new Transaction();
+                        Alert expectedAlert = new Alert(1L, "Alerta: Transacción internacional aprobada");
+
+                        when(transactionService.processTransactionCountryInternational(any(Transaction.class)))
+                                        .thenReturn(expectedAlert);
+
+                        mockMvc.perform(post("/api/alerta-transaccion-internacional")
+                                        .contentType("application/json")
+                                        .content(objectMapper.writeValueAsString(transaction)))
+                                        .andExpect(status().isOk())
+                                        .andExpect(jsonPath("$.userId").value(1L))
+                                        .andExpect(jsonPath("$.description")
+                                                        .value("Alerta: Transacción internacional aprobada"));
+
+                        verify(transactionService).processTransactionCountryInternational(any(Transaction.class));
+                }
+
+                @Test
+                @DisplayName("Retorna 404 Not Found cuando no hay alerta")
+                void postAlertaTransaccionInternacional_CuandoNoAlerta_RetornaNotFound() throws Exception {
+                        Transaction transaction = new Transaction();
+
+                        when(transactionService.processTransactionCountryInternational(any(Transaction.class)))
+                                        .thenReturn(null);
+
+                        mockMvc.perform(post("/api/alerta-transaccion-internacional")
+                                        .contentType("application/json")
+                                        .content(objectMapper.writeValueAsString(transaction)))
+                                        .andExpect(status().isNotFound());
+
+                        verify(transactionService).processTransactionCountryInternational(any(Transaction.class));
+                }
+
+        }
 }

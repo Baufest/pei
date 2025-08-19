@@ -4,16 +4,17 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.pei.config.TransferenciaInternacionalProperties;
 import com.pei.domain.TimeRange;
 import com.pei.domain.Transaction;
-import java.util.Optional;
-
 import com.pei.dto.Alert;
+import com.pei.repository.AccountRepository;
 import com.pei.repository.ChargebackRepository;
 import com.pei.repository.PurchaseRepository;
 import com.pei.repository.TransactionRepository;
@@ -22,23 +23,34 @@ import com.pei.service.bbva.ScoringService;
 @Service
 public class TransactionService {
 
+    private final AccountRepository accountRepository;
+
     private final ChargebackRepository chargebackRepository;
     private final PurchaseRepository purchaseRepository;
     private final TransactionRepository transactionRepository;
     private final TransactionVelocityDetectorService transactionVelocityDetectorService;
     private final ScoringServiceInterno scoringServiceInterno;
     private final Gson gson;
+    private final NotificationService notificationService;
+    private final RiskCountryService riskCountryService;
+    private final TransactionParamsService transactionParamsService;
 
-    public TransactionService(ChargebackRepository chargebackRepository, 
-    PurchaseRepository purchaseRepository, TransactionRepository transactionRepository, 
-    TransactionVelocityDetectorService transactionVelocityDetectorService,
-            Gson gson, ScoringServiceInterno scoringServiceInterno) {
+    public TransactionService(ChargebackRepository chargebackRepository,
+            PurchaseRepository purchaseRepository, TransactionRepository transactionRepository,
+            TransactionVelocityDetectorService transactionVelocityDetectorService,
+            Gson gson, ScoringServiceInterno scoringServiceInterno, AccountRepository accountRepository,
+            TransferenciaInternacionalProperties internationalCountryConfig, NotificationService notificationService,
+            RiskCountryService riskCountryService, TransactionParamsService transactionParamsService) {
         this.chargebackRepository = chargebackRepository;
         this.purchaseRepository = purchaseRepository;
         this.transactionRepository = transactionRepository;
         this.transactionVelocityDetectorService = transactionVelocityDetectorService;
         this.gson = gson;
         this.scoringServiceInterno = scoringServiceInterno;
+        this.accountRepository = accountRepository;
+        this.notificationService = notificationService;
+        this.riskCountryService = riskCountryService;
+        this.transactionParamsService = transactionParamsService;
     }
 
     // TODO: Probablemente tengamos que hacer una Query SQL para obtener las
@@ -114,7 +126,53 @@ public class TransactionService {
         return transaction.getApprovalList().size();
     }
 
-    public Alert processTransaction(Long idCliente) {
+    // PROCESAR TRANSACCION GENERAL
+    // @Transactional
+    // public List<Alert> processTransactionGeneral(Transaction transaction){
+    // //Alert alertCountryInternational =
+    // processVerifyCountryInternational(transaction); DEVUELVE BOOLEAN
+    // //Alert alertScoring = processVerifyScoring(transaction.getUser().getId());
+    // DEVUELVE COLOR
+    // //List..accountRepository
+
+    // //transactionRepository.save(transaction); (GUARDAMOS LA TRANSACCIÓN CON SU
+    // ESTADO (APROBADA, RECHAZADA, REQUIERE_APROBACION))
+    // return new Alert("")
+    // }
+
+    // @Transactional
+public Alert processTransactionCountryInternational(Transaction transaction){
+    if(transaction == null){
+        throw new IllegalArgumentException("Transaction cannot be null in processTransactionCountryInternational");
+    }
+
+    if(transaction.isInternational()){
+
+        if(riskCountryService.isRiskCountry(transaction.getDestinationAccount().getCountry())){
+            transaction.setStatus(Transaction.TransactionStatus.REQUIERE_APROBACION);
+            return new Alert(transaction.getUser().getId(), 
+                    "Alerta: Transacción internacional hacia un país de riesgo");
+        } else if (transaction.getAmount().compareTo(transactionParamsService.getMontoAlertaInternacional()) > 0) {
+            transaction.setStatus(Transaction.TransactionStatus.APROBADA);
+
+            Alert alert = new Alert(transaction.getUser().getId(),
+                    "Alerta: Transacción internacional con monto mayor a: " + transactionParamsService.getMontoAlertaInternacional());
+            notificationService.notifyCompliance(transaction, alert);
+
+            return alert;
+        }else{
+            transaction.setStatus(Transaction.TransactionStatus.APROBADA);
+            return new Alert(transaction.getUser().getId(), "Alerta: Transacción internacional aprobada");
+        }
+    }
+
+    transaction.setStatus(Transaction.TransactionStatus.APROBADA);
+    // transactionRepository.save(transaction); -> DESCOMENTAR AL IMPLEMENTAR BD
+    return new Alert(transaction.getUser().getId(), "Alerta: Transacción aprobada");
+}
+
+    public Alert processTransactionScoring(Long idCliente) { // processVerifyScoring
+
         String scoringJson = ScoringService.consultarScoring(idCliente.intValue());
 
         JsonObject responseScoringService = gson.fromJson(scoringJson, JsonObject.class);
@@ -145,22 +203,22 @@ public class TransactionService {
         }
         return new Alert(idCliente, msj);
     }
-    
+
     public Alert getFastMultipleTransactionAlert(Long userId, String clientType) {
 
-        Integer minutesRange = clientType.equals("individuo") ? 
-            transactionVelocityDetectorService.getIndividuoMinutesRange() : 
-            transactionVelocityDetectorService.getEmpresaMinutesRange();
-        
-        Integer maxTransactions = clientType.equals("individuo") ? 
-            transactionVelocityDetectorService.getIndividuoMaxTransactions() : 
-            transactionVelocityDetectorService.getEmpresaMaxTransactions();
+        Integer minutesRange = clientType.equals("individuo")
+                ? transactionVelocityDetectorService.getIndividuoMinutesRange()
+                : transactionVelocityDetectorService.getEmpresaMinutesRange();
+
+        Integer maxTransactions = clientType.equals("individuo")
+                ? transactionVelocityDetectorService.getIndividuoMaxTransactions()
+                : transactionVelocityDetectorService.getEmpresaMaxTransactions();
 
         LocalDateTime fromDate = LocalDateTime.now().minusMinutes(minutesRange);
         Integer numMaxTransactions = maxTransactions;
         Integer numTransactions = transactionRepository.countTransactionsFromDate(userId, fromDate);
 
-        if (numTransactions > numMaxTransactions){
+        if (numTransactions > numMaxTransactions) {
             return new Alert(userId, "Fast multiple transactions detected for user " + userId);
         }
 
@@ -179,7 +237,8 @@ public class TransactionService {
         // Calcula la diferencia en minutos entre el evento y la transferencia
         long minutesDifference = Duration.between(eventDateHour, transferDate).toMinutes();
 
-        // Considera sospechoso si la transferencia es posterior al evento y dentro de 60 minutos
+        // Considera sospechoso si la transferencia es posterior al evento y dentro de
+        // 60 minutos
         return minutesDifference >= 0 && minutesDifference <= 60;
     }
 

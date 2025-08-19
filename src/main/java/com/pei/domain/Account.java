@@ -1,10 +1,8 @@
 package com.pei.domain;
 
 
-import java.util.Objects;
-
-
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -33,6 +31,9 @@ public class Account {
     @JoinColumn(name = "owner", referencedColumnName = "id", nullable = false)
     private User owner;
 
+    @Column
+    private String country;
+
     public Account() {
     }
 
@@ -45,8 +46,22 @@ public class Account {
         this.owner = owner;
     }
 
+    public Account(String type, User owner, String country) {
+        this.type = type;
+        this.owner = owner;
+        this.country = country;
+    }
+
     public Long getId() {
         return id;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
     }
 
     public LocalDateTime getCreationDate() {
