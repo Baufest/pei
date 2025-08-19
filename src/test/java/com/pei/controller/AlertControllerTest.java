@@ -31,9 +31,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pei.domain.Account;
+import com.pei.domain.Account.Account;
 import com.pei.domain.Transaction;
-import com.pei.domain.User;
+import com.pei.domain.User.User;
 import com.pei.dto.Alert;
 import com.pei.dto.Logins;
 import com.pei.dto.UserTransaction;
