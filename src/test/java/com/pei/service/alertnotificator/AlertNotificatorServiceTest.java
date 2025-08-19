@@ -7,6 +7,9 @@ import org.mockito.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -20,7 +23,8 @@ class AlertNotificatorServiceTest {
     private AlertNotificatorService alertNotificatorService;
 
     private final Long userId = 1L;
-    private final TransactionDTO transactionDTO = new TransactionDTO(100L, java.math.BigDecimal.valueOf(5000), "ARS", 1L);
+    private final TransactionDTO transactionDTO = new TransactionDTO(
+        100L, "1234567890ACBDEFGHIJKL", BigDecimal.valueOf(5000), "ARS", 1L, LocalDateTime.now());
 
     @BeforeEach
     void setUp() {
