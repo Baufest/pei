@@ -1,6 +1,7 @@
 package com.pei.repository;
 
 import com.pei.domain.Account;
+import com.pei.domain.AccountType;
 import com.pei.domain.Transaction;
 import com.pei.domain.User;
 import org.junit.jupiter.api.DisplayName;
@@ -49,11 +50,11 @@ class TransactionRepositoryTest {
 
         // Crear cuentas
         Account accountUser1 = new Account(user1);
-        accountUser1.setType("SAVINGS");
+        accountUser1.setType(AccountType.CUENTA_CORRIENTE);
         accountRepository.save(accountUser1);
 
         Account accountUser2 = new Account(user2);
-        accountUser2.setType("SAVINGS");
+        accountUser2.setType(AccountType.CUENTA_CORRIENTE);
         accountRepository.save(accountUser2);
 
         // Crear transacciones
@@ -120,11 +121,11 @@ class TransactionRepositoryTest {
 
         // Crear cuentas
         Account accountUser1 = new Account(user1);
-        accountUser1.setType("SAVINGS");
+        accountUser1.setType(AccountType.CUENTA_CORRIENTE);
         accountRepository.save(accountUser1);
 
         Account accountUser2 = new Account(user2);
-        accountUser2.setType("SAVINGS");
+        accountUser2.setType(AccountType.CUENTA_CORRIENTE);
         accountRepository.save(accountUser2);
 
         // Crear transacciones
@@ -191,11 +192,11 @@ class TransactionRepositoryTest {
 
         // Crear cuentas
         Account accountUser1 = new Account(user1);
-        accountUser1.setType("SAVINGS");
+        accountUser1.setType(AccountType.CUENTA_CORRIENTE);
         accountRepository.save(accountUser1);
 
         Account accountUser2 = new Account(user2);
-        accountUser2.setType("SAVINGS");
+        accountUser2.setType(AccountType.CUENTA_CORRIENTE);
         accountRepository.save(accountUser2);
 
         // Crear transacciones
