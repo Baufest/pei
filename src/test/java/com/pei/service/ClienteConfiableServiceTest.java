@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.pei.domain.User;
+import com.pei.domain.User.User;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.math.BigDecimal;

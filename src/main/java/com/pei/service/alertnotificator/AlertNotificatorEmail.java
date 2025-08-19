@@ -1,6 +1,6 @@
 package com.pei.service.alertnotificator;
 
-import com.pei.domain.User;
+import com.pei.domain.User.User;
 import com.pei.dto.TransactionDTO;
 import com.pei.repository.UserRepository;
 import jakarta.mail.MessagingException;

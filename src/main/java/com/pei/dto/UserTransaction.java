@@ -1,7 +1,7 @@
 package com.pei.dto;
 
 import com.pei.domain.Transaction;
-import com.pei.domain.User;
+import com.pei.domain.User.User;
 
 public class UserTransaction {
     
@@ -26,4 +26,3 @@ public class UserTransaction {
 
 
 }
-    

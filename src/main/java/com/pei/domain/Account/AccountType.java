@@ -1,4 +1,4 @@
-package com.pei.domain;
+package com.pei.domain.Account;
 
 public enum AccountType {
     CUENTA_AHORROS("Cuenta de Ahorros"),

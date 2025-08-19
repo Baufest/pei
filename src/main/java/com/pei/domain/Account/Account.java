@@ -1,4 +1,4 @@
-package com.pei.domain;
+package com.pei.domain.Account;
 
 
 import java.util.Objects;
@@ -6,6 +6,7 @@ import java.util.Objects;
 
 import java.time.LocalDateTime;
 
+import com.pei.domain.User.User;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 

@@ -1,4 +1,4 @@
-package com.pei.domain;
+package com.pei.domain.User;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.pei.domain.Account.Account;
+import com.pei.domain.TimeRange;
 import com.pei.dto.Chargeback;
 import com.pei.dto.Purchase;
 import jakarta.persistence.*;

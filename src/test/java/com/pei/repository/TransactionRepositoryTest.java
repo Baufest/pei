@@ -1,9 +1,9 @@
 package com.pei.repository;
 
-import com.pei.domain.Account;
-import com.pei.domain.AccountType;
+import com.pei.domain.Account.Account;
+import com.pei.domain.Account.AccountType;
 import com.pei.domain.Transaction;
-import com.pei.domain.User;
+import com.pei.domain.User.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

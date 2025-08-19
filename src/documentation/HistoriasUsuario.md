@@ -1003,7 +1003,7 @@ Se desarrolló el endpoint `/alerta-canales` que permite escalar alertas de tran
 - `com.pei.dto.ChannelAlertRequest`
 - `com.pei.dto.Alert`
 - `com.pei.domain.Transaction`
-- `com.pei.domain.User`
+- `com.pei.domain.User.User`
 
 ### Endpoints Nuevos/Modificados
 | Método HTTP | URL                  | Parámetros (Body)         | Respuesta                                      |

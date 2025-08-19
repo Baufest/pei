@@ -1,4 +1,6 @@
 package com.pei.domain;
+import com.pei.domain.Account.Account;
+import com.pei.domain.User.User;
 import com.pei.dto.TransactionDTO;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
