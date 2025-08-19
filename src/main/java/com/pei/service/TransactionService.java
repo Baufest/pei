@@ -2,6 +2,7 @@ package com.pei.service;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -28,17 +29,22 @@ public class TransactionService {
     private final TransactionVelocityDetectorService transactionVelocityDetectorService;
     private final ScoringServiceInterno scoringServiceInterno;
     private final Gson gson;
+    private final LimitAmountTransactionService limitAmountTransactionService;
+    private final ClienteService clienteService;
 
-    public TransactionService(ChargebackRepository chargebackRepository, 
-    PurchaseRepository purchaseRepository, TransactionRepository transactionRepository, 
-    TransactionVelocityDetectorService transactionVelocityDetectorService,
-            Gson gson, ScoringServiceInterno scoringServiceInterno) {
+    public TransactionService(ChargebackRepository chargebackRepository,
+            PurchaseRepository purchaseRepository, TransactionRepository transactionRepository,
+            TransactionVelocityDetectorService transactionVelocityDetectorService,
+            Gson gson, ScoringServiceInterno scoringServiceInterno,
+            LimitAmountTransactionService limitAmountTransactionService, ClienteService clienteService) {
         this.chargebackRepository = chargebackRepository;
         this.purchaseRepository = purchaseRepository;
         this.transactionRepository = transactionRepository;
         this.transactionVelocityDetectorService = transactionVelocityDetectorService;
         this.gson = gson;
         this.scoringServiceInterno = scoringServiceInterno;
+        this.limitAmountTransactionService = limitAmountTransactionService;
+        this.clienteService = clienteService;
     }
 
     // TODO: Probablemente tengamos que hacer una Query SQL para obtener las
@@ -145,22 +151,22 @@ public class TransactionService {
         }
         return new Alert(idCliente, msj);
     }
-    
+
     public Alert getFastMultipleTransactionAlert(Long userId, String clientType) {
 
-        Integer minutesRange = clientType.equals("individuo") ? 
-            transactionVelocityDetectorService.getIndividuoMinutesRange() : 
-            transactionVelocityDetectorService.getEmpresaMinutesRange();
-        
-        Integer maxTransactions = clientType.equals("individuo") ? 
-            transactionVelocityDetectorService.getIndividuoMaxTransactions() : 
-            transactionVelocityDetectorService.getEmpresaMaxTransactions();
+        Integer minutesRange = clientType.equals("individuo")
+                ? transactionVelocityDetectorService.getIndividuoMinutesRange()
+                : transactionVelocityDetectorService.getEmpresaMinutesRange();
+
+        Integer maxTransactions = clientType.equals("individuo")
+                ? transactionVelocityDetectorService.getIndividuoMaxTransactions()
+                : transactionVelocityDetectorService.getEmpresaMaxTransactions();
 
         LocalDateTime fromDate = LocalDateTime.now().minusMinutes(minutesRange);
         Integer numMaxTransactions = maxTransactions;
         Integer numTransactions = transactionRepository.countTransactionsFromDate(userId, fromDate);
 
-        if (numTransactions > numMaxTransactions){
+        if (numTransactions > numMaxTransactions) {
             return new Alert(userId, "Fast multiple transactions detected for user " + userId);
         }
 
@@ -179,8 +185,29 @@ public class TransactionService {
         // Calcula la diferencia en minutos entre el evento y la transferencia
         long minutesDifference = Duration.between(eventDateHour, transferDate).toMinutes();
 
-        // Considera sospechoso si la transferencia es posterior al evento y dentro de 60 minutos
+        // Considera sospechoso si la transferencia es posterior al evento y dentro de
+        // 60 minutos
         return minutesDifference >= 0 && minutesDifference <= 60;
+    }
+
+    public Alert getAmountLimitAlert(Long userId) {
+        BigDecimal totalAmountToday = getTotalAmountByUserAndDate(userId);
+        BigDecimal limitAmount = limitAmountTransactionService.getAvailableAmount(userId);
+        
+        if (clienteService.isANewUser(userId)) { 
+            limitAmount = limitAmount.multiply(BigDecimal.valueOf(0.5)); }
+        if (totalAmountToday.compareTo(limitAmount) > 0) {
+            return new Alert(userId, "Amount limit exceeded for user " + userId);
+        }
+
+        return new Alert();
+    }
+
+    public BigDecimal getTotalAmountByUserAndDate(Long userId) {
+        LocalDate date = LocalDate.now();
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.atTime(23, 59, 59);
+        return transactionRepository.getTotalAmountByUserAndDate(userId, startOfDay, endOfDay);
     }
 
 }

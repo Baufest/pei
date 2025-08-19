@@ -259,4 +259,18 @@ public class AlertController {
         }
     }
 
+    @GetMapping("/alerta-amount-limit/{userId}")
+    public ResponseEntity<Alert> getAmountLimitAlert(@PathVariable Long userId) {
+        try {
+            Alert totalAmountAlert = transactionService.getAmountLimitAlert(userId);
+            if (totalAmountAlert == null) {
+                return ResponseEntity.notFound().build();
+            } else { 
+                
+                return ResponseEntity.ok(totalAmountAlert);}
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 }
