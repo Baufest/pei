@@ -15,8 +15,12 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
-  @Query("SELECT COUNT(t) FROM Transaction t WHERE t.user.id = :userId AND t.date >= :fromDate")
-  Integer countTransactionsFromDate(@Param("userId") Long userId, @Param("fromDate") LocalDateTime fromDate);
+  @Query("SELECT COUNT(t) FROM Transaction  t WHERE t.user.id= :userId AND t.date>= :fromDate AND  t.amount BETWEEN :minMonto AND :maxMonto")
+  Integer countTransactionsByUserAfterDateBetweenMontos(
+      @Param("userId") Long userId,
+      @Param("fromDate") LocalDateTime fromDate,
+      @Param("minMonto") BigDecimal minMonto,
+      @Param("maxMonto") BigDecimal maxMonto);
 
   @Query("""
       SELECT t

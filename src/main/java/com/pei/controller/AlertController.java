@@ -200,7 +200,7 @@ public class AlertController {
         if (clientType == null || (!clientType.equals("individuo") && !clientType.equals("empresa"))) {
             return ResponseEntity.notFound().build();
         }
-        
+
         Alert alert = transactionService.getFastMultipleTransactionAlert(userId, clientType);
 
         if (alert != null) {

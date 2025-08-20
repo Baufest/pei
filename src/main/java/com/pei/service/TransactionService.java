@@ -149,24 +149,32 @@ public class TransactionService {
 
     public Alert getFastMultipleTransactionAlert(Long userId, String clientType) {
 
-        Integer minutesRange = clientType.equals("individuo")
-                ? transactionVelocityDetectorService.getIndividuoMinutesRange()
-                : transactionVelocityDetectorService.getEmpresaMinutesRange();
+        Integer minutesRange;
+        Integer maxTransactions;
+        BigDecimal minMonto;
+        BigDecimal maxMonto;
 
-        Integer maxTransactions = clientType.equals("individuo")
-                ? transactionVelocityDetectorService.getIndividuoMaxTransactions()
-                : transactionVelocityDetectorService.getEmpresaMaxTransactions();
+        if ("individuo".equals(clientType)) {
+            minutesRange = transactionVelocityDetectorService.getIndividuoMinutesRange();
+            maxTransactions = transactionVelocityDetectorService.getIndividuoMaxTransactions();
+            minMonto = transactionVelocityDetectorService.getIndividuoUmbralMonto().get("minMonto");
+            maxMonto = transactionVelocityDetectorService.getIndividuoUmbralMonto().get("maxMonto");
+        } else {
+            minutesRange = transactionVelocityDetectorService.getEmpresaMinutesRange();
+            maxTransactions = transactionVelocityDetectorService.getEmpresaMaxTransactions();
+            minMonto = transactionVelocityDetectorService.getEmpresaUmbralMonto().get("minMonto");
+            maxMonto = transactionVelocityDetectorService.getEmpresaUmbralMonto().get("maxMonto");
+        }
 
         LocalDateTime fromDate = LocalDateTime.now().minusMinutes(minutesRange);
-        Integer numMaxTransactions = maxTransactions;
-        Integer numTransactions = transactionRepository.countTransactionsFromDate(userId, fromDate);
+        int numTransactions = transactionRepository
+                .countTransactionsByUserAfterDateBetweenMontos(userId, fromDate, minMonto, maxMonto);
 
-        if (numTransactions > numMaxTransactions) {
+        if (numTransactions > maxTransactions) {
             return new Alert(userId, "Fast multiple transactions detected for user " + userId);
         }
 
-        Alert fastMultipleTransactionAlert = null;
-        return fastMultipleTransactionAlert;
+        return null;
     }
 
     public Optional<Transaction> getMostRecentTransferByUserId(Long userId) {
