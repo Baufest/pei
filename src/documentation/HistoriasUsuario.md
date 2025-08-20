@@ -235,7 +235,7 @@ GET /api/alerts/chargeback/123
 
 ---
 
-## 🧑‍💻 Historia de Usuario #235
+## 🧑‍💻 Historia de Usuario #235  (Se implemento nueva funcionalidad en Task #251)
 
 Implementación de endpoint para alerta de transacciones rápidas por tipo de cliente
 
