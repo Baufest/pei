@@ -183,4 +183,7 @@ public class TransactionService {
         return minutesDifference >= 0 && minutesDifference <= 60;
     }
 
+    public List<Transaction> getAllTransactions() {
+        return transactionRepository.findAll();
+    }
 }

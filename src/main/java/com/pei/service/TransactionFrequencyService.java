@@ -6,9 +6,12 @@ import com.pei.domain.Account.AccountType;
 import com.pei.domain.Transaction;
 import com.pei.domain.User.ClientType;
 import com.pei.domain.User.User;
+import com.pei.dto.RecurringBeneficiaryAlert;
+import com.pei.repository.RecurringBeneficiaryAlertRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,18 +19,26 @@ import java.util.stream.Collectors;
 
 @Service
 public class TransactionFrequencyService {
+    private final RecurringBeneficiaryAlertRepository recurringBeneficiaryAlertRepository;
 
+    private final TransactionService transactionService;
     private final IndividualClientFrequencyProperties individualProps;
     private final CompanyClientFrequencyProperties companyProps;
 
     public TransactionFrequencyService(
             IndividualClientFrequencyProperties individualProps,
-            CompanyClientFrequencyProperties companyProps) {
+            CompanyClientFrequencyProperties companyProps,
+            RecurringBeneficiaryAlertRepository recurringBeneficiaryAlertRepository,
+            TransactionService transactionService) {
+        this.transactionService = transactionService;
+        this.recurringBeneficiaryAlertRepository = recurringBeneficiaryAlertRepository;
         this.individualProps = individualProps;
         this.companyProps = companyProps;
     }
 
-    public void analyzeTransactionFrequency(List<Transaction> transactions) {
+    public void analyzeTransactionFrequency() {
+        List<Transaction> transactions = transactionService.getAllTransactions();
+
         if (transactions == null || transactions.isEmpty()) {
             return;
         }
@@ -42,14 +53,20 @@ public class TransactionFrequencyService {
     }
 
     private void verifyCompanyClientFrequency(List<Transaction> transactions) {
-        checkFrequency(transactions, companyProps);
+        List<RecurringBeneficiaryAlert> alerts = checkFrequency(transactions, companyProps);
+
+        recurringBeneficiaryAlertRepository.saveAll(alerts);
     }
 
     private void verifyIndividualClientFrequency(List<Transaction> transactions) {
-        checkFrequency(transactions, individualProps);
+        List<RecurringBeneficiaryAlert> alerts = checkFrequency(transactions, individualProps);
+
+        recurringBeneficiaryAlertRepository.saveAll(alerts);
     }
 
-    private void checkFrequency(List<Transaction> transactions, Object props) {
+    private List<RecurringBeneficiaryAlert> checkFrequency(List<Transaction> transactions, Object props) {
+        List<RecurringBeneficiaryAlert> alerts = new ArrayList<>();
+
         int checkWindowHs;
         int maxTransfersSameBeneficiary;
         int maxDepositsAccountHolder;
@@ -112,18 +129,31 @@ public class TransactionFrequencyService {
 
             boolean deposito = actor.getId().equals(destinoOwner.getId());
 
+            // TODO: Averiguar que hacer con las alertas de las transacciones
+            // Si es depósito, verificamos el número de depósitos al mismo titular
+            // Si es transferencia, verificamos el número de transferencias al mismo beneficiario externo
+            // Cargo la alerta correspondiente si se supera el límite
             if (deposito) {
                 if (txs.size() >= maxDepositsAccountHolder) {
-                    System.out.printf("⚠️ Alerta: demasiados depósitos (%d) al mismo titular (userId=%d, cuentaDestino=%d)%n",
-                        txs.size(), actor.getId(), sample.getDestinationAccount().getId());
+                    alerts.add(new RecurringBeneficiaryAlert(
+                        actor.getId(),
+                        LocalDateTime.now(),
+                        String.format("⚠️ Alerta: demasiados depósitos (%d) al mismo titular (userId=%d, cuentaDestino=%d)%n",
+                            txs.size(), actor.getId(), sample.getDestinationAccount().getId())
+                        ));
                 }
             } else {
                 if (txs.size() >= maxTransfersSameBeneficiary) {
-                    System.out.printf("⚠️ Alerta: demasiadas transferencias (%d) al mismo beneficiario externo (userId=%d, cuentaDestino=%d)%n",
-                        txs.size(), actor.getId(), sample.getDestinationAccount().getId());
+                    alerts.add(new RecurringBeneficiaryAlert(
+                        actor.getId(),
+                        LocalDateTime.now(),
+                        String.format("⚠️ Alerta: demasiadas transferencias (%d) al mismo beneficiario externo (userId=%d, cuentaDestino=%d)%n",
+                            txs.size(), actor.getId(), sample.getDestinationAccount().getId())
+                    ));
                 }
             }
         }
+        return alerts;
     }
 }
 
