@@ -3,6 +3,7 @@ package com.pei.repository;
 import com.pei.domain.Account.Account;
 import com.pei.domain.Account.AccountType;
 import com.pei.domain.Transaction;
+import com.pei.domain.Transaction.TransactionStatus;
 import com.pei.domain.User.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -57,32 +58,40 @@ class TransactionRepositoryTest {
         accountUser2.setType(AccountType.CUENTA_CORRIENTE);
         accountRepository.save(accountUser2);
 
+        // Usar fechas fijas para evitar problemas de precisión
+        LocalDateTime now = LocalDateTime.of(2024, 1, 1, 12, 0, 0);
+        LocalDateTime fourHoursAgo = now.minusHours(4);
+        LocalDateTime oneDayAgo = now.minusDays(1);
+
         // Crear transacciones
         Transaction oldTransaction = new Transaction(
             user1,
             BigDecimal.valueOf(100),
-            LocalDateTime.now().minusDays(1),
+            oneDayAgo,
             accountUser1,
             accountUser2 // distinto dueño
         );
+        oldTransaction.setStatus(TransactionStatus.APROBADA);
         transactionRepository.save(oldTransaction);
 
         Transaction latestTransaction1 = new Transaction(
             user1,
             BigDecimal.valueOf(200),
-            LocalDateTime.now(), // Ultima Transacción
+            now, // Ultima Transacción
             accountUser1,
             accountUser2 // distinto dueño
         );
+        latestTransaction1.setStatus(TransactionStatus.APROBADA);
         transactionRepository.save(latestTransaction1);
 
         Transaction latestTransaction2 = new Transaction(
             user1,
             BigDecimal.valueOf(500),
-            LocalDateTime.now().minusHours(4),
+            fourHoursAgo,
             accountUser1,
             accountUser2 // distinto dueño
         );
+        latestTransaction2.setStatus(TransactionStatus.APROBADA);
         transactionRepository.save(latestTransaction2);
 
         // La lista debe estar ordenada de forma que la última transacción sea la primera
@@ -136,6 +145,7 @@ class TransactionRepositoryTest {
             accountUser2,
             accountUser1 // distinto dueño
         );
+        oldTransaction.setStatus(TransactionStatus.APROBADA);
         transactionRepository.save(oldTransaction);
 
         Transaction latestTransaction1 = new Transaction(
@@ -145,6 +155,7 @@ class TransactionRepositoryTest {
             accountUser2,
             accountUser1 // distinto dueño
         );
+        latestTransaction1.setStatus(TransactionStatus.APROBADA);
         transactionRepository.save(latestTransaction1);
 
         Transaction latestTransaction2 = new Transaction(
@@ -154,6 +165,7 @@ class TransactionRepositoryTest {
             accountUser2,
             accountUser1 // distinto dueño
         );
+        latestTransaction2.setStatus(TransactionStatus.APROBADA);
         transactionRepository.save(latestTransaction2);
 
         // La lista debe estar ordenada de forma que la última transacción sea la primera
@@ -207,6 +219,7 @@ class TransactionRepositoryTest {
             accountUser1,
             accountUser2 // distinto dueño
         );
+        transfer1.setStatus(TransactionStatus.APROBADA);
         transactionRepository.save(transfer1);
 
         Transaction deposit = new Transaction(
@@ -216,6 +229,7 @@ class TransactionRepositoryTest {
             accountUser2,
             accountUser1 // Depósito
         );
+        deposit.setStatus(TransactionStatus.APROBADA);
         transactionRepository.save(deposit);
 
         Transaction transfer2 = new Transaction(
@@ -225,6 +239,7 @@ class TransactionRepositoryTest {
             accountUser1,
             accountUser2 // distinto dueño
         );
+        transfer2.setStatus(TransactionStatus.APROBADA);
         transactionRepository.save(transfer2);
 
         // La lista debe contener solo las transferencias ordenadas, no los depósitos
