@@ -1,8 +1,8 @@
 package com.pei.service;
 
-import com.pei.domain.Account;
+import com.pei.domain.Account.Account;
 import com.pei.domain.Transaction;
-import com.pei.domain.User;
+import com.pei.domain.User.User;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;

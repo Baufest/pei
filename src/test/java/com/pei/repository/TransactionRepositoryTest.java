@@ -1,8 +1,9 @@
 package com.pei.repository;
 
-import com.pei.domain.Account;
+import com.pei.domain.Account.Account;
+import com.pei.domain.Account.AccountType;
 import com.pei.domain.Transaction;
-import com.pei.domain.User;
+import com.pei.domain.User.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,11 +50,11 @@ class TransactionRepositoryTest {
 
         // Crear cuentas
         Account accountUser1 = new Account(user1);
-        accountUser1.setType("SAVINGS");
+        accountUser1.setType(AccountType.CUENTA_CORRIENTE);
         accountRepository.save(accountUser1);
 
         Account accountUser2 = new Account(user2);
-        accountUser2.setType("SAVINGS");
+        accountUser2.setType(AccountType.CUENTA_CORRIENTE);
         accountRepository.save(accountUser2);
 
         // Crear transacciones
@@ -120,11 +121,11 @@ class TransactionRepositoryTest {
 
         // Crear cuentas
         Account accountUser1 = new Account(user1);
-        accountUser1.setType("SAVINGS");
+        accountUser1.setType(AccountType.CUENTA_CORRIENTE);
         accountRepository.save(accountUser1);
 
         Account accountUser2 = new Account(user2);
-        accountUser2.setType("SAVINGS");
+        accountUser2.setType(AccountType.CUENTA_CORRIENTE);
         accountRepository.save(accountUser2);
 
         // Crear transacciones
@@ -191,11 +192,11 @@ class TransactionRepositoryTest {
 
         // Crear cuentas
         Account accountUser1 = new Account(user1);
-        accountUser1.setType("SAVINGS");
+        accountUser1.setType(AccountType.CUENTA_CORRIENTE);
         accountRepository.save(accountUser1);
 
         Account accountUser2 = new Account(user2);
-        accountUser2.setType("SAVINGS");
+        accountUser2.setType(AccountType.CUENTA_CORRIENTE);
         accountRepository.save(accountUser2);
 
         // Crear transacciones
@@ -252,11 +253,11 @@ class TransactionRepositoryTest {
 
         // Crear cuentas
         Account account1 = new Account(user);
-        account1.setType("CHECKING");
+        account1.setType(AccountType.CUENTA_CORRIENTE);
         accountRepository.save(account1);
 
         Account account2 = new Account(user);
-        account2.setType("SAVINGS");
+        account2.setType(AccountType.CUENTA_AHORROS);
         accountRepository.save(account2);
 
         // Crear transacciones

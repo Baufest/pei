@@ -33,9 +33,9 @@ import java.util.ArrayList;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.pei.domain.Account;
+import com.pei.domain.Account.Account;
 import com.pei.domain.Transaction;
-import com.pei.domain.User;
+import com.pei.domain.User.User;
 
 @ExtendWith(MockitoExtension.class)
 class TransactionServiceTest {

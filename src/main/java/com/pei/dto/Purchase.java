@@ -1,6 +1,6 @@
 package com.pei.dto;
 
-import com.pei.domain.User;
+import com.pei.domain.User.User;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
