@@ -50,11 +50,11 @@ class TransactionRepositoryTest {
 
         // Crear cuentas
         Account accountUser1 = new Account(user1);
-        accountUser1.setType(AccountType.CUENTA_CORRIENTE);
+        accountUser1.setAccountType(AccountType.CUENTA_CORRIENTE);
         accountRepository.save(accountUser1);
 
         Account accountUser2 = new Account(user2);
-        accountUser2.setType(AccountType.CUENTA_CORRIENTE);
+        accountUser2.setAccountType(AccountType.CUENTA_CORRIENTE);
         accountRepository.save(accountUser2);
 
         // Crear transacciones
@@ -121,11 +121,11 @@ class TransactionRepositoryTest {
 
         // Crear cuentas
         Account accountUser1 = new Account(user1);
-        accountUser1.setType(AccountType.CUENTA_CORRIENTE);
+        accountUser1.setAccountType(AccountType.CUENTA_CORRIENTE);
         accountRepository.save(accountUser1);
 
         Account accountUser2 = new Account(user2);
-        accountUser2.setType(AccountType.CUENTA_CORRIENTE);
+        accountUser2.setAccountType(AccountType.CUENTA_CORRIENTE);
         accountRepository.save(accountUser2);
 
         // Crear transacciones
@@ -192,11 +192,11 @@ class TransactionRepositoryTest {
 
         // Crear cuentas
         Account accountUser1 = new Account(user1);
-        accountUser1.setType(AccountType.CUENTA_CORRIENTE);
+        accountUser1.setAccountType(AccountType.CUENTA_CORRIENTE);
         accountRepository.save(accountUser1);
 
         Account accountUser2 = new Account(user2);
-        accountUser2.setType(AccountType.CUENTA_CORRIENTE);
+        accountUser2.setAccountType(AccountType.CUENTA_CORRIENTE);
         accountRepository.save(accountUser2);
 
         // Crear transacciones
