@@ -1,9 +1,11 @@
 package com.pei.service;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
@@ -29,9 +31,9 @@ public class TransactionService {
     private final ScoringServiceInterno scoringServiceInterno;
     private final Gson gson;
 
-    public TransactionService(ChargebackRepository chargebackRepository, 
-    PurchaseRepository purchaseRepository, TransactionRepository transactionRepository, 
-    TransactionVelocityDetectorService transactionVelocityDetectorService,
+    public TransactionService(ChargebackRepository chargebackRepository,
+            PurchaseRepository purchaseRepository, TransactionRepository transactionRepository,
+            TransactionVelocityDetectorService transactionVelocityDetectorService,
             Gson gson, ScoringServiceInterno scoringServiceInterno) {
         this.chargebackRepository = chargebackRepository;
         this.purchaseRepository = purchaseRepository;
@@ -145,27 +147,35 @@ public class TransactionService {
         }
         return new Alert(idCliente, msj);
     }
-    
+
     public Alert getFastMultipleTransactionAlert(Long userId, String clientType) {
 
-        Integer minutesRange = clientType.equals("individuo") ? 
-            transactionVelocityDetectorService.getIndividuoMinutesRange() : 
-            transactionVelocityDetectorService.getEmpresaMinutesRange();
-        
-        Integer maxTransactions = clientType.equals("individuo") ? 
-            transactionVelocityDetectorService.getIndividuoMaxTransactions() : 
-            transactionVelocityDetectorService.getEmpresaMaxTransactions();
+        Integer minutesRange;
+        Integer maxTransactions;
+        BigDecimal minMonto;
+        BigDecimal maxMonto;
+
+        if ("individuo".equals(clientType)) {
+            minutesRange = transactionVelocityDetectorService.getIndividuoMinutesRange();
+            maxTransactions = transactionVelocityDetectorService.getIndividuoMaxTransactions();
+            minMonto = transactionVelocityDetectorService.getIndividuoUmbralMonto().get("minMonto");
+            maxMonto = transactionVelocityDetectorService.getIndividuoUmbralMonto().get("maxMonto");
+        } else {
+            minutesRange = transactionVelocityDetectorService.getEmpresaMinutesRange();
+            maxTransactions = transactionVelocityDetectorService.getEmpresaMaxTransactions();
+            minMonto = transactionVelocityDetectorService.getEmpresaUmbralMonto().get("minMonto");
+            maxMonto = transactionVelocityDetectorService.getEmpresaUmbralMonto().get("maxMonto");
+        }
 
         LocalDateTime fromDate = LocalDateTime.now().minusMinutes(minutesRange);
-        Integer numMaxTransactions = maxTransactions;
-        Integer numTransactions = transactionRepository.countTransactionsFromDate(userId, fromDate);
+        int numTransactions = transactionRepository
+                .countTransactionsByUserAfterDateBetweenMontos(userId, fromDate, minMonto, maxMonto);
 
-        if (numTransactions > numMaxTransactions){
+        if (numTransactions > maxTransactions) {
             return new Alert(userId, "Fast multiple transactions detected for user " + userId);
         }
 
-        Alert fastMultipleTransactionAlert = null;
-        return fastMultipleTransactionAlert;
+        return null;
     }
 
     public Optional<Transaction> getMostRecentTransferByUserId(Long userId) {
@@ -179,7 +189,8 @@ public class TransactionService {
         // Calcula la diferencia en minutos entre el evento y la transferencia
         long minutesDifference = Duration.between(eventDateHour, transferDate).toMinutes();
 
-        // Considera sospechoso si la transferencia es posterior al evento y dentro de 60 minutos
+        // Considera sospechoso si la transferencia es posterior al evento y dentro de
+        // 60 minutos
         return minutesDifference >= 0 && minutesDifference <= 60;
     }
 
