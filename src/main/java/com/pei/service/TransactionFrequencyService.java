@@ -6,7 +6,7 @@ import com.pei.domain.Account.AccountType;
 import com.pei.domain.Transaction;
 import com.pei.domain.User.ClientType;
 import com.pei.domain.User.User;
-import com.pei.dto.RecurringBeneficiaryAlert;
+import com.pei.domain.alerts.RecurringBeneficiaryAlert;
 import com.pei.repository.RecurringBeneficiaryAlertRepository;
 import org.springframework.stereotype.Service;
 
@@ -55,11 +55,19 @@ public class TransactionFrequencyService {
     private void verifyCompanyClientFrequency(List<Transaction> transactions) {
         List<RecurringBeneficiaryAlert> alerts = checkFrequency(transactions, companyProps);
 
+        if(alerts.isEmpty()) {
+            return;
+        }
+
         recurringBeneficiaryAlertRepository.saveAll(alerts);
     }
 
     private void verifyIndividualClientFrequency(List<Transaction> transactions) {
         List<RecurringBeneficiaryAlert> alerts = checkFrequency(transactions, individualProps);
+
+        if(alerts.isEmpty()) {
+            return;
+        }
 
         recurringBeneficiaryAlertRepository.saveAll(alerts);
     }

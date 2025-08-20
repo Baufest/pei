@@ -1,6 +1,6 @@
 package com.pei.repository;
 
-import com.pei.dto.RecurringBeneficiaryAlert;
+import com.pei.domain.alerts.RecurringBeneficiaryAlert;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

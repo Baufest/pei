@@ -1,4 +1,4 @@
-package com.pei.dto;
+package com.pei.domain.alerts;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
