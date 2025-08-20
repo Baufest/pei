@@ -1,8 +1,8 @@
 package com.pei.repository;
 
-import com.pei.domain.Account;
+import com.pei.domain.Account.*;
 import com.pei.domain.Transaction;
-import com.pei.domain.User;
+import com.pei.domain.User.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +31,7 @@ class TransactionRepositoryTest {
     void findRecentTransferByUserId_shouldReturnMostTransfer() {
         // Crear usuarios
         User user1 = new User();
+        user1.setClientType(ClientType.INDIVIDUAL);
         user1.setName("Juan");
         user1.setRisk("LOW");
         user1.setProfile("NORMAL");
@@ -40,6 +41,7 @@ class TransactionRepositoryTest {
         userRepository.save(user1);
 
         User user2 = new User();
+        user2.setClientType(ClientType.INDIVIDUAL);
         user2.setName("Pedro");
         user2.setRisk("LOW");
         user2.setProfile("NORMAL");
@@ -49,11 +51,11 @@ class TransactionRepositoryTest {
 
         // Crear cuentas
         Account accountUser1 = new Account(user1);
-        accountUser1.setType("SAVINGS");
+        accountUser1.setType(AccountType.CUENTA_AHORROS);
         accountRepository.save(accountUser1);
 
         Account accountUser2 = new Account(user2);
-        accountUser2.setType("SAVINGS");
+        accountUser2.setType(AccountType.CUENTA_AHORROS);
         accountRepository.save(accountUser2);
 
         // Crear transacciones
@@ -103,6 +105,7 @@ class TransactionRepositoryTest {
     void Should_ReturnEmptyList_When_NoContainsTransfers() {
         // Crear usuarios
         User user1 = new User();
+        user1.setClientType(ClientType.INDIVIDUAL);
         user1.setName("Juan");
         user1.setRisk("LOW");
         user1.setProfile("NORMAL");
@@ -111,6 +114,7 @@ class TransactionRepositoryTest {
         userRepository.save(user1);
 
         User user2 = new User();
+        user2.setClientType(ClientType.INDIVIDUAL);
         user2.setName("Pedro");
         user2.setRisk("LOW");
         user2.setProfile("NORMAL");
@@ -120,11 +124,11 @@ class TransactionRepositoryTest {
 
         // Crear cuentas
         Account accountUser1 = new Account(user1);
-        accountUser1.setType("SAVINGS");
+        accountUser1.setType(AccountType.CUENTA_AHORROS);
         accountRepository.save(accountUser1);
 
         Account accountUser2 = new Account(user2);
-        accountUser2.setType("SAVINGS");
+        accountUser2.setType(AccountType.CUENTA_AHORROS);
         accountRepository.save(accountUser2);
 
         // Crear transacciones
@@ -174,6 +178,7 @@ class TransactionRepositoryTest {
     void Should_ReturnOnlyTransfers_When_ContainsTransfersAndDeposits() {
         // Crear usuarios
         User user1 = new User();
+        user1.setClientType(ClientType.INDIVIDUAL);
         user1.setName("Juan");
         user1.setRisk("LOW");
         user1.setProfile("NORMAL");
@@ -182,6 +187,7 @@ class TransactionRepositoryTest {
         userRepository.save(user1);
 
         User user2 = new User();
+        user2.setClientType(ClientType.INDIVIDUAL);
         user2.setName("Pedro");
         user2.setRisk("LOW");
         user2.setProfile("NORMAL");
@@ -191,11 +197,11 @@ class TransactionRepositoryTest {
 
         // Crear cuentas
         Account accountUser1 = new Account(user1);
-        accountUser1.setType("SAVINGS");
+        accountUser1.setType(AccountType.CUENTA_AHORROS);
         accountRepository.save(accountUser1);
 
         Account accountUser2 = new Account(user2);
-        accountUser2.setType("SAVINGS");
+        accountUser2.setType(AccountType.CUENTA_AHORROS);
         accountRepository.save(accountUser2);
 
         // Crear transacciones

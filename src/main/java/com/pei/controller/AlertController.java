@@ -1,9 +1,7 @@
 package com.pei.controller;
 
 import com.pei.domain.Transaction;
-import com.pei.dto.Alert;
-import com.pei.dto.Logins;
-import com.pei.dto.TimeRangeRequest;
+import com.pei.dto.*;
 import com.pei.service.AlertService;
 import com.pei.service.ClienteService;
 
@@ -23,12 +21,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import com.pei.domain.Account;
+import com.pei.domain.Account.Account;
 
 import com.pei.domain.UserEvent.UserEvent;
 
-import com.pei.dto.TransferRequest;
-import com.pei.dto.UserTransaction;
 import com.pei.service.AccountService;
 
 @RestController
@@ -256,6 +252,20 @@ public class AlertController {
 
         } catch (Exception e) {
             return ResponseEntity.status(400).body(new Alert(null, "Error: No se han proporcionado eventos de usuario."));
+        }
+    }
+
+    @PostMapping("/alerta/comportamiento")
+    public ResponseEntity<Alert> checkUnusualBehavior(@RequestBody Transaction transaction) {
+        try {
+            Alert alerta = alertService.evaluateTransactionBehavior(transaction);
+            if (alerta != null) {
+                return ResponseEntity.ok(alerta);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new Alert(null, "Error interno del servidor. No se pudo procesar la solicitud."));
         }
     }
 

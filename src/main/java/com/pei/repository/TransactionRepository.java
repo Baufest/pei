@@ -26,4 +26,5 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     ORDER BY t.date DESC
     """)
     List<Transaction> findRecentTransferByUserId(@Param("userId") Long userId);
+    List<Transaction> findByUserId(Long userId);
 }

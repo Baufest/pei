@@ -1,24 +1,32 @@
 package com.pei.service;
 
-import com.pei.domain.Account;
+import com.pei.config.AlertProperties;
+import com.pei.domain.Account.Account;
 import com.pei.domain.Transaction;
 import com.pei.domain.*;
-import com.pei.dto.Alert;
+import com.pei.domain.User.User;
+import com.pei.dto.*;
+import com.pei.repository.TransactionRepository;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
+import java.time.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 import static com.pei.service.CriticalityService.getCriticality;
 
 @Service
 public class AlertService {
+
     private TransactionService transactionService;
     private NotificationService notificationService;
+    private TransactionRepository transactionRepository;
 
-    public AlertService(TransactionService transactionService, NotificationService notificationService) {
+    public AlertService(TransactionService transactionService, NotificationService notificationService,  TransactionRepository transactionRepository) {
         this.notificationService = notificationService;
         this.transactionService = transactionService;
+        this.transactionRepository = transactionRepository;
     }
 
     public Alert approvalAlert(Long transactionId) {
@@ -86,4 +94,29 @@ public class AlertService {
             return new Alert(transaction.getId(), "Transacción con ID = " + transaction.getId() + " tiene criticidad baja. Se le notificará mediante Slack.");
         }
     }
+
+    /**
+     * Método principal que evalúa la transacción y devuelve la primera alerta encontrada.
+     * La lógica de verificación de monto y comportamiento está delegada a métodos auxiliares.
+     */
+    public Alert evaluateTransactionBehavior(Transaction transaction) {
+        User user = transaction.getUser();
+
+        // 1. Verificación de monto inusual
+        Alert amountAlert = transactionService.checkUnusualAmount(user, transaction.getAmount());
+        if (amountAlert != null) {
+            return amountAlert;
+        }
+
+        // 2. Verificación de comportamiento inusual (dispositivo nuevo + horario fuera del rango)
+        Alert behaviorAlert = transactionService.checkUnusualBehavior(user, transaction);
+        if (behaviorAlert != null) {
+            return behaviorAlert;
+        }
+
+        return new Alert(user.getId(), "Alerta estándar");
+    }
+
+
+
 }
