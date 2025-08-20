@@ -49,7 +49,7 @@ class TransactionServiceTest {
     @Mock
     private TransactionVelocityDetectorService transactionVelocityDetectorService;
     @Mock
-    private ScoringServiceInterno scoringServiceInterno;
+    private ScoringRangesService scoringServiceInterno;
     @Mock
     private Gson gson;
     @InjectMocks
@@ -316,125 +316,129 @@ class TransactionServiceTest {
         verify(transactionRepository).countTransactionsFromDate(eq(userId), any(LocalDateTime.class));
     }
 
-    @Test
-    void processTransaction_CuandoStatusDistintoDe200_RetornaAlertRechazada() {
+@Test
+void processTransactionScoring_CuandoStatusDistintoDe200_RetornaAlertRechazada() {
         Long idCliente = 1L;
+        String clientType = "individuo";
         String scoringJson = "{\"status\":500,\"mensaje\":\"Error interno del servidor de scoring\",\"timestamp\":2025-08-18T10:00:00Z}";
 
         try (MockedStatic<ScoringService> mocked = Mockito.mockStatic(ScoringService.class)) {
                 mocked.when(() -> ScoringService.consultarScoring(idCliente.intValue()))
-                    .thenReturn(scoringJson);
+                        .thenReturn(scoringJson);
 
-            JsonObject fakeJson = new JsonObject();
-            fakeJson.addProperty("status", 500);
-            fakeJson.addProperty("mensaje", "Error interno del servidor de scoring");
-            fakeJson.addProperty("timestamp", "2025-08-18T10:00:00Z");
+                JsonObject fakeJson = new JsonObject();
+                fakeJson.addProperty("status", 500);
+                fakeJson.addProperty("mensaje", "Error interno del servidor de scoring");
+                fakeJson.addProperty("timestamp", "2025-08-18T10:00:00Z");
 
-            when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
+                when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
 
-            Alert result = transactionService.processTransaction(idCliente);
+                Alert result = transactionService.processTransactionScoring(idCliente, clientType);
 
-            assertNotNull(result);
-            assertEquals(idCliente, result.userId());
-            assertTrue(result.description().contains("rechazada"));
+                assertNotNull(result);
+                assertEquals(idCliente, result.userId());
+                assertTrue(result.description().contains("rechazada"));
         }
-    }
+}
 
-    @Test
-    void processTransaction_CuandoColorVerde_RetornaAlertAprobada() {
+@Test
+void processTransactionScoring_CuandoColorVerde_RetornaAlertAprobada() {
         Long idCliente = 2L;
+        String clientType = "individuo";
         int scoringCliente = 70;
 
         String scoringJson = "{\"status\":200,\"mensaje\":\"Consulta exitosa\",\"idCliente\":2,\"scoring\":" +
-                scoringCliente + ",\"timestamp\":\"2025-08-18T10:00:00Z\"}";
+                        scoringCliente + ",\"timestamp\":\"2025-08-18T10:00:00Z\"}";
 
         try (MockedStatic<ScoringService> mocked = Mockito.mockStatic(ScoringService.class)) {
                 mocked.when(() -> ScoringService.consultarScoring(idCliente.intValue()))
-                    .thenReturn(scoringJson);
+                                .thenReturn(scoringJson);
 
-            JsonObject fakeJson = new JsonObject();
-            fakeJson.addProperty("status", 200);
-            fakeJson.addProperty("mensaje", "Consulta exitosa");
-            fakeJson.addProperty("idCliente", idCliente.intValue());
-            fakeJson.addProperty("scoring", scoringCliente);
-            fakeJson.addProperty("timestamp", "2025-08-18T10:00:00Z");
+                JsonObject fakeJson = new JsonObject();
+                fakeJson.addProperty("status", 200);
+                fakeJson.addProperty("mensaje", "Consulta exitosa");
+                fakeJson.addProperty("idCliente", idCliente.intValue());
+                fakeJson.addProperty("scoring", scoringCliente);
+                fakeJson.addProperty("timestamp", "2025-08-18T10:00:00Z");
 
-            when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
+                when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
 
-            when(scoringServiceInterno.getScoringColorBasedInUserScore(scoringCliente))
-                    .thenReturn("Verde");
+                when(scoringServiceInterno.getScoringColor(scoringCliente,clientType))
+                                .thenReturn("VERDE");
 
-            Alert result = transactionService.processTransaction(idCliente);
+                Alert result = transactionService.processTransactionScoring(idCliente, clientType);
 
-            assertNotNull(result);
-            assertEquals(idCliente, result.userId());
-            assertTrue(result.description().contains("aprobada"));
-            assertTrue(result.description().contains(String.valueOf(scoringCliente)));
+                assertNotNull(result);
+                assertEquals(idCliente, result.userId());
+                assertTrue(result.description().contains("aprobada"));
+                assertTrue(result.description().contains(String.valueOf(scoringCliente)));
         }
-    }
+}
 
-    @Test
-    void processTransaction_CuandoColorAmarillo_RetornaAlertRevision() {
+@Test
+void processTransactionScoring_CuandoColorAmarillo_RetornaAlertRevision() {
         Long idCliente = 3L;
+        String clientType = "individuo";
         int scoringCliente = 60;
         String scoringJson = "{\"status\":200,\"mensaje\":\"Consulta exitosa\",\"idCliente\":3,\"scoring\":" +
-                scoringCliente + ",\"timestamp\":\"2025-08-18T10:00:00Z\"}";
+                        scoringCliente + ",\"timestamp\":\"2025-08-18T10:00:00Z\"}";
 
         try (MockedStatic<ScoringService> mocked = Mockito.mockStatic(ScoringService.class)) {
                 mocked.when(() -> ScoringService.consultarScoring(idCliente.intValue()))
-                    .thenReturn(scoringJson);
+                                .thenReturn(scoringJson);
 
-            JsonObject fakeJson = new JsonObject();
-            fakeJson.addProperty("status", 200);
-            fakeJson.addProperty("mensaje", "Consulta exitosa");
-            fakeJson.addProperty("idCliente", idCliente.intValue());
-            fakeJson.addProperty("scoring", scoringCliente);
-            fakeJson.addProperty("timestamp", "2025-08-18T10:00:00Z");
+                JsonObject fakeJson = new JsonObject();
+                fakeJson.addProperty("status", 200);
+                fakeJson.addProperty("mensaje", "Consulta exitosa");
+                fakeJson.addProperty("idCliente", idCliente.intValue());
+                fakeJson.addProperty("scoring", scoringCliente);
+                fakeJson.addProperty("timestamp", "2025-08-18T10:00:00Z");
 
-            when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
+                when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
 
-            when(scoringServiceInterno.getScoringColorBasedInUserScore(scoringCliente))
-                    .thenReturn("Amarillo");
+                when(scoringServiceInterno.getScoringColor(scoringCliente,clientType))
+                                .thenReturn("AMARILLO");
 
-            Alert result = transactionService.processTransaction(idCliente);
+                Alert result = transactionService.processTransactionScoring(idCliente, clientType);
 
-            assertNotNull(result);
-            assertEquals(idCliente, result.userId());
-            assertTrue(result.description().contains("revision"));
-            assertTrue(result.description().contains(String.valueOf(scoringCliente)));
+                assertNotNull(result);
+                assertEquals(idCliente, result.userId());
+                assertTrue(result.description().contains("revision"));
+                assertTrue(result.description().contains(String.valueOf(scoringCliente)));
         }
-    }
+}
 
-    @Test
-    void processTransaction_CuandoColorRojo_RetornaAlertRechazada() {
+@Test
+void processTransactionScoring_CuandoColorRojo_RetornaAlertRechazada() {
         Long idCliente = 4L;
+        String clientType = "individuo";
         int scoringCliente = 20;
 
         String scoringJson = "{\"status\":200,\"mensaje\":\"Consulta exitosa\",\"idCliente\":4,\"scoring\":" +
-                scoringCliente + ",\"timestamp\":\"2025-08-18T10:00:00Z\"}";
+                        scoringCliente + ",\"timestamp\":\"2025-08-18T10:00:00Z\"}";
 
         try (MockedStatic<ScoringService> mocked = Mockito.mockStatic(ScoringService.class)) {
                 mocked.when(() -> ScoringService.consultarScoring(idCliente.intValue()))
-                    .thenReturn(scoringJson);
+                                .thenReturn(scoringJson);
 
-            JsonObject fakeJson = new JsonObject();
-            fakeJson.addProperty("status", 200);
-            fakeJson.addProperty("mensaje", "Consulta exitosa");
-            fakeJson.addProperty("idCliente", idCliente.intValue());
-            fakeJson.addProperty("scoring", scoringCliente);
-            fakeJson.addProperty("timestamp", "2025-08-18T10:00:00Z");
+                JsonObject fakeJson = new JsonObject();
+                fakeJson.addProperty("status", 200);
+                fakeJson.addProperty("mensaje", "Consulta exitosa");
+                fakeJson.addProperty("idCliente", idCliente.intValue());
+                fakeJson.addProperty("scoring", scoringCliente);
+                fakeJson.addProperty("timestamp", "2025-08-18T10:00:00Z");
 
-            when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
+                when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
 
-            when(scoringServiceInterno.getScoringColorBasedInUserScore(scoringCliente))
-                    .thenReturn("Rojo");
+                when(scoringServiceInterno.getScoringColor(scoringCliente,clientType))
+                                .thenReturn("ROJO");
 
-            Alert result = transactionService.processTransaction(idCliente);
+                Alert result = transactionService.processTransactionScoring(idCliente, clientType);
 
-            assertNotNull(result);
-            assertEquals(idCliente, result.userId());
-            assertTrue(result.description().contains("rechazada"));
-            assertTrue(result.description().contains(String.valueOf(scoringCliente)));
+                assertNotNull(result);
+                assertEquals(idCliente, result.userId());
+                assertTrue(result.description().contains("rechazada"));
+                assertTrue(result.description().contains(String.valueOf(scoringCliente)));
         }
-    }
+}
 }
