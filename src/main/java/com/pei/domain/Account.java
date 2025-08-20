@@ -31,7 +31,7 @@ public class Account {
     @JoinColumn(name = "owner", referencedColumnName = "id", nullable = false)
     private User owner;
 
-    @Column
+    @Column(nullable = false)
     private String country;
 
     public Account() {

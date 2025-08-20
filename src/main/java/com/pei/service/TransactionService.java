@@ -142,17 +142,23 @@ public class TransactionService {
 
     // @Transactional
 public Alert processTransactionCountryInternational(Transaction transaction){
-    if(transaction == null){
-        throw new IllegalArgumentException("Transaction cannot be null in processTransactionCountryInternational");
+    if(transaction == null || transaction.getSourceAccount() == null || transaction.getDestinationAccount() == null){
+        throw new IllegalArgumentException("Transaction and accounts cannot be null in processTransactionCountryInternational");
+    }
+
+    String origen = transaction.getSourceAccount().getCountry();
+    String destino = transaction.getDestinationAccount().getCountry();
+
+    
+    if (riskCountryService.isRiskCountry(origen) || riskCountryService.isRiskCountry(destino)) {
+        transaction.setStatus(Transaction.TransactionStatus.REQUIERE_APROBACION);
+        return new Alert(transaction.getUser().getId(),
+                "Alerta: Transacción hacia/desde país de riesgo (origen: " + origen + ", destino: " + destino + ")");
     }
 
     if(transaction.isInternational()){
 
-        if(riskCountryService.isRiskCountry(transaction.getDestinationAccount().getCountry())){
-            transaction.setStatus(Transaction.TransactionStatus.REQUIERE_APROBACION);
-            return new Alert(transaction.getUser().getId(), 
-                    "Alerta: Transacción internacional hacia un país de riesgo");
-        } else if (transaction.getAmount().compareTo(transactionParamsService.getMontoAlertaInternacional()) > 0) {
+        if (transaction.getAmount().compareTo(transactionParamsService.getMontoAlertaInternacional()) > 0) {
             transaction.setStatus(Transaction.TransactionStatus.APROBADA);
 
             Alert alert = new Alert(transaction.getUser().getId(),
