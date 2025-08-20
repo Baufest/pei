@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.pei.domain.AlertaSeveridad;
 import com.pei.domain.TimeRange;
 import com.pei.domain.Transaction;
 import java.util.Optional;
@@ -27,18 +28,20 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final TransactionVelocityDetectorService transactionVelocityDetectorService;
     private final ScoringServiceInterno scoringServiceInterno;
+    private final CheckSeverityService checkSeverityService;
     private final Gson gson;
 
-    public TransactionService(ChargebackRepository chargebackRepository, 
-    PurchaseRepository purchaseRepository, TransactionRepository transactionRepository, 
-    TransactionVelocityDetectorService transactionVelocityDetectorService,
-            Gson gson, ScoringServiceInterno scoringServiceInterno) {
+    public TransactionService(ChargebackRepository chargebackRepository,
+            PurchaseRepository purchaseRepository, TransactionRepository transactionRepository,
+            TransactionVelocityDetectorService transactionVelocityDetectorService,
+            Gson gson, ScoringServiceInterno scoringServiceInterno, CheckSeverityService checkSeverityService) {
         this.chargebackRepository = chargebackRepository;
         this.purchaseRepository = purchaseRepository;
         this.transactionRepository = transactionRepository;
         this.transactionVelocityDetectorService = transactionVelocityDetectorService;
         this.gson = gson;
         this.scoringServiceInterno = scoringServiceInterno;
+        this.checkSeverityService = checkSeverityService;
     }
 
     // TODO: Probablemente tengamos que hacer una Query SQL para obtener las
@@ -145,22 +148,22 @@ public class TransactionService {
         }
         return new Alert(idCliente, msj);
     }
-    
+
     public Alert getFastMultipleTransactionAlert(Long userId, String clientType) {
 
-        Integer minutesRange = clientType.equals("individuo") ? 
-            transactionVelocityDetectorService.getIndividuoMinutesRange() : 
-            transactionVelocityDetectorService.getEmpresaMinutesRange();
-        
-        Integer maxTransactions = clientType.equals("individuo") ? 
-            transactionVelocityDetectorService.getIndividuoMaxTransactions() : 
-            transactionVelocityDetectorService.getEmpresaMaxTransactions();
+        Integer minutesRange = clientType.equals("individuo")
+                ? transactionVelocityDetectorService.getIndividuoMinutesRange()
+                : transactionVelocityDetectorService.getEmpresaMinutesRange();
+
+        Integer maxTransactions = clientType.equals("individuo")
+                ? transactionVelocityDetectorService.getIndividuoMaxTransactions()
+                : transactionVelocityDetectorService.getEmpresaMaxTransactions();
 
         LocalDateTime fromDate = LocalDateTime.now().minusMinutes(minutesRange);
         Integer numMaxTransactions = maxTransactions;
         Integer numTransactions = transactionRepository.countTransactionsFromDate(userId, fromDate);
 
-        if (numTransactions > numMaxTransactions){
+        if (numTransactions > numMaxTransactions) {
             return new Alert(userId, "Fast multiple transactions detected for user " + userId);
         }
 
@@ -179,8 +182,33 @@ public class TransactionService {
         // Calcula la diferencia en minutos entre el evento y la transferencia
         long minutesDifference = Duration.between(eventDateHour, transferDate).toMinutes();
 
-        // Considera sospechoso si la transferencia es posterior al evento y dentro de 60 minutos
+        // Considera sospechoso si la transferencia es posterior al evento y dentro de
+        // 60 minutos
         return minutesDifference >= 0 && minutesDifference <= 60;
+    }
+
+    public Alert checkTransactionAmount(Transaction t) {
+        String msj = "No hay nada malo aca.";
+        Long idCliente = t.getUser().getId();
+
+        AlertaSeveridad result = checkSeverityService.checkSeveridad(t);
+
+        switch (result.toString()) {
+            case "BAJA":
+                msj = "Alerta BAJA: Monto bajo";
+                break;
+            case "MEDIA":
+                msj = "Alerta MEDIA: Monto maomeno";
+                break;
+            case "ALTA":
+                msj = "Alerta ALTA: Monto grande y cuenta nueva";
+                break;
+            default:
+                msj = "Alerta ALTA: Monto grande y cuenta nueva";
+                break;
+        }
+
+        return new Alert(idCliente, msj);
     }
 
 }
