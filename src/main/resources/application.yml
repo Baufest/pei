@@ -11,9 +11,13 @@ velocity-transaction-params:
     individuo:
         minutes-range: 10
         max-transactions: 5
+        min-monto: 10000
+        max-monto: 50000
     empresa:
         minutes-range: 10
         max-transactions: 20
+        min-monto: 150000
+        max-monto: 400000
 
 transaction:
     frequency:

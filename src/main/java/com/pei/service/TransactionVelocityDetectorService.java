@@ -1,5 +1,8 @@
 package com.pei.service;
 
+import java.math.BigDecimal;
+import java.util.Map;
+
 import org.springframework.stereotype.Service;
 import com.pei.config.VelocityTransactionsProperties;
 
@@ -23,8 +26,16 @@ public class TransactionVelocityDetectorService {
         return config.getIndividuoMaxTransactions();
     }
 
-    public Integer getEmpresaMaxTransactions () {
+    public Integer getEmpresaMaxTransactions() {
         return config.getEmpresaMaxTransactions();
+    }
+
+    public Map<String, BigDecimal> getIndividuoUmbralMonto() {
+        return config.getIndividuoUmbralMonto();
+    }
+
+    public Map<String, BigDecimal> getEmpresaUmbralMonto() {
+        return config.getEmpresaUmbralMonto();
     }
 
 }
