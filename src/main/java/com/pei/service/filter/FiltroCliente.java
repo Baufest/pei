@@ -1,6 +1,6 @@
 package com.pei.service.filter;
 
-import com.pei.domain.User;
+import com.pei.domain.User.User;
 
 // Interfaz con fin de filtrar clientes
 // que cumplen con una condición específica.

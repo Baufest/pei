@@ -1,7 +1,7 @@
 package com.pei.service;
 
 import com.pei.config.ClienteConfiableProperties;
-import com.pei.domain.User;
+import com.pei.domain.User.*;
 import com.pei.service.filter.FiltroCliente;
 import org.springframework.stereotype.Service;
 
@@ -36,16 +36,16 @@ public class ClienteConfiableService {
     // Cada filtro verifica una condición específica
     private boolean filtroAntiguedad(User cliente) {
         LocalDate fechaAlta = cliente.getCreationDate(); // Debe existir en User
-        double minima = config.getAntiguedad().getMinimoMedicion();
+        double minima = config.getConfigFor(ClientType.INDIVIDUAL).getAntiguedad().getMinimoMedicion();
 
-        ChronoUnit unidad = mapearUnidad(config.getAntiguedad().getMedicion());
+        ChronoUnit unidad = mapearUnidad(config.getConfigFor(ClientType.INDIVIDUAL).getAntiguedad().getMedicion());
         long diferencia = unidad.between(fechaAlta, LocalDate.now());
 
         return diferencia >= minima;
     }
 
     private boolean filtroChargeback(User cliente) {
-        int limite = config.getLimiteChargeback();
+        int limite = config.getConfigFor(ClientType.INDIVIDUAL).getLimiteChargeback();
         long cantidadChargebacks = cliente.getChargebacks() != null
             ? cliente.getChargebacks().size()
             : 0;
@@ -53,7 +53,7 @@ public class ClienteConfiableService {
     }
 
     private boolean filtroPerfil(User cliente) {
-        return config.getPerfilesNoConfiables()
+        return config.getConfigFor(ClientType.INDIVIDUAL).getPerfilesNoConfiables()
             .stream()
             .noneMatch(p -> p.equalsIgnoreCase(cliente.getProfile()));
     }

@@ -1003,7 +1003,7 @@ Se desarrolló el endpoint `/alerta-canales` que permite escalar alertas de tran
 - `com.pei.dto.ChannelAlertRequest`
 - `com.pei.dto.Alert`
 - `com.pei.domain.Transaction`
-- `com.pei.domain.User`
+- `com.pei.domain.User.User`
 
 ### Endpoints Nuevos/Modificados
 | Método HTTP | URL                  | Parámetros (Body)         | Respuesta                                      |
@@ -1398,3 +1398,124 @@ Content-Type: application/json
 - **Servicio de Alertas**  
   - Ubicación: `AlertService`
   - Descripción: Lógica de negocio para detección de patrones sospechosos en transacciones entre cuentas no relacionadas.  
+
+----
+
+## 👨‍💻 Historia de Usuario #249
+
+### 📝 Título
+Modificación de excepción para "Clientes Confiables"
+
+---
+
+### 📌 Descripción Breve
+Se implementa una lógica configurable para determinar si un cliente puede ser considerado confiable, permitiendo omitir ciertas validaciones en el sistema. La confiabilidad se basa en la antigüedad de la cuenta y el historial de chargebacks, con parámetros diferenciados para individuos y empresas. El objetivo es facilitar la adaptación de criterios sin modificar el código fuente.
+
+---
+
+### ⚙️ Detalles Técnicos
+
+#### 🧩 Clases/Métodos Afectados
+- `ClienteConfiableProperties`
+    - Configuración parametrizable por tipo de cliente (`INDIVIDUAL`, `COMPANY`)
+- `ClienteConfiableService`
+    - Método: `esClienteConfiable(User user)`
+- `User`
+    - Entidad que representa al cliente
+- `ClientType`
+    - Enum para distinguir tipo de cliente
+
+#### 🌐 Endpoints Nuevos/Modificados
+_No se introdujeron endpoints en esta implementación._
+
+#### 🗃️ Cambios en Base de Datos
+- No se realizaron cambios estructurales en la base de datos.
+
+#### 🗃️ Cambios en Configuración
+- Se agregó la sección `cliente.confiable.tipos` en `application.yml` para definir parámetros por tipo de cliente:
+    - `antiguedad.medicion`: Unidad de tiempo (MES, AÑO, etc.)
+    - `antiguedad.minimo-medicion`: Valor mínimo requerido
+    - `limite-chargeback`: Máximo de chargebacks permitidos
+
+**Ejemplo en `application.yml`:**
+```yaml
+cliente:
+    confiable:
+        tipos:
+            INDIVIDUAL:
+                antiguedad:
+                    medicion: MES
+                    minimo-medicion: 24
+                perfiles-no-confiables:
+                    - IRRECUPERABLE
+                limite-chargeback: 0
+            COMPANY:
+                antiguedad:
+                    medicion: MES
+                    minimo-medicion: 12
+                perfiles-no-confiables:
+                    - CRITICO
+                limite-chargeback: 0
+```
+
+---
+
+### 🔍 Impacto en el Sistema
+- Módulo afectado: `com.pei.service`, `com.pei.config`
+- Permite modificar criterios de confiabilidad sin cambios en el código.
+- Mejora la flexibilidad y mantenibilidad del sistema.
+
+---
+
+### 💻 Ejemplo de Uso
+
+**Request**
+```java
+User cliente = new User();
+cliente.setCreationDate(LocalDate.of(2020, 1, 1));
+cliente.setProfile("NORMAL");
+cliente.addChargebacks(new ArrayList<>());
+boolean confiable = clienteConfiableService.esClienteConfiable(cliente);
+```
+
+**Response**
+```java
+true // Si cumple con todos los filtros configurados
+```
+
+---
+
+## 🧪 Pruebas Unitarias
+
+### 🧪 Escenarios Cubiertos
+- `testCargaDesdeYaml`: Verifica que las propiedades se cargan correctamente desde el archivo de configuración.
+- `clienteCumpleTodosLosFiltros`: Cliente con más de 24 meses, sin chargebacks y perfil confiable → **confiable**.
+- `clienteFallaPorAntiguedad`: Cliente con solo 12 meses de antigüedad → **no confiable**.
+- `clienteFallaPorChargebacks`: Cliente con más de un chargeback → **no confiable**.
+- `clienteFallaPorPerfil`: Cliente con perfil "IRRECUPERABLE" → **no confiable**.
+- `getConfigFor_CuandoTipoEsCompany_RetornaConfiguracionCorrecta`: Verifica configuración para tipo empresa.
+- `getTipos_CuandoSeCargaYaml_RetornaMapConAmbosTipos`: Verifica que el mapa contiene ambos tipos.
+
+### 🧪 Endpoints Probados
+_No aplica, ya que no se expone vía API._
+
+---
+
+## ✅ Estado
+✔️ Completado
+
+---
+
+## 🔗 Integraciones Externas
+
+- No aplica. La lógica y configuración son internas al sistema.
+
+---
+
+## 📝 Cambios realizados
+
+- **application.yml**: Se parametrizó la lógica de confiabilidad por tipo de cliente.
+- **ClienteConfiableProperties**: Se implementó un mapa de configuración por tipo y métodos de acceso.
+- **ClienteConfiablePropertiesTest**: Se agregaron tests unitarios para verificar la carga y acceso a la configuración.
+
+---
