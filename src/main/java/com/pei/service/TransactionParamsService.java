@@ -27,12 +27,11 @@ public class TransactionParamsService {
         // transactionParamRepository.findAll().stream() //DESCOMENTAR TODO AL IMPLEMENTAR BD
         //         .filter(TransactionParam::isActive)
         //         .forEach(param -> cacheParams.put(param.getKeyName(), param.getValue()));
-        System.out.println("[TransactionParamService] Cache actualizado: " + cacheParams);
+        System.out.println("[TransactionParamsService] Cache actualizado: " + cacheParams);
     }
 
     public BigDecimal getMontoAlertaInternacional() {
         return new BigDecimal(cacheParams.getOrDefault("monto_alerta_internacional", "50000"));
     }
 
-    // Podés ir agregando más getters según lo que necesites
 }

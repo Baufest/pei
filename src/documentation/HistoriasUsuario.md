@@ -590,7 +590,7 @@ GET /api/alerta-cliente-alto-riesgo/1
 ```json
 {
   "userId": 1,
-  "description": "Alerta: El cliente es de alto riesgo."
+  "description": "Alerta: Cliente individual de alto riesgo, con chargebacks: 5"
 }
 ```
 
@@ -599,9 +599,12 @@ GET /api/alerta-cliente-alto-riesgo/1
 ## 🧪 Pruebas Unitarias
 
 ### 🧪 Escenarios Cubiertos
-- `testHighRiskUser`: Alerta si el usuario es de alto riesgo.
-- `testLowRiskUser`: Mensaje de verificado si el usuario es de bajo riesgo.
-- `testNotFoundUser`: Alerta si el usuario no es encontrado.
+- `testClientTypeNull`: Alerta si el clientType es null.
+- `testChargebacksMissing`: Alerta si chargebacks es null.
+- `testEmpresaHighRisk`: Alerta si el cliente empresa es de alto riesgo.
+- `testEmpretestIndividuoHighRisksaHighRisk`: Alerta si el cliente individuo es de alto riesgo.
+- `testClienteValidadoSinAlertas`: Alerta si el cliente es validado sin alertas de riesgo.
+- `testJsonProcessingException`: Alerta si el json está mal procesado.
 
 ### 🧪 Endpoints Probados
 | Método HTTP | URL                                 | Escenario de Test         | Resultado Esperado |

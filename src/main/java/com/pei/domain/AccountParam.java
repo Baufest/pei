@@ -5,18 +5,16 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "transaction_params")
-public class TransactionParam {
-
+public class AccountParam {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(unique = true, nullable = false)
-    private String keyName; // ej: "monto_alerta_internacional"
+    private String keyName; // ej: "monto_alerta_alto_riesgo"
 
     @Column(nullable = false)
     private String value; // guardado como String, lo convertís a BigDecimal/Integer/etc.
@@ -51,5 +49,4 @@ public class TransactionParam {
     public void setActive(boolean active) {
         this.active = active;
     }
-
 }
