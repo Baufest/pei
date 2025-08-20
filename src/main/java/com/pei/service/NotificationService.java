@@ -1,6 +1,6 @@
 package com.pei.service;
 
-import com.pei.domain.User;
+import com.pei.domain.User.User;
 import com.pei.domain.Transaction;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;

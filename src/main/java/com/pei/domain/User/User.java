@@ -1,11 +1,11 @@
-package com.pei.domain;
+package com.pei.domain.User;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
+import com.pei.domain.*;
+import com.pei.domain.Account.Account;
 import com.pei.dto.Chargeback;
 import com.pei.dto.Purchase;
 import jakarta.persistence.*;
@@ -46,7 +46,9 @@ public class User {
     @OneToMany(mappedBy = "user")
     private List<Chargeback> chargebacks = new ArrayList<>();
 
-    private String clientType;
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private ClientType clientType;
 
     @Column(nullable = false, unique = true) // email único y obligatorio
     private String email;
@@ -61,12 +63,14 @@ public class User {
     private TimeRange avgTimeRange;
 
 
-    public User() {}
+    public User() {
+    }
 
     public User(Long id) {
         this.id = id;
         this.accounts = new java.util.ArrayList<>();
     }
+
     public User(Long id, List<Account> accounts) {
         this.id = id;
         this.accounts = accounts;
@@ -136,12 +140,12 @@ public class User {
         this.creationDate = creationDate;
     }
 
-    public void setClientType(String clientType) {
-        this.clientType = clientType;
+    public ClientType getClientType() {
+        return clientType;
     }
 
-    public String getClientType() {
-        return clientType;
+    public void setClientType(ClientType clientType) {
+        this.clientType = clientType;
     }
 
     public BigDecimal getAverageMonthlySpending() {
@@ -187,4 +191,5 @@ public class User {
     public int hashCode() {
         return Objects.hash(id, name, risk, profile, averageMonthlySpending, creationDate, accounts, purchases, chargebacks);
     }
+
 }
