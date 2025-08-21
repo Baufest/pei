@@ -10,13 +10,13 @@ public class RecurringBeneficiaryAlert {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column
+    @Column(nullable = false)
     private Long idBeneficiary;
 
     @CreationTimestamp
     private LocalDateTime dateTime;
 
-    @Column
+    @Column(nullable = false)
     private String message;
 
 

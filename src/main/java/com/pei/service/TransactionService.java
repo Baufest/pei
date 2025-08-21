@@ -194,7 +194,7 @@ public class TransactionService {
         return minutesDifference >= 0 && minutesDifference <= 60;
     }
 
-    public List<Transaction> getAllTransactions() {
-        return transactionRepository.findAll();
+    public List<Transaction> getAllTransactionsByUserId(Long userId) {
+        return transactionRepository.findRecentTransferByUserId(userId);
     }
 }
