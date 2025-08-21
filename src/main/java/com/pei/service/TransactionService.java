@@ -212,4 +212,7 @@ public class TransactionService {
         return transactionRepository.getTotalAmountByUserAndDate(userId, startOfDay, endOfDay);
     }
 
+    public List<Transaction> getAllTransactionsByUserId(Long userId) {
+        return transactionRepository.findRecentTransferByUserId(userId);
+    }
 }
