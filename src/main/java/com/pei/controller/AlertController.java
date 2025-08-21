@@ -229,7 +229,7 @@ public class AlertController {
     @PostMapping("/alerta-scoring")
     public ResponseEntity<Alert> checkProcessTransaction(@RequestBody Long userId) {
         
-        String clientType = clienteService.getClientType(userId);
+        String clientType = clienteService.getClientType(userId).orElseThrow(() -> new RuntimeException("Tipo de cliente no encontrado"));
         
             Alert alerta = transactionService.processTransactionScoring(userId, clientType);
             if (alerta != null) {
