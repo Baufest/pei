@@ -1,11 +1,10 @@
 package com.pei.service;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
@@ -202,6 +201,25 @@ public class TransactionService {
         // Considera sospechoso si la transferencia es posterior al evento y dentro de
         // 60 minutos
         return minutesDifference >= 0 && minutesDifference <= 60;
+    }
+
+    public Alert getAmountLimitAlert(Long userId, BigDecimal limitAmount, Boolean isANewUser) {
+        BigDecimal totalAmountToday = getTotalAmountByUserAndDate(userId);
+        
+        if (isANewUser) { 
+            limitAmount = limitAmount.multiply(BigDecimal.valueOf(0.5)); }
+        if (totalAmountToday.compareTo(limitAmount) > 0) {
+            return new Alert(userId, "Amount limit exceeded for user " + userId);
+        }
+
+        return null;
+    }
+
+    public BigDecimal getTotalAmountByUserAndDate(Long userId) {
+        LocalDate date = LocalDate.now();
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.atTime(23, 59, 59);
+        return transactionRepository.getTotalAmountByUserAndDate(userId, startOfDay, endOfDay);
     }
 
     public List<Transaction> getAllTransactionsByUserId(Long userId) {

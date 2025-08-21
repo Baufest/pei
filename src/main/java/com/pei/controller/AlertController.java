@@ -9,6 +9,7 @@ import com.pei.service.ClienteService;
 
 import org.springframework.http.ResponseEntity;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import com.pei.service.GeolocalizationService;
+import com.pei.service.LimitAmountTransactionService;
 import com.pei.service.TransactionService;
 
 import org.springframework.web.bind.annotation.PostMapping;
@@ -40,25 +42,27 @@ public class AlertController {
     private final AlertService alertService;
     private final AccountService accountService;
     private final ClienteService clienteService;
+    private final LimitAmountTransactionService limitAmountTransactionService;
 
     public AlertController(AlertService alertService,
-            AccountService accountService, TransactionService transactionService,
-            GeolocalizationService geolocalizationService, ClienteService clienteService) {
+                AccountService accountService, TransactionService transactionService,
+                GeolocalizationService geolocalizationService, ClienteService clienteService,
+                LimitAmountTransactionService limitAmountTransactionService) {
+
         this.alertService = alertService;
         this.accountService = accountService;
         this.transactionService = transactionService;
         this.geolocalizationService = geolocalizationService;
         this.clienteService = clienteService;
-
+        this.limitAmountTransactionService = limitAmountTransactionService;
+    
     }
 
     @PostMapping("/alerta-money-mule")
     public ResponseEntity<Alert> detectMoneyMule(@RequestBody List<Transaction> transactions) {
         try {
             boolean alertFlag = alertService.verifyMoneyMule(transactions);
-            // TODO: Deberíamos obtener el ID del usuario con Spring Security, pero aun no
-            // esta implementado
-            // Por ahora, asumimos que las transacciones tienen un usuario asociado
+
             Long userId = transactions.isEmpty() ? null : transactions.get(0).getUser().getId();
 
             if (alertFlag) {
@@ -190,23 +194,26 @@ public class AlertController {
 
     @GetMapping("/alerta-fast-multiple-transaction/{userId}")
     public ResponseEntity<Alert> getFastMultipleTransactionsAlert(@PathVariable Long userId) {
-        String clientType = clienteService.getClientType(userId);
-        if (clientType == null || (!clientType.equals("individuo") && !clientType.equals("empresa"))) {
-            return ResponseEntity.notFound().build();
-        }
 
-        try {
-            Alert alert = transactionService.getFastMultipleTransactionAlert(userId, clientType);
+    Optional<String> clientTypeOpt = clienteService.getClientType(userId);
 
-            if (alert != null) {
-                return ResponseEntity.ok(alert);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
+    if (clientTypeOpt.isEmpty()) {
+        return ResponseEntity.notFound().build();
+    }
 
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(new Alert(userId, "Error: " + e.getMessage()));
-        }
+    String clientType = clientTypeOpt.get();
+
+    if (!clientType.equals("individuo") && !clientType.equals("empresa")) {
+        return ResponseEntity.notFound().build();
+    }
+
+    Alert alert = transactionService.getFastMultipleTransactionAlert(userId, clientType);
+
+    if (alert != null) {
+        return ResponseEntity.ok(alert);
+    } else {
+        return ResponseEntity.notFound().build();
+    }
     }
 
     @PostMapping("/alerta-canales")
@@ -262,6 +269,23 @@ public class AlertController {
         } catch (Exception e) {
             return ResponseEntity.status(400)
                     .body(new Alert(null, "Error: No se han proporcionado eventos de usuario."));
+        }
+    }
+
+    @GetMapping("/alerta-amount-limit/{userId}")
+    public ResponseEntity<Alert> getAmountLimitAlert(@PathVariable Long userId) {
+        
+        BigDecimal limitAmount = limitAmountTransactionService.getAvailableAmount(userId);
+        Boolean isANewUser = clienteService.isANewUser(userId);
+        try {
+            Alert totalAmountAlert = transactionService.getAmountLimitAlert(userId, limitAmount, isANewUser);
+            if (totalAmountAlert == null) {
+                return ResponseEntity.notFound().build();
+            } else { 
+                
+                return ResponseEntity.ok(totalAmountAlert);}
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

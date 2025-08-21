@@ -1,6 +1,8 @@
 package com.pei.service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.Random;
 
 import org.springframework.stereotype.Service;
@@ -94,8 +96,13 @@ public class ClienteService {
         return fechaNacimiento.toString();
     }
 
-    public String getClientType (Long userId) {
-        return userRepository.findClientTypeById(userId);
+    public Optional<String> getClientType(Long userId) {
+    return Optional.ofNullable(userRepository.findClientTypeById(userId));
+    }
+
+    public boolean isANewUser(Long userId) {
+        LocalDateTime dateLimit = LocalDateTime.now().minusDays(30);
+        return userRepository.isANewUser(userId, dateLimit);
     }
 
 }

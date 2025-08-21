@@ -5,16 +5,7 @@ import com.pei.dto.TransactionDTO;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Objects;
 import java.util.*;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
 
 @Entity @Table(name = "user_transaction")
 public class Transaction {
@@ -49,6 +40,15 @@ public class Transaction {
     @OneToMany(mappedBy = "transaction")
     private List<Approval> approvalList = new ArrayList<>();
 
+    @Column(nullable = false)
+    private TransactionStatus status;
+ 
+    public enum TransactionStatus {
+        REQUIERE_APROBACION,
+        APROBADA,
+        RECHAZADA
+    } 
+
     public Transaction() {}
 
     public Transaction(BigDecimal amount){
@@ -70,6 +70,14 @@ public class Transaction {
         this.sourceAccount = sourceAccount;
         this.destinationAccount = destinationAccount;
         this.approvalList = approvalList;
+    }
+
+    public TransactionStatus getStatus() {
+        return status;
+    }
+ 
+    public void setStatus(TransactionStatus status) {
+        this.status = status;
     }
 
     public Long getId() {
