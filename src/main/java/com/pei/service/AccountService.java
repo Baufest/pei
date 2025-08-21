@@ -40,44 +40,72 @@ public class AccountService {
     }
 
     public Alert validateHighRiskClient(Long userId) {
+        if (userId == null) {
+            return new Alert(null, "Alerta: userId no puede ser null.");
+        }
         String clientJson = ClienteService.obtenerClienteJson(userId.intValue());
+        if (clientJson == null || clientJson.isBlank()) {
+            return new Alert(userId, "Alerta: Datos de cliente no encontrados. (JSON vacío)");
+        }
         List<ChargebackDTO> chargebacks = new ArrayList<>();
 
         try { // Se implementa esta lógica a fin de no modificar generarChargebacks() en
               // ClienteService
-            JsonNode root = objectMapper.readTree(clientJson); //Para leer campos que nos interesen (mapea a arbol de nodos)
+            JsonNode root = objectMapper.readTree(clientJson); // Para leer campos que nos interesen (mapea a arbol de
+                                                               // nodos)
 
-            //Guardamos clientType buscado por el fieldName
+            // Guardamos clientType buscado por el fieldName
             String clientType = root.path("clientType").asText(null);
             if (clientType == null) {
                 return new Alert(userId, "Alerta: Tipo de cliente no encontrado. (NULL)");
             }
 
-            //Guardamos el JsonNode de chargebacks buscado por el fieldName
+            // Guardamos el JsonNode de chargebacks buscado por el fieldName
             JsonNode chargebacksNode = root.path("chargebacks");
             if (chargebacksNode.isMissingNode() || !chargebacksNode.isArray()) {
                 return new Alert(userId, "Alerta: Lista de chargebacks no encontrada. (NULL)");
             }
 
-            //Mapeamos cada JsonNode(chargebackNode) a un ChargebackDTO y lo añadimos a la lista de chargebacks(dto)
+            // Mapeamos cada JsonNode(chargebackNode) a un ChargebackDTO y lo añadimos a la
+            // lista de chargebacks(dto)
             for (JsonNode cbNode : chargebacksNode) {
+                if (!cbNode.hasNonNull("fechaCreacion")) {
+                    return new Alert(userId, "Alerta: Chargeback con fecha de creación inválida.");
+                }
+                if (!cbNode.hasNonNull("monto") || cbNode.get("monto").asInt() <= 0) {
+                    return new Alert(userId, "Alerta: Chargeback con monto inválido.");
+                }
+                if (!cbNode.has("aceptado")) {
+                    return new Alert(userId, "Alerta: Chargeback sin campo 'aceptado'.");
+                }
+                String fechaPago = "";
+                if (cbNode.has("fechaPago") && !cbNode.get("fechaPago").isNull()) {
+                    String valor = cbNode.get("fechaPago").asText();
+                    if (!valor.isBlank()) {
+                        fechaPago = valor;
+                    }
+                }
                 ChargebackDTO cb = new ChargebackDTO();
                 cb.setFechaCreacion(cbNode.path("fechaCreacion").asText());
                 cb.setMonto(cbNode.path("monto").asInt());
                 cb.setAceptado(cbNode.path("aceptado").asBoolean());
-                cb.setFechaPago(cbNode.hasNonNull("fechaPago") ? cbNode.get("fechaPago").asText() : null);
+                cb.setFechaPago(fechaPago);
                 chargebacks.add(cb);
             }
 
-            //logica de negocio
+            // logica de negocio
             if (clientType.equals("empresa")) {
                 if (chargebacks.size() >= accountParamsService.getLimiteAlertaAltoRiesgoEmpresa()) {
-                    return new Alert(userId, "Alerta: Cliente empresarial de alto riesgo, con múltiples chargebacks: " + chargebacks.size());
+                    return new Alert(userId, "Alerta: Cliente empresarial de alto riesgo, con múltiples chargebacks: "
+                            + chargebacks.size());
                 }
             } else if (clientType.equals("individuo")) {
                 if (chargebacks.size() >= accountParamsService.getLimiteAlertaAltoRiesgoIndividuo()) {
-                    return new Alert(userId, "Alerta: Cliente individual de alto riesgo, con chargebacks: " + chargebacks.size());
+                    return new Alert(userId,
+                            "Alerta: Cliente individual de alto riesgo, con chargebacks: " + chargebacks.size());
                 }
+            } else {
+                return new Alert(userId, "Alerta: Tipo de cliente desconocido: " + clientType);
             }
             return new Alert(userId, "Alerta: Cliente validado sin alertas de riesgo.");
 

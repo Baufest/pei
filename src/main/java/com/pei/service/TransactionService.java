@@ -141,41 +141,57 @@ public class TransactionService {
     // }
 
     // @Transactional
-public Alert processTransactionCountryInternational(Transaction transaction){
-    if(transaction == null || transaction.getSourceAccount() == null || transaction.getDestinationAccount() == null){
-        throw new IllegalArgumentException("Transaction and accounts cannot be null in processTransactionCountryInternational");
-    }
-
-    String origen = transaction.getSourceAccount().getCountry();
-    String destino = transaction.getDestinationAccount().getCountry();
-
-    
-    if (riskCountryService.isRiskCountry(origen) || riskCountryService.isRiskCountry(destino)) {
-        transaction.setStatus(Transaction.TransactionStatus.REQUIERE_APROBACION);
-        return new Alert(transaction.getUser().getId(),
-                "Alerta: Transacción hacia/desde país de riesgo (origen: " + origen + ", destino: " + destino + ")");
-    }
-
-    if(transaction.isInternational()){
-
-        if (transaction.getAmount().compareTo(transactionParamsService.getMontoAlertaInternacional()) > 0) {
-            transaction.setStatus(Transaction.TransactionStatus.APROBADA);
-
-            Alert alert = new Alert(transaction.getUser().getId(),
-                    "Alerta: Transacción internacional con monto mayor a: " + transactionParamsService.getMontoAlertaInternacional());
-            notificationService.notifyCompliance(transaction, alert);
-
-            return alert;
-        }else{
-            transaction.setStatus(Transaction.TransactionStatus.APROBADA);
-            return new Alert(transaction.getUser().getId(), "Alerta: Transacción internacional aprobada");
+    public Alert processTransactionCountryInternational(Transaction transaction) {
+        if (transaction == null ||
+                transaction.getSourceAccount() == null ||
+                transaction.getDestinationAccount() == null ||
+                transaction.getUser() == null ||
+                transaction.getUser().getId() == null) {
+            return new Alert(null, "Alerta: Transacción inválida (faltan datos obligatorios)");
         }
-    }
 
-    transaction.setStatus(Transaction.TransactionStatus.APROBADA);
-    // transactionRepository.save(transaction); -> DESCOMENTAR AL IMPLEMENTAR BD
-    return new Alert(transaction.getUser().getId(), "Alerta: Transacción aprobada");
-}
+        if (transaction.getAmount() == null || transaction.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            return new Alert(transaction.getUser().getId(), "Alerta: Monto de transacción inválido");
+        }
+
+        String origen = transaction.getSourceAccount().getCountry();
+        String destino = transaction.getDestinationAccount().getCountry();
+
+        if (origen == null || origen.isBlank() || destino == null || destino.isBlank()) {
+            return new Alert(transaction.getUser().getId(), "Alerta: País de origen o destino inválido");
+        }
+
+        if (riskCountryService.isRiskCountry(origen) || riskCountryService.isRiskCountry(destino)) {
+            transaction.setStatus(Transaction.TransactionStatus.REQUIERE_APROBACION);
+            return new Alert(transaction.getUser().getId(),
+                    "Alerta: Transacción hacia/desde país de riesgo (origen: " + origen + ", destino: " + destino
+                            + ")");
+        }
+
+        if (transaction.isInternational()) {
+            BigDecimal limiteInternacional = transactionParamsService.getMontoAlertaInternacional();
+            if (limiteInternacional == null) {
+                throw new IllegalStateException("Parámetro de monto internacional no configurado");
+            }
+            if (transaction.getAmount().compareTo(limiteInternacional) > 0) {
+                transaction.setStatus(Transaction.TransactionStatus.APROBADA);
+
+                Alert alert = new Alert(transaction.getUser().getId(),
+                        "Alerta: Transacción internacional con monto mayor a: "
+                                + limiteInternacional);
+                notificationService.notifyCompliance(transaction, alert);
+
+                return alert;
+            } else {
+                transaction.setStatus(Transaction.TransactionStatus.APROBADA);
+                return new Alert(transaction.getUser().getId(), "Alerta: Transacción internacional aprobada");
+            }
+        }
+
+        transaction.setStatus(Transaction.TransactionStatus.APROBADA);
+        // transactionRepository.save(transaction); -> DESCOMENTAR AL IMPLEMENTAR BD
+        return new Alert(transaction.getUser().getId(), "Alerta: Transacción aprobada");
+    }
 
     public Alert processTransactionScoring(Long idCliente) { // processVerifyScoring
 
