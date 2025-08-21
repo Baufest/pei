@@ -1,34 +1,25 @@
 package com.pei.domain.Account;
 
-
 import java.util.Objects;
-
-
 import java.time.LocalDateTime;
-
 import com.pei.domain.User.User;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
-
 @Entity
 public class Account {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @CreationTimestamp
     private LocalDateTime creationDate;
 
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
+    @Column(nullable = false) @Enumerated(EnumType.STRING)
     private AccountType accountType;
 
     @ManyToOne
     @JoinColumn(name = "owner", referencedColumnName = "id", nullable = false)
     private User owner;
-
-
 
     public Account() {
     }
@@ -54,11 +45,11 @@ public class Account {
         this.creationDate = creationDate;
     }
 
-    public AccountType getType() {
+    public AccountType getAccountType() {
         return accountType;
     }
 
-    public void setType(AccountType type) {
+    public void setAccountType(AccountType type) {
         this.accountType = type;
     }
 

@@ -1,6 +1,8 @@
 package com.pei.controller;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -17,6 +19,7 @@ import java.util.*;
 
 import com.pei.domain.*;
 import com.pei.dto.*;
+import com.pei.repository.LoginRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -29,11 +32,13 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pei.domain.Account.Account;
+import com.pei.domain.Transaction;
 import com.pei.domain.User.User;
-
+import com.pei.dto.Alert;
+import com.pei.domain.Login;
+import com.pei.dto.UserTransaction;
 import com.pei.repository.LoginRepository;
 
 import com.pei.service.AccountService;
@@ -74,9 +79,9 @@ class AlertControllerTest {
         @Autowired
         MockMvc mockMvc;
 
-    @Nested
-    @DisplayName("Tests para validar fraude geolocalizacion y dispositivo")
-    class ValidarFraudeGeoDisp {
+        @Nested
+        @DisplayName("Tests para validar fraude geolocalizacion y dispositivo")
+        class ValidarFraudeGeoDisp {
 
         @Test
         void shouldReturnAlertWhenNoPreviousLoginFound() throws Exception {
@@ -132,7 +137,7 @@ class AlertControllerTest {
 
 
 
-    @Test
+                @Test
                 void shouldReturn404WhenLoginNull() throws Exception {
                         Login login = null;
 

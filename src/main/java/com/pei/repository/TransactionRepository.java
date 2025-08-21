@@ -5,32 +5,33 @@ import com.pei.domain.Transaction;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
-    @Query("SELECT COUNT(t) FROM Transaction t WHERE t.user.id = :userId AND t.date >= :fromDate")
-    Integer countTransactionsFromDate(@Param("userId") Long userId, @Param("fromDate") LocalDateTime fromDate);
+  @Query("SELECT COUNT(t) FROM Transaction  t WHERE t.user.id= :userId AND t.date>= :fromDate AND  t.amount BETWEEN :minMonto AND :maxMonto")
+  Integer countTransactionsByUserAfterDateBetweenMontos(
+      @Param("userId") Long userId,
+      @Param("fromDate") LocalDateTime fromDate,
+      @Param("minMonto") BigDecimal minMonto,
+      @Param("maxMonto") BigDecimal maxMonto);
 
+  @Query("""
+      SELECT t
+      FROM Transaction t
+      WHERE t.user.id = :userId
+        AND t.destinationAccount.owner.id <> :userId
+      ORDER BY t.date DESC
+      """)
+  List<Transaction> findRecentTransferByUserId(@Param("userId") Long userId);
+  List<Transaction> findByUserId(Long userId);
 
-    @Query("""
-    SELECT t
-    FROM Transaction t
-    WHERE t.user.id = :userId
-      AND t.destinationAccount.owner.id <> :userId
-    ORDER BY t.date DESC
-    """)
-    List<Transaction> findRecentTransferByUserId(@Param("userId") Long userId);
-    List<Transaction> findByUserId(Long userId);
-
-    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.user.id = :userId AND t.date >= :fromDate")
-    BigDecimal sumTransactionsFromDate(@Param("userId") Long userId, @Param("fromDate") LocalDateTime fromDate);
+  @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.user.id = :userId AND t.date >= :fromDate")
+  BigDecimal sumTransactionsFromDate(@Param("userId") Long userId, @Param("fromDate") LocalDateTime fromDate);
 
 
 }

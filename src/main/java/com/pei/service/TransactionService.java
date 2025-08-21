@@ -1,17 +1,21 @@
 package com.pei.service;
 
 import java.math.*;
+import java.util.HashSet;
 import java.time.*;
-import java.util.*;
-
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import com.pei.config.AlertProperties;
 import com.pei.domain.*;
 import com.pei.domain.User.User;
 import org.springframework.stereotype.Service;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-
+import com.pei.domain.TimeRange;
+import com.pei.domain.Transaction;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.pei.dto.Alert;
@@ -32,9 +36,9 @@ public class TransactionService {
     private final AlertProperties alertProperties;
 
     public TransactionService(ChargebackRepository chargebackRepository,
-                              PurchaseRepository purchaseRepository, TransactionRepository transactionRepository,
-                              TransactionVelocityDetectorService transactionVelocityDetectorService,
-                              Gson gson, ScoringServiceInterno scoringServiceInterno, AlertProperties alertProperties) {
+            PurchaseRepository purchaseRepository, TransactionRepository transactionRepository,
+            TransactionVelocityDetectorService transactionVelocityDetectorService,
+            Gson gson, ScoringServiceInterno scoringServiceInterno, AlertProperties alertProperties) {
         this.chargebackRepository = chargebackRepository;
         this.purchaseRepository = purchaseRepository;
         this.transactionRepository = transactionRepository;
@@ -148,27 +152,35 @@ public class TransactionService {
         }
         return new Alert(idCliente, msj);
     }
-    
+
     public Alert getFastMultipleTransactionAlert(Long userId, String clientType) {
 
-        Integer minutesRange = clientType.equals("individuo") ? 
-            transactionVelocityDetectorService.getIndividuoMinutesRange() : 
-            transactionVelocityDetectorService.getEmpresaMinutesRange();
-        
-        Integer maxTransactions = clientType.equals("individuo") ? 
-            transactionVelocityDetectorService.getIndividuoMaxTransactions() : 
-            transactionVelocityDetectorService.getEmpresaMaxTransactions();
+        Integer minutesRange;
+        Integer maxTransactions;
+        BigDecimal minMonto;
+        BigDecimal maxMonto;
+
+        if ("individuo".equals(clientType)) {
+            minutesRange = transactionVelocityDetectorService.getIndividuoMinutesRange();
+            maxTransactions = transactionVelocityDetectorService.getIndividuoMaxTransactions();
+            minMonto = transactionVelocityDetectorService.getIndividuoUmbralMonto().get("minMonto");
+            maxMonto = transactionVelocityDetectorService.getIndividuoUmbralMonto().get("maxMonto");
+        } else {
+            minutesRange = transactionVelocityDetectorService.getEmpresaMinutesRange();
+            maxTransactions = transactionVelocityDetectorService.getEmpresaMaxTransactions();
+            minMonto = transactionVelocityDetectorService.getEmpresaUmbralMonto().get("minMonto");
+            maxMonto = transactionVelocityDetectorService.getEmpresaUmbralMonto().get("maxMonto");
+        }
 
         LocalDateTime fromDate = LocalDateTime.now().minusMinutes(minutesRange);
-        Integer numMaxTransactions = maxTransactions;
-        Integer numTransactions = transactionRepository.countTransactionsFromDate(userId, fromDate);
+        int numTransactions = transactionRepository
+                .countTransactionsByUserAfterDateBetweenMontos(userId, fromDate, minMonto, maxMonto);
 
-        if (numTransactions > numMaxTransactions){
+        if (numTransactions > maxTransactions) {
             return new Alert(userId, "Fast multiple transactions detected for user " + userId);
         }
 
-        Alert fastMultipleTransactionAlert = null;
-        return fastMultipleTransactionAlert;
+        return null;
     }
 
     public Optional<Transaction> getMostRecentTransferByUserId(Long userId) {
@@ -182,8 +194,13 @@ public class TransactionService {
         // Calcula la diferencia en minutos entre el evento y la transferencia
         long minutesDifference = Duration.between(eventDateHour, transferDate).toMinutes();
 
-        // Considera sospechoso si la transferencia es posterior al evento y dentro de 60 minutos
+        // Considera sospechoso si la transferencia es posterior al evento y dentro de
+        // 60 minutos
         return minutesDifference >= 0 && minutesDifference <= 60;
+    }
+
+    public List<Transaction> getAllTransactionsByUserId(Long userId) {
+        return transactionRepository.findRecentTransferByUserId(userId);
     }
 
     /**
@@ -303,8 +320,8 @@ public class TransactionService {
 
         // Verificar si el device ya existe en el set
         boolean deviceExists = user.getDevices().stream()
-            .anyMatch(d -> d.getDeviceID() != null
-                && d.getDeviceID().equals(login.getDevice().getDeviceID()));
+            .anyMatch(d -> d.getDeviceId() != null
+                && d.getDeviceId().equals(login.getDevice().getDeviceId()));
 
         if (deviceExists) {
             return false; // dispositivo ya conocido

@@ -1,11 +1,17 @@
 package com.pei.domain.User;
 
+
+import com.pei.domain.Device;
+import com.pei.domain.Country;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.*;
-
-import com.pei.domain.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Objects;
 import com.pei.domain.Account.Account;
+import com.pei.domain.TimeRange;
 import com.pei.dto.Chargeback;
 import com.pei.dto.Purchase;
 import jakarta.persistence.*;
@@ -31,6 +37,10 @@ public class User {
     @Column(nullable = false)
     private String profile;
 
+    @Column
+    @Enumerated(EnumType.STRING)
+    private ClientType clientType;
+
     @Column(nullable = false)
     private BigDecimal averageMonthlySpending;
 
@@ -46,32 +56,25 @@ public class User {
     @OneToMany(mappedBy = "user")
     private List<Chargeback> chargebacks = new ArrayList<>();
 
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private ClientType clientType;
-
     @Column(nullable = false, unique = true) // email único y obligatorio
     private String email;
     
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, orphanRemoval = true)
     private Set<Device> devices = new HashSet<>();
 
-    //@OneToMany(mappedBy = "user", fetch = FetchType.EAGER, orphanRemoval = true)
-    //private Set<Country> countries = new HashSet<>();
-
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, orphanRemoval = true)
+    private Set<Country> countries = new HashSet<>();
 
     @Embedded
     private TimeRange avgTimeRange;
 
 
-    public User() {
-    }
+    public User() {}
 
     public User(Long id) {
         this.id = id;
         this.accounts = new java.util.ArrayList<>();
     }
-
     public User(Long id, List<Account> accounts) {
         this.id = id;
         this.accounts = accounts;
@@ -199,5 +202,4 @@ public class User {
     public int hashCode() {
         return Objects.hash(id, name, risk, profile, averageMonthlySpending, creationDate, accounts, purchases, chargebacks);
     }
-
 }

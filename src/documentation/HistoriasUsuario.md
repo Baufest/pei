@@ -235,7 +235,7 @@ GET /api/alerts/chargeback/123
 
 ---
 
-## 🧑‍💻 Historia de Usuario #235
+## 🧑‍💻 Historia de Usuario #235  (Se implemento nueva funcionalidad en Task #251)
 
 Implementación de endpoint para alerta de transacciones rápidas por tipo de cliente
 
@@ -325,7 +325,7 @@ _No aplica para este endpoint. No se utilizan servicios externos._
 ## 🧑‍💻 Historia de Usuario #220
 
 ### 📝 Título
-Alerta por Login desde múltiples países
+Alerta por logins desde múltiples países
 
 ---
 
@@ -1398,6 +1398,215 @@ Content-Type: application/json
 - **Servicio de Alertas**  
   - Ubicación: `AlertService`
   - Descripción: Lógica de negocio para detección de patrones sospechosos en transacciones entre cuentas no relacionadas.  
+---
+
+## 🧑‍💻 Historia de Usuario #250
+
+### 📝 Título
+Modificación de Escalado de Alertas por Canal
+
+---
+
+### 📌 Descripción Breve
+Se modificó la lógica de escalado de alertas para enviar notificaciones a diferentes canales (Email, SMS, Slack) según la criticidad de la transacción. El envío real se realiza solo por Email utilizando JavaMail; los métodos de SMS y Slack simulan la acción. Se agregaron nuevos campos requeridos en la entidad de transacción y su DTO, según lo solicitado por la entidad regulatoria y el feedback de Adrian.
+
+---
+
+### ⚙️ Detalles Técnicos
+
+#### 🧩 Clases/Métodos Afectados
+- `Transaction`
+    - Nuevos campos: `dateTime` (fecha y hora), `codCoelsa` (código regulatorio)
+- `TransactionDTO`
+    - Incluye: `id`, `amount`, `currency`, `accountDestinationId`, `dateTime`, `codCoelsa`
+- `AlertNotificatorService`
+    - Método: `executeNotificator(Long userId, TransactionDTO transactionDTO)`
+- `AlertNotificatorStrategy`
+    - Métodos:
+        - `sendCriticalAlertEmail(...)` (envío real por email)
+        - `sendCriticalAlertSms(...)` (simulado)
+        - `sendCriticalAlertSlack(...)` (simulado)
+
+#### 🌐 Endpoints Nuevos/Modificados
+| Método HTTP | URL                  | Parámetros (Body)         | Respuesta                                      |
+|-------------|----------------------|---------------------------|------------------------------------------------|
+| POST        | `/api/alerta-canales` | `ChannelAlertRequest`     | `Alert` con mensaje y canal utilizado          |
+
+#### 🗃️ Cambios en Base de Datos
+- Se agregaron los campos `dateTime` y `codCoelsa` a la entidad `Transaction`.
+
+---
+
+### 🔍 Impacto en el Sistema
+- Módulo afectado: `AlertNotificatorService`, `Transaction`
+- Dependencias relevantes: `JavaMail` para envío real de emails, simulaciones para SMS y Slack.
+
+---
+
+### 💻 Ejemplo de Uso
+
+**Request**
+```http
+POST /api/alerta-canales
+Content-Type: application/json
+{
+  "transactionId": 456,
+  "userId": 789,
+  "channel": "EMAIL"
+}
+```
+
+**Response (caso positivo)**
+```json
+{
+  "userId": 789,
+  "description": "Alerta escalada por EMAIL para la transacción 456"
+}
+```
+
+---
+
+## 🧪 Pruebas Unitarias
+
+### 🧪 Escenarios Cubiertos
+- `executeNotificator_CuandoEjecucionExitosa_VerificaEnvio`: Verifica que se llama al método de envío del canal correcto (email real, SMS/Slack simulado).
+- `executeNotificator_CuandoEstrategiaLanzaExcepcion_LanzaAlertNotificatorException`: Simula error en el envío y verifica que se lanza la excepción personalizada.
+
+### 🧪 Endpoints Probados
+| Método HTTP | URL                  | Escenario de Test                       | Resultado Esperado |
+|-------------|----------------------|-----------------------------------------|--------------------|
+| POST        | `/api/alerta-canales` | Transacción y usuario válidos           | Alerta y notificación enviada |
+
+---
+
+## ✅ Estado
+✔️ Completado
+
+---
+
+## 📦 Documentación de Integraciones Externas
+
+- **Servicio de Email (JavaMail)**: Envío real de alertas por correo electrónico.
+- **SMS y Slack**: Métodos simulados para pruebas y demostración.
+
+---
+
+## 🗃️ Cambios en Entidades
+
+### Transaction
+- Se agregaron los campos:
+    - `dateTime`: Fecha y hora de la transacción.
+    - `codCoelsa`: Código regulatorio alfanumérico de 22 caracteres.
+
+### TransactionDTO
+- Incluye los campos:
+    - `id`, `codCoelsa`, `amount`, `currency`, `accountDestinationId`, `dateTime`.
+
+---
+
+## 🧪 Pruebas Implementadas
+
+- Se implementaron tests unitarios en `AlertNotificatorServiceTest` usando JUnit 5 y Mockito, cubriendo casos de éxito y error en el envío de alertas por canal.
+
+---
+
+
+---------------------
+
+  ## 🧑‍💻 Historia de Usuario #251
+
+### 📝 Título
+Modificacion umbral de velocidades de transacciones
+
+---
+
+### 📌 Descripción Breve
+Se implementa la configuración de umbrales de monto mínimo y máximo para la alerta de transacciones rápidas, permitiendo que el sistema detecte actividad sospechosa solo si las transacciones se encuentran dentro de un rango de monto configurable según el tipo de cliente ("individuo" o "empresa"). Esto mejora la flexibilidad y precisión de la lógica antifraude.
+
+---
+
+### ⚙️ Detalles Técnicos
+
+#### 🧩 Clases/Métodos Afectados
+- `TransactionService`
+  - Método: `getFastMultipleTransactionAlert(Long userId, String clientType)`
+    - Ahora utiliza los valores configurables de monto mínimo y máximo.
+    - Se factorizo el metodo para que sea más claro y haga una consulta por tipo de cliente.
+- `TransactionVelocityDetectorService`
+  - Métodos: `getIndividuoUmbralMonto()`, `getEmpresaUmbralMonto()`
+    - Devuelven `Map<String, BigDecimal>` con claves `minMonto` y `maxMonto`.
+- `TransactionRepository`
+  - Método: `countTransactionsByUserAfterDateBetweenMontos(Long userId, LocalDateTime fromDate, BigDecimal minMonto, BigDecimal maxMonto)`
+    - Se asegura que la consulta considere los nuevos parámetros de monto.
+    - Se modifico el nombre del metodo.
+- `AlertController`
+  - Método: `getFastMultipleTransactionsAlert(Long userId, String clientType)`
+    - Expone la funcionalidad vía API.
+
+#### 🌐 Endpoints Nuevos/Modificados
+| Método HTTP | URL                                         | Parámetros (Query)         | Respuesta                                      |
+|-------------|---------------------------------------------|----------------------------|------------------------------------------------|
+| GET         | `/api/alerta-fast-multiple-transaction`     | `userId`, `clientType`     | `Alert` con mensaje si se detecta actividad sospechosa |
+
+#### 🗃️ Cambios en Base de Datos
+- No se realizaron cambios estructurales en la base de datos.
+- Se ajustó la consulta en el repositorio para considerar los nuevos parámetros de monto.
+
+---
+
+### 🔍 Impacto en el Sistema
+- Módulo afectado: `com.pei.service`
+- Dependencias relevantes: `VelocityTransactionsProperties`, `TransactionVelocityDetectorService`, `TransactionRepository`, configuración de límites en `application.yml`
+
+---
+
+### 💻 Ejemplo de Uso
+
+**Request**
+```http
+GET /api/alerta-fast-multiple-transaction?userId=123
+```
+
+**Response (caso positivo)**
+```json
+{
+  "userId": 123,
+  "description": "Fast multiple transactions detected for user 123"
+}
+```
+
+**Response (caso negativo)**
+```http
+204 No Content
+```
+
+---
+
+## 🧪 Pruebas Unitarias
+
+### 🧪 Escenarios Cubiertos
+- `getFastMultipleTransactionAlert_CuandoSuperaMaximoTransacciones_RetornaAlerta`: Retorna alerta si el usuario supera el máximo de transacciones en el rango de monto configurado.
+- `getFastMultipleTransactionAlert_CuandoNoSuperaMaximoTransacciones_RetornaNull`: No retorna alerta si el usuario no supera el máximo.
+- `getFastMultipleTransactionAlert_CuandoMontoFueraDeRango_NoCuentaTransaccion`: Solo se consideran transacciones dentro del rango de monto.
+- `getFastMultipleTransactionAlert_CuandoTipoClienteEmpresa_UsaConfiguracionEmpresa`: Usa los umbrales correctos según el tipo de cliente.
+- El resto de la logica esta tal cual el metodo original. Respeta la cantidad maxima de transacciones y el limite de tiempo.
+
+### 🧪 Endpoints Probados
+| Método HTTP | URL                                         | Escenario de Test                                   | Resultado Esperado                  |
+|-------------|---------------------------------------------|-----------------------------------------------------|-------------------------------------|
+| GET         | `/api/alerta-fast-multiple-transaction`     | Usuario supera máximo de transacciones              | Retorna alerta                      |
+| GET         | `/api/alerta-fast-multiple-transaction`     | Usuario no supera máximo de transacciones           | 204 No Content                      |
+| GET         | `/api/alerta-fast-multiple-transaction`     | Transacciones fuera de rango de monto               | No se consideran en el conteo       |
+
+---
+
+## 🧪 Pruebas Implementadas
+
+- Se modificaron los tests unitarios en `TransactionService` usando JUnit 5 y Mockito, cubriendo casos de éxito y error.
+
+--
+
+## ✅ Estado
 
 ----
 
@@ -1648,6 +1857,3 @@ Content-Type: application/json
 - **AlertService**: Se implementaron métodos para detectar comportamiento inusual y calcular alertas.
 - **TransactionLogin DTO**: Se creó para combinar `Transaction` y `Login`.
 - **Pruebas Unitarias**: Se agregaron tests que cubren escenarios de monto excesivo, dispositivo nuevo y horarios inusuales.
-
-
-

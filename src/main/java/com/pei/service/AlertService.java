@@ -1,31 +1,27 @@
 package com.pei.service;
 
-import com.pei.config.AlertProperties;
 import com.pei.domain.Account.Account;
 import com.pei.domain.Transaction;
 import com.pei.domain.*;
-import com.pei.domain.User.User;
-import com.pei.dto.*;
+import com.pei.dto.Alert;
 import com.pei.repository.*;
+import com.pei.service.alertnotificator.AlertNotificatorService;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
-import java.time.*;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 import static com.pei.service.CriticalityService.getCriticality;
 
 @Service
 public class AlertService {
-
     private TransactionService transactionService;
-    private NotificationService notificationService;
+    private AlertNotificatorService alertNotificatorService;
     private TransactionRepository transactionRepository;
     private LoginRepository loginRepository;
 
-    public AlertService(TransactionService transactionService, NotificationService notificationService,  TransactionRepository transactionRepository, LoginRepository loginRepository) {
-        this.notificationService = notificationService;
+    public AlertService(TransactionService transactionService, AlertNotificatorService alertNotificatorService,TransactionRepository transactionRepository, LoginRepository loginRepository) {
+        this.alertNotificatorService = alertNotificatorService;
         this.transactionService = transactionService;
         this.transactionRepository = transactionRepository;
         this.loginRepository = loginRepository;
@@ -82,18 +78,21 @@ public class AlertService {
     }
 
     public Alert alertCriticality(Transaction transaction) {
+        try {
+            String criticality = getCriticality(transaction.getUser().getId(),
+                transaction.getAmount().doubleValue(), transaction.getDestinationAccount());
 
-        String criticality = getCriticality(transaction.getUser().getId(),
-        transaction.getAmount().doubleValue(), transaction.getDestinationAccount());
-
-        if ("high".equalsIgnoreCase(criticality)) {
-            notificationService.sendCriticalAlertEmail(transaction.getUser(), transaction);
-            return new Alert(transaction.getId(), "Transacción con ID = " + transaction.getId() + " tiene criticidad alta. Se le notificará mediante Mail.");
-        } else if ("medium".equalsIgnoreCase(criticality)) {
-            return new Alert(transaction.getId(), "Transacción con ID = " + transaction.getId() + " tiene criticidad media. Se le notificará mediante SMS.");
-        }
-        else {
-            return new Alert(transaction.getId(), "Transacción con ID = " + transaction.getId() + " tiene criticidad baja. Se le notificará mediante Slack.");
+            if ("high".equalsIgnoreCase(criticality)) {
+                alertNotificatorService.executeNotificator(transaction.getUser().getId(), transaction.transactionToDto());
+                return new Alert(transaction.getId(), "Transacción con ID = " + transaction.getId() + " tiene criticidad alta. Se le notificará mediante Mail.");
+            } else if ("medium".equalsIgnoreCase(criticality)) {
+                return new Alert(transaction.getId(), "Transacción con ID = " + transaction.getId() + " tiene criticidad media. Se le notificará mediante SMS.");
+            }
+            else {
+                return new Alert(transaction.getId(), "Transacción con ID = " + transaction.getId() + " tiene criticidad baja. Se le notificará mediante Slack.");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al determinar la criticidad de la transacción: " + e.getMessage());
         }
     }
 
