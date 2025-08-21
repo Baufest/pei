@@ -1,6 +1,6 @@
 package com.pei.domain.UserEvent;
 
-import com.pei.domain.User;
+import com.pei.domain.User.User;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 

@@ -1,6 +1,6 @@
 package com.pei.dto;
 
-import com.pei.domain.Account;
+import com.pei.domain.Account.Account;
 import com.pei.domain.Transaction;
 
 public class TransferRequest {

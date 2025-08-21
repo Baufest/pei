@@ -1,4 +1,4 @@
-package com.pei.domain;
+package com.pei.domain.User;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -6,11 +6,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import org.hibernate.annotations.CreationTimestamp;
+
+import com.pei.domain.Account.Account;
+import com.pei.domain.TimeRange;
 import com.pei.dto.Chargeback;
 import com.pei.dto.Purchase;
-import jakarta.persistence.*;
 
-import org.hibernate.annotations.CreationTimestamp;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 @Entity @Table(name = "client")
 public class User {
@@ -31,6 +43,10 @@ public class User {
     @Column(nullable = false)
     private String profile;
 
+    @Column
+    @Enumerated(EnumType.STRING)
+    private ClientType clientType;
+
     @Column(nullable = false)
     private BigDecimal averageMonthlySpending;
 
@@ -45,8 +61,6 @@ public class User {
 
     @OneToMany(mappedBy = "user")
     private List<Chargeback> chargebacks = new ArrayList<>();
-
-    private String clientType;
 
     @Column(nullable = false, unique = true) // email único y obligatorio
     private String email;
@@ -136,12 +150,12 @@ public class User {
         this.creationDate = creationDate;
     }
 
-    public void setClientType(String clientType) {
-        this.clientType = clientType;
+    public ClientType getClientType() {
+        return clientType;
     }
 
-    public String getClientType() {
-        return clientType;
+    public void setClientType(ClientType clientType) {
+        this.clientType = clientType;
     }
 
     public BigDecimal getAverageMonthlySpending() {

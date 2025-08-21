@@ -1,4 +1,4 @@
-package com.pei.domain;
+package com.pei.domain.Account;
 
 
 import java.time.LocalDateTime;
@@ -6,8 +6,12 @@ import java.util.Objects;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.pei.domain.User.User;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -17,15 +21,14 @@ import jakarta.persistence.ManyToOne;
 @Entity
 public class Account {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @CreationTimestamp
     private LocalDateTime creationDate;
 
-    @Column(nullable = false)
-    private String type;
+    @Column(nullable = false) @Enumerated(EnumType.STRING)
+    private AccountType accountType;
 
     @ManyToOne
     @JoinColumn(name = "owner", referencedColumnName = "id", nullable = false)
@@ -46,8 +49,8 @@ public class Account {
         this.owner = owner;
     }
 
-    public Account(String type, User owner, String country) {
-        this.type = type;
+    public Account(AccountType accountType, User owner, String country) {
+        this.accountType = accountType;
         this.owner = owner;
         this.country = country;
     }
@@ -72,12 +75,12 @@ public class Account {
         this.creationDate = creationDate;
     }
 
-    public String getType() {
-        return type;
+    public AccountType getAccountType() {
+        return accountType;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setAccountType(AccountType type) {
+        this.accountType = type;
     }
 
     public User getOwner() {

@@ -21,9 +21,9 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pei.domain.Account;
 import com.pei.domain.Transaction;
-import com.pei.domain.User;
+import com.pei.domain.Account.Account;
+import com.pei.domain.User.User;
 import com.pei.dto.Alert;
 
 @ExtendWith(MockitoExtension.class)

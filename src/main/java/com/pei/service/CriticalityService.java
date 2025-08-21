@@ -1,6 +1,6 @@
 package com.pei.service;
 
-import com.pei.domain.Account;
+import com.pei.domain.Account.Account;
 
 public class CriticalityService {
 

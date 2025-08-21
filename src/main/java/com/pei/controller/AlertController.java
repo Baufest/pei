@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.pei.domain.Account;
+import com.pei.domain.Account.Account;
 import com.pei.domain.Transaction;
 import com.pei.domain.UserEvent.UserEvent;
 import com.pei.dto.Alert;

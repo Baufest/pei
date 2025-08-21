@@ -1,7 +1,7 @@
 package com.pei.service;
 
 import com.pei.config.ClienteConfiableProperties;
-import com.pei.domain.User;
+import com.pei.domain.User.User;
 import com.pei.service.filter.FiltroCliente;
 import org.springframework.stereotype.Service;
 

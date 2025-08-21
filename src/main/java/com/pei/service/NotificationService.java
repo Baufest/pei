@@ -6,7 +6,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import com.pei.domain.Transaction;
-import com.pei.domain.User;
+import com.pei.domain.User.User;
 import com.pei.dto.Alert;
 
 import jakarta.mail.MessagingException;

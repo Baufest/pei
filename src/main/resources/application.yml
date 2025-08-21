@@ -11,9 +11,13 @@ velocity-transaction-params:
     individuo:
         minutes-range: 10
         max-transactions: 5
+        min-monto: 10000
+        max-monto: 50000
     empresa:
         minutes-range: 10
         max-transactions: 20
+        min-monto: 150000
+        max-monto: 400000
 
 transferencias:
   internacionales:
@@ -22,3 +26,25 @@ transferencias:
       - Rusia
       - Iran
     monto-alerta: 50000.00
+
+transaction:
+    frequency:
+        client:
+            individual:
+                check-window-hs: 24 # Ventana de tiempo en horas para verificar la frecuencia de transacciones
+                max-transfers-same-beneficiary: 3 # Máximo de transferencias al mismo beneficiario
+                max-deposits-account-holder: 5 # Máximo de depósitos al titular de la cuenta
+                types-account-holder: # Tipos de cuentas que entran en la verificación de frecuencia
+                    - CUENTA_CORRIENTE
+                    - CUENTA_AHORRO
+                    - CUENTA_PLAZO_FIJO
+                    - CUENTA_INVERSION
+            company:
+                check-window-hs: 24 # Ventana de tiempo en horas para verificar
+                max-transfers-same-beneficiary: 5 # Máximo de transferencias al mismo beneficiario
+                max-deposits-account-holder: 10 # Máximo de depósitos al titular de la
+                types-account-holder: # Tipos de cuentas que entran en la verificación de frecuencia
+                    - CUENTA_CORRIENTE
+                    - CUENTA_AHORRO
+                    - CUENTA_PLAZO_FIJO
+                    - CUENTA_INVERSION

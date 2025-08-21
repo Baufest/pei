@@ -6,6 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.pei.domain.Account.Account;
+import com.pei.domain.User.User;
+import com.pei.dto.TransactionDTO;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -33,6 +37,12 @@ public class Transaction {
 
     @Column(nullable = false)
     private LocalDateTime date;
+
+    @Column
+    private String currency; // Moneda
+
+    @Column(name = "codigo_coelsa", length = 22)
+    private String codCoelsa; // Código Coelsa alfanumérico de longitud de 22 para cada transacción
 
     @ManyToOne
     @JoinColumn(name = "source_account", referencedColumnName = "id", nullable = false)
@@ -157,20 +167,35 @@ public class Transaction {
         return !sourceCountry.equalsIgnoreCase(destinationCountry);
     }
 
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public TransactionDTO transactionToDto() {
+        return new TransactionDTO(
+            this.id,
+            this.codCoelsa != null ? this.codCoelsa : "",
+            this.amount,
+            this.destinationAccount != null ? this.getCurrency() : null,
+            this.destinationAccount != null ? this.destinationAccount.getId() : null,
+            this.date != null ? this.date : LocalDateTime.now()
+        );
+    }
 
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass())
             return false;
         Transaction that = (Transaction) o;
-        return Objects.equals(id, that.id) && Objects.equals(user, that.user) && Objects.equals(amount, that.amount)
-                && Objects.equals(date, that.date) && Objects.equals(sourceAccount, that.sourceAccount)
-                && Objects.equals(destinationAccount, that.destinationAccount)
-                && Objects.equals(approvalList, that.approvalList);
+        return Objects.equals(id, that.id) && Objects.equals(user, that.user) && Objects.equals(amount, that.amount) && Objects.equals(date, that.date) && Objects.equals(currency, that.currency) && Objects.equals(sourceAccount, that.sourceAccount) && Objects.equals(destinationAccount, that.destinationAccount) && Objects.equals(approvalList, that.approvalList);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, user, amount, date, sourceAccount, destinationAccount, approvalList);
+        return Objects.hash(id, user, amount, date, currency, sourceAccount, destinationAccount, approvalList);
     }
 }

@@ -8,9 +8,9 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pei.domain.Account;
 import com.pei.domain.Transaction;
-import com.pei.domain.User;
+import com.pei.domain.Account.Account;
+import com.pei.domain.User.User;
 import com.pei.dto.Alert;
 import com.pei.dto.ChargebackDTO;
 
