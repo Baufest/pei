@@ -3,6 +3,7 @@ package com.pei.service;
 import com.pei.domain.Account.Account;
 import com.pei.domain.Transaction;
 import com.pei.domain.*;
+import com.pei.domain.User.User;
 import com.pei.dto.Alert;
 import com.pei.repository.*;
 import com.pei.service.alertnotificator.AlertNotificatorService;

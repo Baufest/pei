@@ -17,12 +17,12 @@ public interface LoginRepository extends JpaRepository<Login, Long> {
     @Query("SELECT l FROM Login l " +
         "WHERE l.user.id = :userId " +
         "AND l.country = :country " +
-        "AND l.device.deviceID = :deviceID " +
+        "AND l.device.deviceId = :deviceID " +
         "AND l.success = :success")
     List<Login> findLoginByUserAndCountryAndDevice(
         @Param("userId") Long userId,
         @Param("country") String country,
-        @Param("deviceID") String deviceID,
+        @Param("deviceId") Long deviceID,
         @Param("success") boolean success);
 
 

@@ -89,7 +89,7 @@ class AlertControllerTest {
             ReflectionTestUtils.setField(user, "id", 1L);
 
             Device device = new Device();
-            device.setDeviceID("qwertasdfgh");
+            device.setDeviceId(1L);
             device.setUser(user);
 
             Login login = new Login(1L, user, device, "Canada", LocalDateTime.now(), true);
@@ -114,7 +114,7 @@ class AlertControllerTest {
             ReflectionTestUtils.setField(user, "id", 1L);
 
             Device device = new Device();
-            device.setDeviceID("qwertasdfgh");
+            device.setDeviceId(1L);
             device.setUser(user);
 
             Login login = new Login(1L, user, device, "Canada", LocalDateTime.now(), true);
@@ -557,7 +557,7 @@ class AlertControllerTest {
 
             // Login
             Device device = new Device();
-            ReflectionTestUtils.setField(device, "deviceID", "device123");
+            ReflectionTestUtils.setField(device, "deviceId", 123L); // CORREGIDO
 
             Login login = new Login();
             ReflectionTestUtils.setField(login, "id", 5L);
@@ -580,6 +580,7 @@ class AlertControllerTest {
                 .andExpect(jsonPath("$.userId").value(1))
                 .andExpect(jsonPath("$.description").value("Dispositivo nuevo y horario inusual"));
         }
+
 
 
 

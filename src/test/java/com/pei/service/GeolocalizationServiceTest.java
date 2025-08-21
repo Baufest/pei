@@ -56,7 +56,7 @@ class GeolocalizationServiceTest {
 
         // Creamos el Device
         device = new Device();
-        device.setDeviceID("DEVICE-123");
+        device.setDeviceId(1L);
         device.setUser(user);
 
         // Creamos el Login usando el constructor de 6 argumentos
@@ -73,18 +73,23 @@ class GeolocalizationServiceTest {
 
     @Test
     void shouldReturnFraudAlertWhenNoPreviousLoginFound() {
-        // previo
+        // Preparar datos con constructores
+        User user = new User(1L);
+        Device device = new Device(1L, user);
+        Login login = new Login(null, user, device, "Canada", LocalDateTime.now(), true);
+
+        // Stubbing
         when(geoSimService.getCountryFromIP("Canada")).thenReturn("Canada");
-        when(loginRepository.findLoginByUserAndCountryAndDevice(1L, "Canada", "DEVICE-123", true))
-            .thenReturn(List.of()); // lista vacía
+        when(loginRepository.findLoginByUserAndCountryAndDevice(anyLong(), anyString(), any(), anyBoolean()))
+            .thenReturn(List.of());
         when(loginRepository.findAll()).thenReturn(List.of(
             new Login(50L, user, device, "Canada", LocalDateTime.now(), true)
         ));
 
-        // act
+        // Act
         Alert alert = geolocalizationService.verifyFraudOfDeviceAndGeolocation(login);
 
-        // checks
+        // Assert
         assertEquals(1L, alert.userId());
         assertEquals("Device and geolocalization problem detected for 1", alert.description());
         verify(loginRepository).save(any(Login.class));
@@ -92,40 +97,51 @@ class GeolocalizationServiceTest {
 
     @Test
     void shouldAssignIdOneWhenNoLoginExistInRepository() {
-        // previo
+        // Crear usuario y dispositivo correctamente
+        User user = new User(1L);
+        Device device = new Device(1L, user); // Constructor con ID y usuario
+        Login login = new Login(null, user, device, "Canada", LocalDateTime.now(), true);
+
+        // Stubbing
         when(geoSimService.getCountryFromIP("Canada")).thenReturn("Canada");
-        when(loginRepository.findLoginByUserAndCountryAndDevice(anyLong(), anyString(), anyString(),
-            anyBoolean()))
+        when(loginRepository.findLoginByUserAndCountryAndDevice(anyLong(), anyString(), anyLong(), anyBoolean()))
             .thenReturn(List.of());
         when(loginRepository.findAll()).thenReturn(List.of()); // lista vacía
 
-        // act
+        // Act
         geolocalizationService.verifyFraudOfDeviceAndGeolocation(login);
 
-        // checks
+        // Assert
         ArgumentCaptor<Login> captor = ArgumentCaptor.forClass(Login.class);
         verify(loginRepository).save(captor.capture());
         assertEquals(1L, captor.getValue().getUser().getId());
     }
 
+
     @Test
     void shouldAssignIdAsLastPlusOneWhenLoginExist() {
-        // previo
+        // Crear usuario y dispositivo con constructores
+        User user = new User(1L);
+        Device device = new Device(1L, user);
+        Login login = new Login(null, user, device, "Canada", LocalDateTime.now(), true);
+
+        // Stubbing
         when(geoSimService.getCountryFromIP("Canada")).thenReturn("Canada");
-        when(loginRepository.findLoginByUserAndCountryAndDevice(anyLong(), anyString(), anyString(),
-            anyBoolean()))
+        when(loginRepository.findLoginByUserAndCountryAndDevice(anyLong(), anyString(), anyLong(), anyBoolean()))
             .thenReturn(List.of());
         when(loginRepository.findAll()).thenReturn(List.of(
             new Login(10L, user, device, "Canada", LocalDateTime.now(), true)));
 
-        // act
+        // Act
         geolocalizationService.verifyFraudOfDeviceAndGeolocation(login);
 
-        // checks
+        // Assert
         ArgumentCaptor<Login> captor = ArgumentCaptor.forClass(Login.class);
         verify(loginRepository).save(captor.capture());
         assertEquals(1L, captor.getValue().getUser().getId());
     }
+
+
 
     /* CAMBIAR LLAMADO A NEW FALTA VARIABLE SUCCESS */
         /* @Test

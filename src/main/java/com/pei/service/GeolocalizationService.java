@@ -43,7 +43,7 @@ public class GeolocalizationService {
         String countryActual = geoSimService.getCountryFromIP(login.getCountry());
 
         List<Login> LoginDelUser = loginRepository.findLoginByUserAndCountryAndDevice(login.getUser().getId(),
-                countryActual, login.getDevice().getDeviceID(), true);
+                countryActual, login.getDevice().getDeviceId(), true);
 
         List<Login> allLogin = loginRepository.findAll();
         Long lastLoginId = allLogin.isEmpty() ? 1 : allLogin.get(allLogin.size() - 1).getUser().getId() + 1;
