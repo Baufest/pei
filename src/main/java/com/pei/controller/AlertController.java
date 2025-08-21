@@ -42,14 +42,14 @@ public class AlertController {
     private final ClienteService clienteService;
 
     public AlertController(AlertService alertService,
-                AccountService accountService, TransactionService transactionService,
-                GeolocalizationService geolocalizationService, ClienteService clienteService) {
+            AccountService accountService, TransactionService transactionService,
+            GeolocalizationService geolocalizationService, ClienteService clienteService) {
         this.alertService = alertService;
         this.accountService = accountService;
         this.transactionService = transactionService;
         this.geolocalizationService = geolocalizationService;
         this.clienteService = clienteService;
-        
+
     }
 
     @PostMapping("/alerta-money-mule")
@@ -173,7 +173,7 @@ public class AlertController {
         }
         return ResponseEntity.notFound().build();
     }
-    
+
     @PostMapping("/alerta-dispositivo")
     public ResponseEntity<Alert> checkDeviceLocalization(@RequestBody Logins login) {
         try {
@@ -190,20 +190,23 @@ public class AlertController {
 
     @GetMapping("/alerta-fast-multiple-transaction/{userId}")
     public ResponseEntity<Alert> getFastMultipleTransactionsAlert(@PathVariable Long userId) {
-        
         String clientType = clienteService.getClientType(userId);
         if (clientType == null || (!clientType.equals("individuo") && !clientType.equals("empresa"))) {
             return ResponseEntity.notFound().build();
         }
 
-        Alert alert = transactionService.getFastMultipleTransactionAlert(userId, clientType);
+        try {
+            Alert alert = transactionService.getFastMultipleTransactionAlert(userId, clientType);
 
-        if (alert != null) {
-            return ResponseEntity.ok(alert);
-        } else {
-            return ResponseEntity.notFound().build();
+            if (alert != null) {
+                return ResponseEntity.ok(alert);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new Alert(userId, "Error: " + e.getMessage()));
         }
-
     }
 
     @PostMapping("/alerta-canales")
@@ -233,29 +236,32 @@ public class AlertController {
     @PostMapping("/alerta-account-takeover")
     public ResponseEntity<Alert> evaluateAccountTakeover(@RequestBody List<UserEvent> userEvents) {
         try {
-            // Si tengo algún evento de usuario que sea crítico, entonces se genera una alerta
+            // Si tengo algún evento de usuario que sea crítico, entonces se genera una
+            // alerta
             boolean userEventFlag = userEvents.stream()
-                .anyMatch(userEvent -> userEvent.getType().CriticEvent());
+                    .anyMatch(userEvent -> userEvent.getType().CriticEvent());
 
-            Optional<Transaction> mostRecentTransfer = transactionService.getMostRecentTransferByUserId(userEvents.get(0).getUser().getId());
+            Optional<Transaction> mostRecentTransfer = transactionService
+                    .getMostRecentTransferByUserId(userEvents.get(0).getUser().getId());
 
             boolean lastTransferFlag = mostRecentTransfer.isPresent() &&
-                transactionService.isLastTransferInLastHour(mostRecentTransfer.get(), userEvents.get(0).getEventDateHour());
+                    transactionService.isLastTransferInLastHour(mostRecentTransfer.get(),
+                            userEvents.get(0).getEventDateHour());
 
             if (userEventFlag && lastTransferFlag) {
                 // Crear alerta de account takeover
                 Long userId = mostRecentTransfer.get().getUser().getId();
                 Alert alert = new Alert(
-                    userId,
-                    "Alerta: Posible Account Takeover detectado para el usuario " + userId
-                    );
+                        userId,
+                        "Alerta: Posible Account Takeover detectado para el usuario " + userId);
                 return ResponseEntity.ok(alert);
             } else {
                 return ResponseEntity.notFound().build();
             }
 
         } catch (Exception e) {
-            return ResponseEntity.status(400).body(new Alert(null, "Error: No se han proporcionado eventos de usuario."));
+            return ResponseEntity.status(400)
+                    .body(new Alert(null, "Error: No se han proporcionado eventos de usuario."));
         }
     }
 

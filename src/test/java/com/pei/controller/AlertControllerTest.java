@@ -1,5 +1,8 @@
 package com.pei.controller;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -26,7 +29,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -519,6 +524,68 @@ class AlertControllerTest {
                         }
 
                 }
+        }
+
+        @Nested
+        @DisplayName("tests para velocity transaction fraud umbral")
+        public class TestsUmbralDeVelocidades {
+                Long userId;
+
+                @BeforeEach
+                public void setUp() {
+                        userId = 1L;
+                }
+
+                @Test
+                void whenClientTypeIsNull_ShouldReturnNotFound() throws Exception {
+                        when(clienteService.getClientType(userId)).thenReturn(null);
+                        mockMvc.perform(get("/api/alerta-fast-multiple-transaction/{userId}", userId))
+                                        .andExpect(status().isNotFound());
+                }
+
+                @Test
+                void whenClienttypeIsInvalid_ShouldReturnNotFound() throws Exception {
+                        when(clienteService.getClientType(userId)).thenReturn("otroTipo");
+                        mockMvc.perform(get("/api/alerta-fast-multiple-transaction/{userId}", userId))
+                                        .andExpect(status().isNotFound());
+                }
+
+                @Test
+                void whenAllOk_ShouldReturnAlerta() throws Exception {
+                        Alert alert = new Alert(userId, "Fast multiple transactions detected for user " + userId);
+                        when(clienteService.getClientType(userId)).thenReturn("individuo");
+                        when(transactionService.getFastMultipleTransactionAlert(userId, "individuo"))
+                                        .thenReturn(alert);
+
+                        mockMvc.perform(get("/api/alerta-fast-multiple-transaction/{userId}", userId))
+                                        .andExpect(status().isOk())
+                                        .andExpect(jsonPath("$.userId").value(userId))
+                                        .andExpect(jsonPath("$.description").value(
+                                                        "Fast multiple transactions detected for user " + userId));
+                }
+
+                @Test
+                void whenAlertaIsNull_ShouldReturnNotFound() throws Exception {
+                        when(clienteService.getClientType(userId)).thenReturn("empresa");
+                        when(transactionService.getFastMultipleTransactionAlert(userId, "empresa"))
+                                        .thenReturn(null);
+
+                        mockMvc.perform(get("/api/alerta-fast-multiple-transaction/{userId}", userId))
+                                        .andExpect(status().isNotFound());
+                }
+
+                @Test
+                void whenThrowIllegalArg_ShouldReturnException() throws Exception {
+                        when(clienteService.getClientType(userId)).thenReturn("individuo");
+                        when(transactionService.getFastMultipleTransactionAlert(userId, "individuo"))
+                                        .thenThrow(new IllegalArgumentException("Parametros invalidos"));
+
+                        mockMvc.perform(get("/api/alerta-fast-multiple-transaction/{userId}", userId))
+                                        .andExpect(status().isBadRequest())
+                                        .andExpect(jsonPath("$.userId").value(userId))
+                                        .andExpect(jsonPath("$.description").value("Error: Parametros invalidos"));
+                }
+
         }
 
 }
