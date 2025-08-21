@@ -15,6 +15,7 @@ import com.pei.domain.Transaction;
 import java.util.Optional;
 
 import com.pei.dto.Alert;
+import com.pei.handler.severidadAlertaHandler.ManejadorDeSeveridad;
 import com.pei.repository.ChargebackRepository;
 import com.pei.repository.PurchaseRepository;
 import com.pei.repository.TransactionRepository;
@@ -187,7 +188,13 @@ public class TransactionService {
         return minutesDifference >= 0 && minutesDifference <= 60;
     }
 
+    /*
+     * Service creado para pruebas del chains of responsability
+     */
     public Alert checkTransactionAmount(Transaction t) {
+        if (t == null) {
+            throw new IllegalArgumentException("Parametro invalido");
+        }
         String msj = "No hay nada malo aca.";
         Long idCliente = t.getUser().getId();
 
