@@ -53,11 +53,12 @@ public class User {
     @Column(nullable = false, unique = true) // email único y obligatorio
     private String email;
     
-    /* @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, orphanRemoval = true)
     private Set<Device> devices = new HashSet<>();
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, orphanRemoval = true)
-    private Set<Country> countries = new HashSet<>(); */
+    //@OneToMany(mappedBy = "user", fetch = FetchType.EAGER, orphanRemoval = true)
+    //private Set<Country> countries = new HashSet<>();
+
 
     @Embedded
     private TimeRange avgTimeRange;
@@ -178,6 +179,10 @@ public class User {
 
     public void setAvgTimeRange(TimeRange avgTimeRange) {
         this.avgTimeRange = avgTimeRange;
+    }
+
+    public Set<Device> getDevices() {
+        return devices;
     }
 
     @Override

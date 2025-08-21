@@ -1,8 +1,6 @@
 package com.pei.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -18,6 +16,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import com.pei.domain.*;
+import com.pei.dto.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -28,17 +28,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pei.domain.Account.Account;
-import com.pei.domain.Transaction;
 import com.pei.domain.User.User;
-import com.pei.dto.Alert;
-import com.pei.dto.Logins;
-import com.pei.dto.UserTransaction;
 
-import com.pei.repository.LoginsRepository;
+import com.pei.repository.LoginRepository;
 
 import com.pei.service.AccountService;
 import com.pei.service.AlertService;
@@ -58,7 +55,7 @@ class AlertControllerTest {
         private GeoSimService geoSimService;
 
         @MockitoBean
-        private LoginsRepository loginsRepository;
+        private LoginRepository loginRepository;
 
         @MockitoBean
         private AlertService alertService;
@@ -78,49 +75,67 @@ class AlertControllerTest {
         @Autowired
         MockMvc mockMvc;
 
-        @Nested
-        @DisplayName("Tests para validar fraude geolocalizacion y dispositivo")
-        class ValidarFraudeGeoDisp {
+    @Nested
+    @DisplayName("Tests para validar fraude geolocalizacion y dispositivo")
+    class ValidarFraudeGeoDisp {
 
-                /* solo probamos el controller que funcione corretamente */
-                @Test
-                void shouldReturnAlertWhenNoPreviousLoginsFound() throws Exception {
-                        Logins login = new Logins(1L, 1L, "qwertasdfgh", "Canada", LocalDateTime.now(), true);
+        @Test
+        void shouldReturnAlertWhenNoPreviousLoginFound() throws Exception {
+            User user = new User();
+            ReflectionTestUtils.setField(user, "id", 1L);
 
-                        when(geolocalizationService.verifyFraudOfDeviceAndGeolocation(login))
-                                        .thenReturn(new Alert(login.userId(),
-                                                        "Device and geolocalization problem detected for "
-                                                                        + login.userId()));
+            Device device = new Device();
+            device.setDeviceID("qwertasdfgh");
+            device.setUser(user);
 
-                        mockMvc.perform(post("/api/alerta-dispositivo")
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .content(objectMapper.writeValueAsString(login)))
-                                        .andExpect(status().isOk())
-                                        .andExpect(jsonPath("$.userId").value(1))
-                                        .andExpect(jsonPath("$.description")
-                                                        .value("Device and geolocalization problem detected for 1"));
-                }
+            Login login = new Login(1L, user, device, "Canada", LocalDateTime.now(), true);
 
-                /* probamos que devuelva something else, correctamente */
-                @Test
-                void shouldReturnAlertOkWhenPreviousLoginsFound() throws Exception {
-                        Logins login = new Logins(1L, 1L, "qwertasdfgh", "Canada", LocalDateTime.now(), true);
+            when(geolocalizationService.verifyFraudOfDeviceAndGeolocation(any(Login.class)))
+                .thenReturn(new Alert(user.getId(),
+                    "Device and geolocalization problem detected for " + user.getId()));
 
-                        when(geolocalizationService.verifyFraudOfDeviceAndGeolocation(login))
-                                        .thenReturn(new Alert(1L, "Something Else"));
+            mockMvc.perform(post("/api/alerta-dispositivo")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(login)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(1))
+                .andExpect(jsonPath("$.description")
+                    .value("Device and geolocalization problem detected for 1"));
+        }
 
-                        mockMvc.perform(post("/api/alerta-dispositivo")
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .content(objectMapper.writeValueAsString(login)))
-                                        .andExpect(status().isOk())
-                                        .andExpect(jsonPath("$.userId").value(1))
-                                        .andExpect(jsonPath("$.description")
-                                                        .value("Something Else"));
-                }
+        @Test
+        void shouldReturnAlertOkWhenPreviousLoginFound() throws Exception {
+            // Creamos el User y Device
+            User user = new User();
+            ReflectionTestUtils.setField(user, "id", 1L);
 
-                @Test
+            Device device = new Device();
+            device.setDeviceID("qwertasdfgh");
+            device.setUser(user);
+
+            Login login = new Login(1L, user, device, "Canada", LocalDateTime.now(), true);
+
+            // Mockeamos el servicio para que devuelva otra alerta
+            when(geolocalizationService.verifyFraudOfDeviceAndGeolocation(any(Login.class)))
+                .thenReturn(new Alert(user.getId(), "Something Else"));
+
+            mockMvc.perform(post("/api/alerta-dispositivo")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(login)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(1))
+                .andExpect(jsonPath("$.description").value("Something Else"));
+        }
+
+
+
+
+
+
+
+    @Test
                 void shouldReturn404WhenLoginNull() throws Exception {
-                        Logins login = null;
+                        Login login = null;
 
                         mockMvc.perform(post("/api/alerta-dispositivo")
                                         .contentType(MediaType.APPLICATION_JSON)
@@ -463,7 +478,7 @@ class AlertControllerTest {
                         }
                 }
 
-                @DisplayName("Tests para Evaluar el Account Takeover")
+                @Nested @DisplayName("Tests para Evaluar el Account Takeover")
                 class EvaluateAccountTakeoverTests {
 
                         @Test
@@ -520,5 +535,93 @@ class AlertControllerTest {
 
                 }
         }
+
+    @Nested @DisplayName("Tests de Autenticación por Comportamiento Inusual")
+    class CheckUnusualBehaviorTests {
+
+        @Test
+        void shouldReturnAlertWhenBehaviorIsUnusual() throws Exception {
+            User user = new User();
+            ReflectionTestUtils.setField(user, "id", 1L);
+
+            Transaction transaction = new Transaction();
+            ReflectionTestUtils.setField(transaction, "user", user);
+
+            Login login = new Login();
+            ReflectionTestUtils.setField(login, "user", user);
+
+            TransactionLogin transactionLogin = new TransactionLogin(login, transaction);
+
+            Alert alert = new Alert(user.getId(), "Dispositivo nuevo y horario inusual");
+
+            when(alertService.evaluateTransactionBehavior(any(Transaction.class), any(Login.class)))
+                .thenReturn(alert);
+
+            mockMvc.perform(post("/api/alerta/comportamiento")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(transactionLogin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(1))
+                .andExpect(jsonPath("$.description").value("Dispositivo nuevo y horario inusual"));
+        }
+
+        @Test
+        void shouldReturnNotFoundWhenNoAlertGenerated() throws Exception {
+            TransactionLogin transactionLogin = new TransactionLogin(new Login(), new Transaction());
+
+            when(alertService.evaluateTransactionBehavior(any(Transaction.class), any(Login.class)))
+                .thenReturn(null);
+
+            mockMvc.perform(post("/api/alerta/comportamiento")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(transactionLogin)))
+                .andExpect(status().isNotFound());
+        }
+        @Test
+        void shouldReturnAlertWhenAmountExceedsThreshold() throws Exception {
+            User user = new User();
+            ReflectionTestUtils.setField(user, "id", 1L);
+            ReflectionTestUtils.setField(user, "averageMonthlySpending", new BigDecimal("5000"));
+
+            Transaction transaction = new Transaction();
+            ReflectionTestUtils.setField(transaction, "user", user);
+            ReflectionTestUtils.setField(transaction, "amount", new BigDecimal("12500")); // > 200% del promedio
+            ReflectionTestUtils.setField(transaction, "date", LocalDateTime.now());
+
+            Login login = new Login();
+            ReflectionTestUtils.setField(login, "user", user);
+
+            TransactionLogin transactionLogin = new TransactionLogin(login, transaction);
+
+            Alert alert = new Alert(user.getId(), "Monto de transacción inusual");
+
+            when(alertService.evaluateTransactionBehavior(any(Transaction.class), any(Login.class)))
+                .thenReturn(alert);
+
+            mockMvc.perform(post("/api/alerta/comportamiento")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(transactionLogin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(1))
+                .andExpect(jsonPath("$.description").value("Monto de transacción inusual"));
+        }
+
+        @Test
+        void shouldReturnInternalServerErrorOnException() throws Exception {
+            TransactionLogin transactionLogin = new TransactionLogin(new Login(), new Transaction());
+
+            when(alertService.evaluateTransactionBehavior(any(Transaction.class), any(Login.class)))
+                .thenThrow(new RuntimeException("Error inesperado"));
+
+            mockMvc.perform(post("/api/alerta/comportamiento")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(transactionLogin)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.userId").doesNotExist())
+                .andExpect(jsonPath("$.description")
+                    .value("Error interno del servidor. No se pudo procesar la solicitud."));
+        }
+    }
+
 
 }

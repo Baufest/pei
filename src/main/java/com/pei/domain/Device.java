@@ -1,47 +1,41 @@
 package com.pei.domain;
 
 import com.pei.domain.User.User;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
-@Table(name = "Device")
+@Table(name = "device")
 public class Device {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String devideID;
+    @Column(nullable = false)
+    private String deviceID;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
     public Device() {
-        // constructor para jpa
     }
 
-    public Device(String deviceID) {
-        this.devideID = deviceID;
+    public Device(String deviceID, User user) {
+        this.deviceID = deviceID;
+        this.user = user;
     }
 
     public Long getId() {
         return id;
     }
 
-    public String getDevideID() {
-        return devideID;
+    public String getDeviceID() {
+        return deviceID;
     }
 
-    public void setDevideID(String devideID) {
-        this.devideID = devideID;
+    public void setDeviceID(String deviceID) {
+        this.deviceID = deviceID;
     }
 
     public User getUser() {
@@ -51,6 +45,4 @@ public class Device {
     public void setUser(User user) {
         this.user = user;
     }
-
-    
 }

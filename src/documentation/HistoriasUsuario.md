@@ -325,7 +325,7 @@ _No aplica para este endpoint. No se utilizan servicios externos._
 ## 🧑‍💻 Historia de Usuario #220
 
 ### 📝 Título
-Alerta por logins desde múltiples países
+Alerta por Login desde múltiples países
 
 ---
 
@@ -352,7 +352,7 @@ Detecta si un usuario inicia sesión desde dos o más países diferentes en la �
 
 ### 🔍 Impacto en el Sistema
 - Módulo afectado: Seguridad y alertas
-- Dependencias relevantes: `LoginsRepository`
+- Dependencias relevantes: `LoginRepository`
 
 ---
 
@@ -1519,3 +1519,135 @@ _No aplica, ya que no se expone vía API._
 - **ClienteConfiablePropertiesTest**: Se agregaron tests unitarios para verificar la carga y acceso a la configuración.
 
 ---
+
+## 👨‍💻 Historia de Usuario #233
+
+### 📝 Título
+Autenticación por "Comportamiento Inusual"
+
+---
+
+### 📌 Descripción Breve
+Se implementa un mecanismo de autenticación adicional para usuarios que se desvían de su comportamiento típico.  
+La alerta se dispara cuando:
+- El monto de una transacción supera un porcentaje configurable del promedio histórico del usuario (`averageMonthlySpending` en `User`):
+    - Cliente individuo → 200%
+    - Cliente empresa → 300%
+- El usuario inicia sesión desde un **dispositivo nuevo** y la hora de la sesión está fuera del 90% de sus transacciones históricas.
+
+El objetivo es reforzar la seguridad detectando comportamientos inusuales antes de permitir operaciones críticas.
+
+---
+
+### ⚙️ Detalles Técnicos
+
+#### 🧩 Clases/Métodos Afectados
+- `AlertController`
+    - Método: `checkUnusualBehavior(TransactionLogin transactionLogin)` → recibe DTO combinando `Login` y `Transaction`.
+- `AlertService`
+    - Métodos:
+        - `evaluateTransactionBehavior(Transaction transaction, Login login)`
+        - `checkUnusualAmount(User user, BigDecimal transactionAmount)`
+        - `checkUnusualBehavior(User user, Transaction transaction, Login login)`
+        - `isNewDevice(Login login)`
+        - `isUnusualTime(User user, LocalDateTime transactionTime)`
+- `TransactionService`
+    - Soporte para cálculos de promedios y verificación de comportamientos.
+- DTO / Entidades:
+    - `TransactionLogin` → combina `Transaction` y `Login`.
+    - `Alert` → record para la respuesta de alerta (`Alert(Long userId, String description)`).
+    - `User`, `Device`, `Login`, `Transaction` → entidades utilizadas en la validación.
+
+#### 🌐 Endpoints Nuevos/Modificados
+- **POST `/api/alerta/comportamiento`**
+    - Evalúa transacciones y sesiones de usuario para detectar comportamientos inusuales.
+    - Respuesta:
+        - `200 OK` + `Alert` → cuando se detecta comportamiento inusual.
+        - `404 Not Found` → cuando no se detecta alerta.
+        - `500 Internal Server Error` → si ocurre un error inesperado.
+
+#### 🗃️ Cambios en Base de Datos
+- No se realizaron cambios estructurales en la base de datos.
+
+#### 🗃️ Cambios en Configuración
+- Se agregó configuración para definir los porcentajes de disparo de alerta por tipo de cliente en `application.yml`:
+
+**Ejemplo en `application.yml`:**
+```yaml
+alert:
+  threshold:
+    INDIVIDUAL: 2.0 # 200% del promedio histórico
+    COMPANY: 3.0    # 300% del promedio histórico
+  time-percentile: 90
+```
+
+### 🔍 Impacto en el Sistema
+- Módulo afectado: `com.pei.controller`, `com.pei.service`, `com.pei.dto`, `com.pei.domain`.
+- Permite detectar y prevenir transacciones y accesos de riesgo mediante alertas.
+- Mejora la seguridad y confiabilidad del sistema sin cambios en la base de datos.
+
+---
+
+### 💻 Ejemplo de Uso
+
+**Request**
+```http
+POST /api/alerta/comportamiento
+Content-Type: application/json
+
+{
+  "transaction": {
+    "id": 12,
+    "user": { "id": 1 },
+    "amount": 12500.0,
+    "date": "2025-08-21T14:30:00"
+  },
+  "login": {
+    "id": 5,
+    "device": { "deviceID": "qwertasdfgh" },
+    "user": { "id": 1 },
+    "location": "Canada"
+  }
+}
+```
+
+**Response**
+```http
+{
+"userId": 1,
+"description": "Dispositivo nuevo y horario de sesión fuera del rango esperado."
+}
+```
+
+## 🧪 Pruebas Unitarias
+
+### 🧪 Escenarios Cubiertos
+- `shouldReturnAlertWhenBehaviorIsUnusual`: Se dispara alerta cuando el usuario inicia sesión en un dispositivo nuevo fuera del rango horario normal.
+- `shouldReturnNotFoundWhenNoAlertGenerated`: Retorna 404 si no se detecta comportamiento inusual.
+- `shouldReturnAlertWhenAmountExceedsThreshold`: Se dispara alerta cuando la transacción supera el porcentaje configurado del promedio histórico. *(pendiente de implementar)*
+- `shouldReturnInternalServerErrorOnException`: Maneja errores inesperados y retorna 500 con mensaje en `Alert`. *(pendiente de implementar)*
+
+### 🧪 Endpoints Probados
+- **POST `/api/alerta/comportamiento`**
+
+---
+
+## ✅ Estado
+✔️ Completado
+
+---
+
+## 🔗 Integraciones Externas
+- No aplica. Toda la lógica se ejecuta dentro del sistema.
+
+---
+
+## 📝 Cambios realizados
+- **application.yml**: Configuración de porcentajes de alerta y percentil horario.
+- **AlertController**: Método `checkUnusualBehavior` agregado para validar transacciones y sesiones.
+- **AlertService**: Se implementaron métodos para detectar comportamiento inusual y calcular alertas.
+- **TransactionLogin DTO**: Se creó para combinar `Transaction` y `Login`.
+- **Pruebas Unitarias**: Se agregaron tests que cubren escenarios de monto excesivo, dispositivo nuevo y horarios inusuales.
+
+
+

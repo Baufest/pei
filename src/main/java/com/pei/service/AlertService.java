@@ -99,7 +99,7 @@ public class AlertService {
      * Método principal que evalúa la transacción y devuelve la primera alerta encontrada.
      * La lógica de verificación de monto y comportamiento está delegada a métodos auxiliares.
      */
-    public Alert evaluateTransactionBehavior(Transaction transaction) {
+    public Alert evaluateTransactionBehavior(Transaction transaction, Login login) {
         User user = transaction.getUser();
 
         // 1. Verificación de monto inusual
@@ -109,7 +109,7 @@ public class AlertService {
         }
 
         // 2. Verificación de comportamiento inusual (dispositivo nuevo + horario fuera del rango)
-        Alert behaviorAlert = transactionService.checkUnusualBehavior(user, transaction);
+        Alert behaviorAlert = transactionService.checkUnusualBehavior(user, transaction, login);
         if (behaviorAlert != null) {
             return behaviorAlert;
         }

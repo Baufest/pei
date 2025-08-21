@@ -2,6 +2,7 @@ package com.pei.repository;
 
 import com.pei.domain.Transaction;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 
@@ -27,4 +28,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     """)
     List<Transaction> findRecentTransferByUserId(@Param("userId") Long userId);
     List<Transaction> findByUserId(Long userId);
+
+    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.user.id = :userId AND t.date >= :fromDate")
+    BigDecimal sumTransactionsFromDate(@Param("userId") Long userId, @Param("fromDate") LocalDateTime fromDate);
+
+
 }

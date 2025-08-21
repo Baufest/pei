@@ -1,6 +1,6 @@
 package com.pei.controller;
 
-import com.pei.domain.Transaction;
+import com.pei.domain.*;
 import com.pei.dto.*;
 import com.pei.service.AlertService;
 import com.pei.service.ClienteService;
@@ -140,7 +140,7 @@ public class AlertController {
         }
     }
 
-    @GetMapping("/alerta-logins/{userId}")
+    @GetMapping("/alerta-Login/{userId}")
     public ResponseEntity<Alert> getLoginAlert(@PathVariable Long userId) {
         Alert alert = geolocalizationService.getLoginAlert(userId);
 
@@ -171,7 +171,7 @@ public class AlertController {
     }
     
     @PostMapping("/alerta-dispositivo")
-    public ResponseEntity<Alert> checkDeviceLocalization(@RequestBody Logins login) {
+    public ResponseEntity<Alert> checkDeviceLocalization(@RequestBody Login login) {
         try {
             if (login == null) {
                 return ResponseEntity.badRequest().build();
@@ -256,9 +256,9 @@ public class AlertController {
     }
 
     @PostMapping("/alerta/comportamiento")
-    public ResponseEntity<Alert> checkUnusualBehavior(@RequestBody Transaction transaction) {
+    public ResponseEntity<Alert> checkUnusualBehavior(@RequestBody TransactionLogin transactionLogin) {
         try {
-            Alert alerta = alertService.evaluateTransactionBehavior(transaction);
+            Alert alerta = alertService.evaluateTransactionBehavior(transactionLogin.getTransaction(), transactionLogin.getLogin());
             if (alerta != null) {
                 return ResponseEntity.ok(alerta);
             } else {

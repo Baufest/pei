@@ -8,54 +8,54 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.pei.dto.Alert;
-import com.pei.dto.Logins;
-import com.pei.repository.LoginsRepository;
+import com.pei.domain.Login;
+import com.pei.repository.LoginRepository;
 
 @Service
 public class GeolocalizationService {
     
-    private LoginsRepository loginsRepository;
+    private LoginRepository loginRepository;
     private GeoSimService geoSimService;
 
 
-    public GeolocalizationService(GeoSimService geoSimService, LoginsRepository loginsRepository) {
+    public GeolocalizationService(GeoSimService geoSimService, LoginRepository loginRepository) {
         this.geoSimService = geoSimService;
-        this.loginsRepository = loginsRepository;
+        this.loginRepository = loginRepository;
     }
     
     public Alert getLoginAlert(Long userId) {
         LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
-        List<Logins> loginsRecientes = loginsRepository.findRecentLogins(userId, oneHourAgo);
+        List<Login> LoginRecientes = loginRepository.findRecentLogin(userId, oneHourAgo);
 
-        Set<String> paises = loginsRecientes.stream()
-                .map(Logins::getCountry)
+        Set<String> paises = LoginRecientes.stream()
+                .map(Login::getCountry)
                 .collect(Collectors.toSet());
 
         if (paises.size() >= 2) {
-            return new Alert(userId, "Multiple countries logins detected for user " + userId);
+            return new Alert(userId, "Multiple countries Login detected for user " + userId);
         }
 
         return null; 
     }
     
-    public Alert verifyFraudOfDeviceAndGeolocation(Logins login) {
+    public Alert verifyFraudOfDeviceAndGeolocation(Login login) {
         
-        String countryActual = geoSimService.getCountryFromIP(login.country());
+        String countryActual = geoSimService.getCountryFromIP(login.getCountry());
 
-        List<Logins> loginsDelUser = loginsRepository.findLoginsByUserAndCountryAndDevice(login.userId(),
-                countryActual, login.deviceID(), true);
+        List<Login> LoginDelUser = loginRepository.findLoginByUserAndCountryAndDevice(login.getUser().getId(),
+                countryActual, login.getDevice().getDeviceID(), true);
 
-        List<Logins> allLogins = loginsRepository.findAll();
-        Long lastLoginsId = allLogins.isEmpty() ? 1 : allLogins.get(allLogins.size() - 1).id() + 1;
+        List<Login> allLogin = loginRepository.findAll();
+        Long lastLoginId = allLogin.isEmpty() ? 1 : allLogin.get(allLogin.size() - 1).getUser().getId() + 1;
 
-        loginsRepository.save(new Logins(lastLoginsId, login.userId(), login.deviceID(), login.country(),
+        loginRepository.save(new Login(lastLoginId, login.getUser(), login.getDevice(), login.getCountry(),
                 LocalDateTime.now(), false));
 
-        boolean loginsMatch = loginsDelUser.isEmpty();
+        boolean LoginMatch = LoginDelUser.isEmpty();
         
-        if (loginsMatch) {
-            return new Alert(login.userId(), "Device and geolocalization problem detected for " + login.userId());
+        if (LoginMatch) {
+            return new Alert(login.getUser().getId(), "Device and geolocalization problem detected for " + login.getUser().getId());
         }
-        return new Alert(login.userId(), "Something else");
+        return new Alert(login.getUser().getId(), "Something else");
     }
 }
