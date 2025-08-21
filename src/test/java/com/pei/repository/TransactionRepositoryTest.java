@@ -253,11 +253,11 @@ class TransactionRepositoryTest {
 
         // Crear cuentas
         Account account1 = new Account(user);
-        account1.setType(AccountType.CUENTA_CORRIENTE);
+        account1.setAccountType(AccountType.CUENTA_CORRIENTE);
         accountRepository.save(account1);
 
         Account account2 = new Account(user);
-        account2.setType(AccountType.CUENTA_AHORROS);
+        account2.setAccountType(AccountType.CUENTA_AHORROS);
         accountRepository.save(account2);
 
         // Crear transacciones

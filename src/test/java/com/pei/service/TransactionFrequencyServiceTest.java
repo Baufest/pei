@@ -9,9 +9,11 @@ import com.pei.domain.User.User;
 import com.pei.domain.Transaction;
 import com.pei.domain.alerts.RecurringBeneficiaryAlert;
 import com.pei.repository.RecurringBeneficiaryAlertRepository;
+import com.pei.service.exceptions.VerificadorBeneficiarioRecurrenteException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -55,13 +57,20 @@ class TransactionFrequencyServiceTest {
     }
 
     @Test
-    void analyzeTransactionFrequency_CuandoTransaccionesNulasONoHayTransacciones_NoGuardaAlertas() {
-        when(transactionService.getAllTransactions()).thenReturn(null);
-        transactionFrequencyService.analyzeTransactionFrequency();
+    void analyzeTransactionFrequency_CuandoTransaccionesNulas_NoGuardaAlertas() {
+        when(transactionService.getAllTransactionsByUserId(anyLong())).thenReturn(null);
+        Executable executable = () -> transactionFrequencyService.analyzeTransactionFrequency(anyLong());
+        assertAll(
+            () -> assertThrows(VerificadorBeneficiarioRecurrenteException.class, executable)
+        );
         verify(recurringBeneficiaryAlertRepository, never()).saveAll(anyList());
+    }
 
-        when(transactionService.getAllTransactions()).thenReturn(Collections.emptyList());
-        transactionFrequencyService.analyzeTransactionFrequency();
+    @Test
+    void analyzeTransactionFrequency_CuandoTransaccionesVacias_NoGuardaAlertas() {
+        when(transactionService.getAllTransactionsByUserId(anyLong())).thenReturn(Collections.emptyList());
+        Executable executable = () -> transactionFrequencyService.analyzeTransactionFrequency(anyLong());
+        assertThrows(VerificadorBeneficiarioRecurrenteException.class, executable);
         verify(recurringBeneficiaryAlertRepository, never()).saveAll(anyList());
     }
 
@@ -73,8 +82,8 @@ class TransactionFrequencyServiceTest {
         for (int i = 0; i < 4; i++) {
             transacciones.add(crearTransaccion(user, cuentaDestino, LocalDateTime.now().minusHours(1)));
         }
-        when(transactionService.getAllTransactions()).thenReturn(transacciones);
-        transactionFrequencyService.analyzeTransactionFrequency();
+        when(transactionService.getAllTransactionsByUserId(anyLong())).thenReturn(transacciones);
+        transactionFrequencyService.analyzeTransactionFrequency(anyLong());
         ArgumentCaptor<List<RecurringBeneficiaryAlert>> captor = ArgumentCaptor.forClass(List.class);
         verify(recurringBeneficiaryAlertRepository).saveAll(captor.capture());
         List<RecurringBeneficiaryAlert> alerts = captor.getValue();
@@ -91,8 +100,8 @@ class TransactionFrequencyServiceTest {
         for (int i = 0; i < 3; i++) {
             transacciones.add(crearTransaccion(user, cuentaDestino, LocalDateTime.now().minusHours(2)));
         }
-        when(transactionService.getAllTransactions()).thenReturn(transacciones);
-        transactionFrequencyService.analyzeTransactionFrequency();
+        when(transactionService.getAllTransactionsByUserId(anyLong())).thenReturn(transacciones);
+        transactionFrequencyService.analyzeTransactionFrequency(anyLong());
         ArgumentCaptor<List<RecurringBeneficiaryAlert>> captor = ArgumentCaptor.forClass(List.class);
         verify(recurringBeneficiaryAlertRepository).saveAll(captor.capture());
         List<RecurringBeneficiaryAlert> alerts = captor.getValue();
@@ -110,8 +119,8 @@ class TransactionFrequencyServiceTest {
         for (int i = 0; i < 3; i++) {
             transacciones.add(crearTransaccion(user, cuentaDestino, LocalDateTime.now().minusHours(3)));
         }
-        when(transactionService.getAllTransactions()).thenReturn(transacciones);
-        transactionFrequencyService.analyzeTransactionFrequency();
+        when(transactionService.getAllTransactionsByUserId(anyLong())).thenReturn(transacciones);
+        transactionFrequencyService.analyzeTransactionFrequency(anyLong());
         ArgumentCaptor<List<RecurringBeneficiaryAlert>> captor = ArgumentCaptor.forClass(List.class);
         verify(recurringBeneficiaryAlertRepository).saveAll(captor.capture());
         List<RecurringBeneficiaryAlert> alerts = captor.getValue();
@@ -132,8 +141,8 @@ class TransactionFrequencyServiceTest {
         for (int i = 0; i < 2; i++) {
             transacciones.add(crearTransaccion(user, cuentaDestino, LocalDateTime.now().minusDays(4)));
         }
-        when(transactionService.getAllTransactions()).thenReturn(transacciones);
-        transactionFrequencyService.analyzeTransactionFrequency();
+        when(transactionService.getAllTransactionsByUserId(anyLong())).thenReturn(transacciones);
+        transactionFrequencyService.analyzeTransactionFrequency(anyLong());
         verify(recurringBeneficiaryAlertRepository, never()).saveAll(anyList());
     }
 
