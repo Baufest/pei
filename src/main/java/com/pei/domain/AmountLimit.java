@@ -24,9 +24,14 @@ public class AmountLimit {
 
     public AmountLimit(String clientType, BigDecimal amount, LocalDateTime startingDate,
             LocalDateTime expirationDate) {
+        this.clientType = clientType;
+        this.amount = amount;
+        this.startingDate = startingDate;
+        this.expirationDate = expirationDate;
     }
 
     public AmountLimit() {}
+
 
     public BigDecimal getAmount() {
         return amount;

@@ -202,7 +202,7 @@ public class TransactionService {
             return new Alert(userId, "Amount limit exceeded for user " + userId);
         }
 
-        return new Alert();
+        return null;
     }
 
     public BigDecimal getTotalAmountByUserAndDate(Long userId) {
