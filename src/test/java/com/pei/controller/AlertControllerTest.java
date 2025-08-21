@@ -560,4 +560,65 @@ class AlertControllerTest {
                 }
 
         }
+        @DisplayName("tests para velocity transaction fraud umbral")
+        public class TestsUmbralDeVelocidades {
+                Long userId;
+
+                @BeforeEach
+                public void setUp() {
+                        userId = 1L;
+                }
+
+                @Test
+                void whenClientTypeIsNull_ShouldReturnNotFound() throws Exception {
+                        when(clienteService.getClientType(userId)).thenReturn(null);
+                        mockMvc.perform(get("/api/alerta-fast-multiple-transaction/{userId}", userId))
+                                        .andExpect(status().isNotFound());
+                }
+
+                @Test
+                void whenClienttypeIsInvalid_ShouldReturnNotFound() throws Exception {
+                        when(clienteService.getClientType(userId)).thenReturn("otroTipo");
+                        mockMvc.perform(get("/api/alerta-fast-multiple-transaction/{userId}", userId))
+                                        .andExpect(status().isNotFound());
+                }
+
+                @Test
+                void whenAllOk_ShouldReturnAlerta() throws Exception {
+                        Alert alert = new Alert(userId, "Fast multiple transactions detected for user " + userId);
+                        when(clienteService.getClientType(userId)).thenReturn("individuo");
+                        when(transactionService.getFastMultipleTransactionAlert(userId, "individuo"))
+                                        .thenReturn(alert);
+
+                        mockMvc.perform(get("/api/alerta-fast-multiple-transaction/{userId}", userId))
+                                        .andExpect(status().isOk())
+                                        .andExpect(jsonPath("$.userId").value(userId))
+                                        .andExpect(jsonPath("$.description").value(
+                                                        "Fast multiple transactions detected for user " + userId));
+                }
+
+                @Test
+                void whenAlertaIsNull_ShouldReturnNotFound() throws Exception {
+                        when(clienteService.getClientType(userId)).thenReturn("empresa");
+                        when(transactionService.getFastMultipleTransactionAlert(userId, "empresa"))
+                                        .thenReturn(null);
+
+                        mockMvc.perform(get("/api/alerta-fast-multiple-transaction/{userId}", userId))
+                                        .andExpect(status().isNotFound());
+                }
+
+                @Test
+                void whenThrowIllegalArg_ShouldReturnException() throws Exception {
+                        when(clienteService.getClientType(userId)).thenReturn("individuo");
+                        when(transactionService.getFastMultipleTransactionAlert(userId, "individuo"))
+                                        .thenThrow(new IllegalArgumentException("Parametros invalidos"));
+
+                        mockMvc.perform(get("/api/alerta-fast-multiple-transaction/{userId}", userId))
+                                        .andExpect(status().isBadRequest())
+                                        .andExpect(jsonPath("$.userId").value(userId))
+                                        .andExpect(jsonPath("$.description").value("Error: Parametros invalidos"));
+                }
+
+        }
+
 }

@@ -191,14 +191,18 @@ public class AlertController {
             return ResponseEntity.notFound().build();
         }
 
-        Alert alert = transactionService.getFastMultipleTransactionAlert(userId, clientType);
+        try {
+            Alert alert = transactionService.getFastMultipleTransactionAlert(userId, clientType);
 
-        if (alert != null) {
-            return ResponseEntity.ok(alert);
-        } else {
-            return ResponseEntity.notFound().build();
+            if (alert != null) {
+                return ResponseEntity.ok(alert);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new Alert(userId, "Error: " + e.getMessage()));
         }
-
     }
 
     @PostMapping("/alerta-canales")
@@ -274,5 +278,4 @@ public class AlertController {
             return ResponseEntity.status(500).body(new Alert(null, "Error interno del servidor."));
         }
     }
-
 }
