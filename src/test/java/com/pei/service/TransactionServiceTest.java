@@ -491,4 +491,5 @@ class TransactionServiceTest {
                         assertTrue(result.description().contains(String.valueOf(scoringCliente)));
                 }
         }
+
 }

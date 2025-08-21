@@ -423,45 +423,6 @@ class AlertControllerTest {
                         verify(alertService).alertCriticality(any(Transaction.class));
                 }
 
-                @Nested
-                @DisplayName("Test para checkear ProcessTransaction con Scoring Service")
-                class ScoringIntegration {
-
-                        @Test
-                        void checkProccesTransaction_CuandoTransaccionExitosa_RetornaResponseOk() throws Exception {
-                                // Arrange
-                                Long idCliente = 1L;
-                                Alert alertaMock = new Alert(idCliente,
-                                                "Alerta: Transaccion aprobada para cliente " + idCliente
-                                                                + " con scoring de: 90");
-
-                                when(transactionService.processTransaction(idCliente)).thenReturn(alertaMock);
-
-                                mockMvc.perform(post("/api/alerta-scoring")
-                                                .contentType(MediaType.APPLICATION_JSON)
-                                                .content("1"))
-                                                .andExpect(status().isOk())
-                                                .andExpect(jsonPath("$.userId").value(idCliente))
-                                                .andExpect(jsonPath("$.description").value(
-                                                                "Alerta: Transaccion aprobada para cliente " + idCliente
-                                                                                + " con scoring de: 90"));
-                        }
-
-                        @Test
-                        void checkProccesTransaction_CuandoAlertNull_RetornaNotFound() throws Exception {
-                                // Arrange
-                                Long idCliente = 2L;
-                                when(transactionService.processTransaction(anyLong()))
-                                                .thenReturn(null);
-
-                                // Act & Assert
-                                mockMvc.perform(post("/api/alerta-scoring")
-                                                .contentType(MediaType.APPLICATION_JSON)
-                                                .content("2"))
-                                                .andExpect(status().isNotFound());
-
-                                verify(transactionService).processTransaction(idCliente);
-                        }
                 }
 
                 @Nested
@@ -521,6 +482,20 @@ class AlertControllerTest {
                         }
 
                 }
+                
+        @Test
+        void checkProcessTransaction_CuandoAlerta_RetornaOk() throws Exception {
+                when(clienteService.getClientType(1L)).thenReturn("individuo");
+                Alert alert = new Alert(1L, "Scoring");
+                when(transactionService.processTransactionScoring(1L, "individuo")).thenReturn(alert);
+
+                mockMvc.perform(post("/api/alerta-scoring")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("1"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.description").value("Scoring"));
+        }
+
         }
 
         @Nested
