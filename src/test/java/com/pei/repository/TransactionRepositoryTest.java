@@ -282,6 +282,7 @@ class TransactionRepositoryTest {
                 LocalDateTime.now().minusMinutes(2),
                 account1,
                 account2);
+        t1.setStatus(TransactionStatus.APROBADA);
         transactionRepository.save(t1);
 
         Transaction t2 = new Transaction(
@@ -290,6 +291,7 @@ class TransactionRepositoryTest {
                 LocalDateTime.now().minusHours(1),
                 account1,
                 account2);
+        t2.setStatus(TransactionStatus.APROBADA);
         transactionRepository.save(t2);
 
         Transaction t3 = new Transaction(
@@ -298,6 +300,7 @@ class TransactionRepositoryTest {
                 LocalDateTime.now().minusDays(1), // fecha vieja
                 account1,
                 account2);
+        t3.setStatus(TransactionStatus.APROBADA);
         transactionRepository.save(t3);
 
         Transaction t4 = new Transaction(
@@ -306,6 +309,7 @@ class TransactionRepositoryTest {
                 LocalDateTime.now().minusDays(10),
                 account1,
                 account2);
+        t4.setStatus(TransactionStatus.APROBADA);
         transactionRepository.save(t4);
 
         // Parámetros del query
