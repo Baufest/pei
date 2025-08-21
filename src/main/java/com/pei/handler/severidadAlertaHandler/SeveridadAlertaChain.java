@@ -6,10 +6,6 @@ import com.pei.domain.Transaction;
 public abstract class SeveridadAlertaChain {
     protected SeveridadAlertaChain next;
 
-    public void setNextComponent(SeveridadAlertaChain next) {
-        this.next = next;
-    }
-
     public AlertaSeveridad procesarSeveridad(Transaction t) {
         if (match(t))
             return getSeveridad();
@@ -19,5 +15,10 @@ public abstract class SeveridadAlertaChain {
     }
 
     protected abstract boolean match(Transaction t);
+
+    public void setNextComponent(SeveridadAlertaChain next) {
+        this.next = next;
+    }
+
     protected abstract AlertaSeveridad getSeveridad();
 }
