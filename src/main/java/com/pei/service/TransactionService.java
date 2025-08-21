@@ -149,6 +149,10 @@ public class TransactionService {
 
     public Alert getFastMultipleTransactionAlert(Long userId, String clientType) {
 
+        if (userId == null || clientType == null || clientType.isBlank()) {
+            throw new IllegalArgumentException("Parametros invalidos");
+        }
+
         Integer minutesRange;
         Integer maxTransactions;
         BigDecimal minMonto;
@@ -159,11 +163,17 @@ public class TransactionService {
             maxTransactions = transactionVelocityDetectorService.getIndividuoMaxTransactions();
             minMonto = transactionVelocityDetectorService.getIndividuoUmbralMonto().get("minMonto");
             maxMonto = transactionVelocityDetectorService.getIndividuoUmbralMonto().get("maxMonto");
-        } else {
+        } else if ("empresa".equals(clientType)) {
             minutesRange = transactionVelocityDetectorService.getEmpresaMinutesRange();
             maxTransactions = transactionVelocityDetectorService.getEmpresaMaxTransactions();
             minMonto = transactionVelocityDetectorService.getEmpresaUmbralMonto().get("minMonto");
             maxMonto = transactionVelocityDetectorService.getEmpresaUmbralMonto().get("maxMonto");
+        } else {
+            throw new IllegalArgumentException();
+        }
+
+        if (minutesRange == null || maxTransactions == null || minMonto == null || maxMonto == null) {
+            return null;
         }
 
         LocalDateTime fromDate = LocalDateTime.now().minusMinutes(minutesRange);
