@@ -50,11 +50,11 @@ public class Account {
         this.creationDate = creationDate;
     }
 
-    public AccountType getType() {
+    public AccountType getAccountType() {
         return accountType;
     }
 
-    public void setType(AccountType type) {
+    public void setAccountType(AccountType type) {
         this.accountType = type;
     }
 

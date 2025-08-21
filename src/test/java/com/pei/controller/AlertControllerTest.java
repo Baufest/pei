@@ -22,8 +22,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
@@ -45,10 +43,10 @@ import com.pei.service.AlertService;
 import com.pei.service.ClienteService;
 import com.pei.service.GeoSimService;
 import com.pei.service.GeolocalizationService;
+import com.pei.service.LimitAmountTransactionService;
 import com.pei.service.TransactionService;
 
 @WebMvcTest(AlertController.class)
-@ExtendWith(MockitoExtension.class)
 class AlertControllerTest {
 
         @MockitoBean
@@ -71,6 +69,9 @@ class AlertControllerTest {
 
         @MockitoBean
         private TransactionService transactionService;
+
+        @MockitoBean
+        private LimitAmountTransactionService limitAmountTransactionService;
 
         @Autowired
         private ObjectMapper objectMapper;
@@ -422,6 +423,7 @@ class AlertControllerTest {
                         verify(alertService).alertCriticality(any(Transaction.class));
                 }
 
+                @Nested
                 @DisplayName("Tests para Evaluar el Account Takeover")
                 class EvaluateAccountTakeoverTests {
 
@@ -478,20 +480,57 @@ class AlertControllerTest {
                         }
 
                 }
-                
+        }
+
+        @Nested
+        @DisplayName("tests para velocity transaction fraud umbral")
+        public class TestsUmbralDeVelocidades {
+        Long userId;
+
+        @BeforeEach
+        public void setUp() {
+                userId = 1L;
+        }
+
         @Test
-        void checkProcessTransaction_CuandoAlerta_RetornaOk() throws Exception {
-                when(clienteService.getClientType(1L)).thenReturn("individuo");
-                Alert alert = new Alert(1L, "Scoring");
-                when(transactionService.processTransactionScoring(1L, "individuo")).thenReturn(alert);
+        void whenClientTypeIsNull_ShouldReturnNotFound() throws Exception {
+                when(clienteService.getClientType(userId)).thenReturn(Optional.empty());
 
-                mockMvc.perform(post("/api/alerta-scoring")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content("1"))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.description").value("Scoring"));
+                mockMvc.perform(get("/api/alerta-fast-multiple-transaction/{userId}", userId))
+                        .andExpect(status().isNotFound());
         }
 
+        @Test
+        void whenClientTypeIsInvalid_ShouldReturnNotFound() throws Exception {
+                when(clienteService.getClientType(userId)).thenReturn(Optional.of("otroTipo"));
+
+                mockMvc.perform(get("/api/alerta-fast-multiple-transaction/{userId}", userId))
+                        .andExpect(status().isNotFound());
         }
+
+        @Test
+        void whenAllOk_ShouldReturnAlerta() throws Exception {
+                Alert alert = new Alert(userId, "Fast multiple transactions detected for user " + userId);
+
+                when(clienteService.getClientType(userId)).thenReturn(Optional.of("individuo"));
+                when(transactionService.getFastMultipleTransactionAlert(userId, "individuo")).thenReturn(alert);
+
+                mockMvc.perform(get("/api/alerta-fast-multiple-transaction/{userId}", userId))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.userId").value(userId))
+                        .andExpect(jsonPath("$.description").value(
+                                "Fast multiple transactions detected for user " + userId));
+        }
+
+        @Test
+        void whenAlertaIsNull_ShouldReturnNotFound() throws Exception {
+                when(clienteService.getClientType(userId)).thenReturn(Optional.of("empresa"));
+                when(transactionService.getFastMultipleTransactionAlert(userId, "empresa")).thenReturn(null);
+
+                mockMvc.perform(get("/api/alerta-fast-multiple-transaction/{userId}", userId))
+                        .andExpect(status().isNotFound());
+        }
+        }
+
 
 }

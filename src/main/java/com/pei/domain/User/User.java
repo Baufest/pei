@@ -33,6 +33,10 @@ public class User {
     @Column(nullable = false)
     private String profile;
 
+    @Column
+    @Enumerated(EnumType.STRING)
+    private ClientType clientType;
+
     @Column(nullable = false)
     private BigDecimal averageMonthlySpending;
 
@@ -47,8 +51,6 @@ public class User {
 
     @OneToMany(mappedBy = "user")
     private List<Chargeback> chargebacks = new ArrayList<>();
-
-    private String clientType;
 
     @Column(nullable = false, unique = true) // email único y obligatorio
     private String email;
@@ -138,12 +140,12 @@ public class User {
         this.creationDate = creationDate;
     }
 
-    public void setClientType(String clientType) {
-        this.clientType = clientType;
+    public ClientType getClientType() {
+        return clientType;
     }
 
-    public String getClientType() {
-        return clientType;
+    public void setClientType(ClientType clientType) {
+        this.clientType = clientType;
     }
 
     public BigDecimal getAverageMonthlySpending() {

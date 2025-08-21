@@ -2,6 +2,7 @@ package com.pei.service;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -146,27 +147,45 @@ public class TransactionService {
         }
         return new Alert(userId, msj);
     }
-    
+
     public Alert getFastMultipleTransactionAlert(Long userId, String clientType) {
 
-        Integer minutesRange = clientType.equals("individuo") ? 
-            transactionVelocityDetectorService.getIndividuoMinutesRange() : 
-            transactionVelocityDetectorService.getEmpresaMinutesRange();
-        
-        Integer maxTransactions = clientType.equals("individuo") ? 
-            transactionVelocityDetectorService.getIndividuoMaxTransactions() : 
-            transactionVelocityDetectorService.getEmpresaMaxTransactions();
+        if (userId == null || clientType == null || clientType.isBlank()) {
+            throw new IllegalArgumentException("Parametros invalidos");
+        }
+
+        Integer minutesRange;
+        Integer maxTransactions;
+        BigDecimal minMonto;
+        BigDecimal maxMonto;
+
+        if ("individuo".equals(clientType)) {
+            minutesRange = transactionVelocityDetectorService.getIndividuoMinutesRange();
+            maxTransactions = transactionVelocityDetectorService.getIndividuoMaxTransactions();
+            minMonto = transactionVelocityDetectorService.getIndividuoUmbralMonto().get("minMonto");
+            maxMonto = transactionVelocityDetectorService.getIndividuoUmbralMonto().get("maxMonto");
+        } else if ("empresa".equals(clientType)) {
+            minutesRange = transactionVelocityDetectorService.getEmpresaMinutesRange();
+            maxTransactions = transactionVelocityDetectorService.getEmpresaMaxTransactions();
+            minMonto = transactionVelocityDetectorService.getEmpresaUmbralMonto().get("minMonto");
+            maxMonto = transactionVelocityDetectorService.getEmpresaUmbralMonto().get("maxMonto");
+        } else {
+            throw new IllegalArgumentException();
+        }
+
+        if (minutesRange == null || maxTransactions == null || minMonto == null || maxMonto == null) {
+            return null;
+        }
 
         LocalDateTime fromDate = LocalDateTime.now().minusMinutes(minutesRange);
-        Integer numMaxTransactions = maxTransactions;
-        Integer numTransactions = transactionRepository.countTransactionsFromDate(userId, fromDate);
+        int numTransactions = transactionRepository
+                .countTransactionsByUserAfterDateBetweenMontos(userId, fromDate, minMonto, maxMonto);
 
-        if (numTransactions > numMaxTransactions){
+        if (numTransactions > maxTransactions) {
             return new Alert(userId, "Fast multiple transactions detected for user " + userId);
         }
 
-        Alert fastMultipleTransactionAlert = null;
-        return fastMultipleTransactionAlert;
+        return null;
     }
 
     public Optional<Transaction> getMostRecentTransferByUserId(Long userId) {
@@ -180,8 +199,31 @@ public class TransactionService {
         // Calcula la diferencia en minutos entre el evento y la transferencia
         long minutesDifference = Duration.between(eventDateHour, transferDate).toMinutes();
 
-        // Considera sospechoso si la transferencia es posterior al evento y dentro de 60 minutos
+        // Considera sospechoso si la transferencia es posterior al evento y dentro de
+        // 60 minutos
         return minutesDifference >= 0 && minutesDifference <= 60;
     }
 
+    public Alert getAmountLimitAlert(Long userId, BigDecimal limitAmount, Boolean isANewUser) {
+        BigDecimal totalAmountToday = getTotalAmountByUserAndDate(userId);
+        
+        if (isANewUser) { 
+            limitAmount = limitAmount.multiply(BigDecimal.valueOf(0.5)); }
+        if (totalAmountToday.compareTo(limitAmount) > 0) {
+            return new Alert(userId, "Amount limit exceeded for user " + userId);
+        }
+
+        return null;
+    }
+
+    public BigDecimal getTotalAmountByUserAndDate(Long userId) {
+        LocalDate date = LocalDate.now();
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.atTime(23, 59, 59);
+        return transactionRepository.getTotalAmountByUserAndDate(userId, startOfDay, endOfDay);
+    }
+
+    public List<Transaction> getAllTransactionsByUserId(Long userId) {
+        return transactionRepository.findRecentTransferByUserId(userId);
+    }
 }

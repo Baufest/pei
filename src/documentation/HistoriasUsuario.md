@@ -235,7 +235,7 @@ GET /api/alerts/chargeback/123
 
 ---
 
-## 🧑‍💻 Historia de Usuario #235
+## 🧑‍💻 Historia de Usuario #235  (Se implemento nueva funcionalidad en Task #251)
 
 Implementación de endpoint para alerta de transacciones rápidas por tipo de cliente
 
@@ -1400,7 +1400,6 @@ Content-Type: application/json
 - **Servicio de Alertas**  
   - Ubicación: `AlertService`
   - Descripción: Lógica de negocio para detección de patrones sospechosos en transacciones entre cuentas no relacionadas.  
-
 ---
 
 ## 🧑‍💻 Historia de Usuario #250
@@ -1511,19 +1510,16 @@ Content-Type: application/json
 
 - Se implementaron tests unitarios en `AlertNotificatorServiceTest` usando JUnit 5 y Mockito, cubriendo casos de éxito y error en el envío de alertas por canal.
 
----
+---------------------
 
 ## 🧑‍💻 Historia de Usuario #252
 
 ### 📝 Título
 Alerta por scoring de transacción con integración de tipo de cliente
 
----
-
 ### 📌 Descripción Breve
-Se implementó el endpoint `/api/alerta-scoring` que permite analizar el scoring de un usuario al procesar una transacción, considerando el tipo de cliente obtenido dinámicamente. El sistema consulta el tipo de cliente, ejecuta la lógica de scoring y, si detecta un scoring bajo o riesgoso, genera una alerta. Si el scoring es aceptable, retorna 404 (no hay alerta).
 
----
+Se implementó el endpoint `/api/alerta-scoring` que permite analizar el scoring de un usuario al procesar una transacción, considerando el tipo de cliente obtenido dinámicamente. El sistema consulta el tipo de cliente, ejecuta la lógica de scoring y, si detecta un scoring bajo o riesgoso, genera una alerta. Si el scoring es aceptable, retorna 404 (no hay alerta).
 
 ### ⚙️ Detalles Técnicos
 
@@ -1544,13 +1540,9 @@ Se implementó el endpoint `/api/alerta-scoring` que permite analizar el scoring
 #### 🗃️ Cambios en Base de Datos
 - No aplica. El endpoint realiza análisis sobre datos existentes, sin modificar la estructura ni los datos de la base.
 
----
-
 ### 🔍 Impacto en el Sistema
 - Módulo afectado: `AlertController`
 - Dependencias relevantes: `ClienteService`, `TransactionService`, configuración de scoring
-
----
 
 ### 💻 Ejemplo de Uso
 
@@ -1561,7 +1553,6 @@ Content-Type: application/json
 
 12345
 ```
-
 **Response (caso positivo)**
 ```json
 {
@@ -1575,11 +1566,10 @@ Content-Type: application/json
 404 Not Found
 ```
 
----
-
 ## 🧪 Pruebas Unitarias
 
 ### 🧪 Escenarios Cubiertos
+
 - `checkProcessTransaction_CuandoScoringBajo_RetornaAlerta`: Usuario con scoring bajo → alerta generada.
 - `checkProcessTransaction_CuandoScoringAlto_NoRetornaAlerta`: Usuario con scoring alto → no genera alerta.
 - `checkProcessTransaction_CuandoTipoClienteNoValido_RetornaNotFound`: Tipo de cliente inválido → 404 Not Found.
@@ -1601,3 +1591,101 @@ Content-Type: application/json
 ## 📦 Documentación de Integraciones Externas
 
 _No aplica para este endpoint. No se utilizan servicios
+
+---------------------
+
+## 🧑‍💻 Historia de Usuario #251
+
+### 📝 Título
+Modificacion umbral de velocidades de transacciones
+
+---
+
+### 📌 Descripción Breve
+
+Se implementa la configuración de umbrales de monto mínimo y máximo para la alerta de transacciones rápidas, permitiendo que el sistema detecte actividad sospechosa solo si las transacciones se encuentran dentro de un rango de monto configurable según el tipo de cliente ("individuo" o "empresa"). Esto mejora la flexibilidad y precisión de la lógica antifraude.
+
+---
+
+### ⚙️ Detalles Técnicos
+
+#### 🧩 Clases/Métodos Afectados
+- `TransactionService`
+  - Método: `getFastMultipleTransactionAlert(Long userId, String clientType)`
+    - Ahora utiliza los valores configurables de monto mínimo y máximo.
+    - Se factorizo el metodo para que sea más claro y haga una consulta por tipo de cliente.
+- `TransactionVelocityDetectorService`
+  - Métodos: `getIndividuoUmbralMonto()`, `getEmpresaUmbralMonto()`
+    - Devuelven `Map<String, BigDecimal>` con claves `minMonto` y `maxMonto`.
+- `TransactionRepository`
+  - Método: `countTransactionsByUserAfterDateBetweenMontos(Long userId, LocalDateTime fromDate, BigDecimal minMonto, BigDecimal maxMonto)`
+    - Se asegura que la consulta considere los nuevos parámetros de monto.
+    - Se modifico el nombre del metodo.
+- `AlertController`
+  - Método: `getFastMultipleTransactionsAlert(Long userId, String clientType)`
+    - Expone la funcionalidad vía API.
+
+#### 🌐 Endpoints Nuevos/Modificados
+| Método HTTP | URL                                         | Parámetros (Query)         | Respuesta                                      |
+|-------------|---------------------------------------------|----------------------------|------------------------------------------------|
+| GET         | `/api/alerta-fast-multiple-transaction`     | `userId`, `clientType`     | `Alert` con mensaje si se detecta actividad sospechosa |
+
+#### 🗃️ Cambios en Base de Datos
+- No se realizaron cambios estructurales en la base de datos.
+- Se ajustó la consulta en el repositorio para considerar los nuevos parámetros de monto.
+
+---
+
+### 🔍 Impacto en el Sistema
+- Módulo afectado: `com.pei.service`
+- Dependencias relevantes: `VelocityTransactionsProperties`, `TransactionVelocityDetectorService`, `TransactionRepository`, configuración de límites en `application.yml`
+
+---
+
+### 💻 Ejemplo de Uso
+
+**Request**
+```http
+GET /api/alerta-fast-multiple-transaction?userId=123
+```
+
+**Response (caso positivo)**
+```json
+{
+  "userId": 123,
+  "description": "Fast multiple transactions detected for user 123"
+}
+```
+
+**Response (caso negativo)**
+```http
+204 No Content
+```
+
+---
+
+## 🧪 Pruebas Unitarias
+
+### 🧪 Escenarios Cubiertos
+- `getFastMultipleTransactionAlert_CuandoSuperaMaximoTransacciones_RetornaAlerta`: Retorna alerta si el usuario supera el máximo de transacciones en el rango de monto configurado.
+- `getFastMultipleTransactionAlert_CuandoNoSuperaMaximoTransacciones_RetornaNull`: No retorna alerta si el usuario no supera el máximo.
+- `getFastMultipleTransactionAlert_CuandoMontoFueraDeRango_NoCuentaTransaccion`: Solo se consideran transacciones dentro del rango de monto.
+- `getFastMultipleTransactionAlert_CuandoTipoClienteEmpresa_UsaConfiguracionEmpresa`: Usa los umbrales correctos según el tipo de cliente.
+- El resto de la logica esta tal cual el metodo original. Respeta la cantidad maxima de transacciones y el limite de tiempo.
+
+### 🧪 Endpoints Probados
+| Método HTTP | URL                                         | Escenario de Test                                   | Resultado Esperado                  |
+|-------------|---------------------------------------------|-----------------------------------------------------|-------------------------------------|
+| GET         | `/api/alerta-fast-multiple-transaction`     | Usuario supera máximo de transacciones              | Retorna alerta                      |
+| GET         | `/api/alerta-fast-multiple-transaction`     | Usuario no supera máximo de transacciones           | 204 No Content                      |
+| GET         | `/api/alerta-fast-multiple-transaction`     | Transacciones fuera de rango de monto               | No se consideran en el conteo       |
+
+---
+
+## 🧪 Pruebas Implementadas
+
+- Se modificaron los tests unitarios en `TransactionService` usando JUnit 5 y Mockito, cubriendo casos de éxito y error.
+
+--
+
+## ✅ Estado
