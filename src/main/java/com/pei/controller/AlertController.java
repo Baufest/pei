@@ -193,20 +193,26 @@ public class AlertController {
 
     @GetMapping("/alerta-fast-multiple-transaction/{userId}")
     public ResponseEntity<Alert> getFastMultipleTransactionsAlert(@PathVariable Long userId) {
-        
-        String clientType = clienteService.getClientType(userId);
-        if (clientType == null || (!clientType.equals("individuo") && !clientType.equals("empresa"))) {
-            return ResponseEntity.notFound().build();
-        }
 
-        Alert alert = transactionService.getFastMultipleTransactionAlert(userId, clientType);
+    Optional<String> clientTypeOpt = clienteService.getClientType(userId);
 
-        if (alert != null) {
-            return ResponseEntity.ok(alert);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    if (clientTypeOpt.isEmpty()) {
+        return ResponseEntity.notFound().build();
+    }
 
+    String clientType = clientTypeOpt.get();
+
+    if (!clientType.equals("individuo") && !clientType.equals("empresa")) {
+        return ResponseEntity.notFound().build();
+    }
+
+    Alert alert = transactionService.getFastMultipleTransactionAlert(userId, clientType);
+
+    if (alert != null) {
+        return ResponseEntity.ok(alert);
+    } else {
+        return ResponseEntity.notFound().build();
+    }
     }
 
     @PostMapping("/alerta-canales")

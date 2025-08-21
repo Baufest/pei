@@ -8,6 +8,7 @@ import org.mockito.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,7 +32,7 @@ class LimitAmountTransactionServiceTest {
     }
 
     @Test
-    void getAvailableAmount_returnsAmountFromRepository() {
+        void getAvailableAmount_returnsAmountFromRepository() {
         // given
         Long userId = 1L;
         String clientType = "individual";
@@ -40,7 +41,7 @@ class LimitAmountTransactionServiceTest {
         AmountLimit amountLimit = new AmountLimit(clientType, BigDecimal.valueOf(1000),
                 now.minusDays(1), now.plusDays(1));
 
-        when(clienteService.getClientType(userId)).thenReturn(clientType);
+        when(clienteService.getClientType(userId)).thenReturn(Optional.of(clientType));
         when(amountLimitRepository.findByClientTypeAndStartingDateBeforeAndExpirationDateAfter(eq(clientType), any(), any()))
                 .thenReturn(amountLimit);
 
@@ -51,15 +52,15 @@ class LimitAmountTransactionServiceTest {
         assertEquals(BigDecimal.valueOf(1000), result);
         verify(clienteService).getClientType(userId);
         verify(amountLimitRepository).findByClientTypeAndStartingDateBeforeAndExpirationDateAfter(eq(clientType), any(), any());
-    }
+        }
 
-    @Test
-    void getAvailableAmount_throwsExceptionWhenNoLimitConfigured() {
+        @Test
+        void getAvailableAmount_throwsExceptionWhenNoLimitConfigured() {
         // given
         Long userId = 2L;
         String clientType = "empresa";
 
-        when(clienteService.getClientType(userId)).thenReturn(clientType);
+        when(clienteService.getClientType(userId)).thenReturn(Optional.of(clientType));
         when(amountLimitRepository.findByClientTypeAndStartingDateBeforeAndExpirationDateAfter(eq(clientType), any(), any()))
                 .thenReturn(null);
 
@@ -70,8 +71,23 @@ class LimitAmountTransactionServiceTest {
         assertTrue(ex.getMessage().contains("No existe un límite de monto configurado"));
         verify(clienteService).getClientType(userId);
         verify(amountLimitRepository).findByClientTypeAndStartingDateBeforeAndExpirationDateAfter(eq(clientType), any(), any());
-    }
+        }
 
+        @Test
+        void getAvailableAmount_throwsExceptionWhenClientTypeMissing() {
+        // given
+        Long userId = 3L;
+
+        when(clienteService.getClientType(userId)).thenReturn(Optional.empty());
+
+        // when + then
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> limitAmountTransactionService.getAvailableAmount(userId));
+
+        assertTrue(ex.getMessage().contains("No existe clientType configurado"));
+        verify(clienteService).getClientType(userId);
+        verifyNoInteractions(amountLimitRepository);
+        }
 
     @Test
     void createAmountLimit_savesValidLimit() {

@@ -21,7 +21,10 @@ public class LimitAmountTransactionService {
         this.clienteService = clienteService;}
 
     public BigDecimal getAvailableAmount(Long userId) {
-        final String clientType = clienteService.getClientType(userId);
+        final String clientType = clienteService.getClientType(userId)
+            .orElseThrow(() -> new IllegalArgumentException(
+                    "No existe clientType configurado para el usuario con ID: " + userId
+            ));
         final LocalDateTime now = LocalDateTime.now();
         final AmountLimit amountLimit = amountLimitRepository
                 .findByClientTypeAndStartingDateBeforeAndExpirationDateAfter(clientType, now, now);
