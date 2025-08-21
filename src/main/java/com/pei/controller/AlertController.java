@@ -258,7 +258,7 @@ public class AlertController {
     @PostMapping("/alerta/comportamiento")
     public ResponseEntity<Alert> checkUnusualBehavior(@RequestBody TransactionLogin transactionLogin) {
         try {
-            Alert alerta = alertService.evaluateTransactionBehavior(transactionLogin.getTransaction(), transactionLogin.getLogin());
+            Alert alerta = alertService.evaluateTransactionBehavior(transactionLogin.getIdTransaction(), transactionLogin.getIdLogin());
             if (alerta != null) {
                 return ResponseEntity.ok(alerta);
             } else {

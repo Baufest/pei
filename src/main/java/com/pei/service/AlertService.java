@@ -6,7 +6,7 @@ import com.pei.domain.Transaction;
 import com.pei.domain.*;
 import com.pei.domain.User.User;
 import com.pei.dto.*;
-import com.pei.repository.TransactionRepository;
+import com.pei.repository.*;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.*;
@@ -22,11 +22,13 @@ public class AlertService {
     private TransactionService transactionService;
     private NotificationService notificationService;
     private TransactionRepository transactionRepository;
+    private LoginRepository loginRepository;
 
-    public AlertService(TransactionService transactionService, NotificationService notificationService,  TransactionRepository transactionRepository) {
+    public AlertService(TransactionService transactionService, NotificationService notificationService,  TransactionRepository transactionRepository, LoginRepository loginRepository) {
         this.notificationService = notificationService;
         this.transactionService = transactionService;
         this.transactionRepository = transactionRepository;
+        this.loginRepository = loginRepository;
     }
 
     public Alert approvalAlert(Long transactionId) {
@@ -99,7 +101,14 @@ public class AlertService {
      * Método principal que evalúa la transacción y devuelve la primera alerta encontrada.
      * La lógica de verificación de monto y comportamiento está delegada a métodos auxiliares.
      */
-    public Alert evaluateTransactionBehavior(Transaction transaction, Login login) {
+    public Alert evaluateTransactionBehavior(Long idTransaction, Long idLogin) {
+        // Traer los objetos desde la base de datos
+        Transaction transaction = transactionRepository.findById(idTransaction)
+            .orElseThrow(() -> new RuntimeException("Transaction no encontrada"));
+
+        Login login = loginRepository.findById(idLogin)
+            .orElseThrow(() -> new RuntimeException("Login no encontrado"));
+
         User user = transaction.getUser();
 
         // 1. Verificación de monto inusual
@@ -108,7 +117,7 @@ public class AlertService {
             return amountAlert;
         }
 
-        // 2. Verificación de comportamiento inusual (dispositivo nuevo + horario fuera del rango)
+        // 2. Verificación de comportamiento inusual
         Alert behaviorAlert = transactionService.checkUnusualBehavior(user, transaction, login);
         if (behaviorAlert != null) {
             return behaviorAlert;
@@ -116,6 +125,7 @@ public class AlertService {
 
         return new Alert(user.getId(), "Alerta estándar");
     }
+
 
 
 

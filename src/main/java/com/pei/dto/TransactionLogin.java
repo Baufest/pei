@@ -1,32 +1,30 @@
 package com.pei.dto;
 
-import com.pei.domain.*;
-
 public class TransactionLogin {
 
-    private Login login;
-    private Transaction transaction;
+    private Long idLogin;
+    private Long idTransaction;
 
-    public TransactionLogin(Login login, Transaction transaction) {
-        this.login = login;
-        this.transaction = transaction;
+    public TransactionLogin() {}
+
+    public TransactionLogin (Long idLogin, Long idTransaction) {
+        this.idLogin = idLogin;
+        this.idTransaction = idTransaction;
     }
 
-    // Getters y Setters
-    public Login getLogin() {
-        return login;
+    public Long getIdLogin() {
+        return idLogin;
     }
 
-    public void setLogin(Login login) {
-        this.login = login;
+    public void setIdLogin(Long idLogin) {
+        this.idLogin = idLogin;
     }
 
-    public Transaction getTransaction() {
-        return transaction;
+    public Long getIdTransaction() {
+        return idTransaction;
     }
 
-    public void setTransaction(Transaction transaction) {
-        this.transaction = transaction;
+    public void setIdTransaction(Long idTransaction) {
+        this.idTransaction = idTransaction;
     }
 }
-

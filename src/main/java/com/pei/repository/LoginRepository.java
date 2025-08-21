@@ -25,4 +25,5 @@ public interface LoginRepository extends JpaRepository<Login, Long> {
         @Param("deviceID") String deviceID,
         @Param("success") boolean success);
 
+
 }

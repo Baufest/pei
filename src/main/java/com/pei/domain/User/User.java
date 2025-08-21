@@ -184,6 +184,9 @@ public class User {
     public Set<Device> getDevices() {
         return devices;
     }
+    public void setDevices(Set<Device> devices) {
+        this.devices = devices;
+    }
 
     @Override
     public boolean equals(Object o) {

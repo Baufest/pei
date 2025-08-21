@@ -2,7 +2,7 @@ package com.pei.service;
 
 import java.math.*;
 import java.time.*;
-import java.util.List;
+import java.util.*;
 
 import com.pei.config.AlertProperties;
 import com.pei.domain.*;
@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.pei.dto.Alert;
@@ -191,6 +190,10 @@ public class TransactionService {
          * Verifica si el monto de la transacción supera el umbral esperado según el perfil del cliente.
          */
     public Alert checkUnusualAmount(User user, BigDecimal transactionAmount) {
+        //Validaciones NullPointeErException
+        if (user == null || transactionAmount == null) {
+            throw new IllegalArgumentException("User y transactionAmount no pueden ser null");
+        }
         //Calculo el promedio de gasto mensual
         updateAverageMonthlySpending(user);
         BigDecimal avgSpending = user.getAverageMonthlySpending();
@@ -218,6 +221,13 @@ public class TransactionService {
      * Verifica si la transacción tiene nuevo dispositivo y esta en horario fuera del rango típico).
      */
     public Alert checkUnusualBehavior(User user, Transaction transaction, Login login) {
+        //Validaciones NullPointerException
+        if (user == null || transaction == null || login == null) {
+            throw new IllegalArgumentException("User, Transaction y Login no pueden ser null");
+        }
+        if (transaction.getDate() == null) {
+            throw new IllegalArgumentException("Transaction date no puede ser null");
+        }
         // Verifico si el dispositivo es nuevo y si la hora es inusual
         boolean newDevice = isNewDevice(login);
         boolean unusualTime = isUnusualTime(user, transaction.getDate());
@@ -234,6 +244,9 @@ public class TransactionService {
      * Verifica si la hora de una nueva transacción está fuera del rango típico del usuario (percentiles 5 y 95).
      */
     private boolean isUnusualTime(User user, LocalDateTime transactionTime) {
+        //Validaciones NullPointerException
+        if (user == null || transactionTime == null) throw new IllegalArgumentException("User y transactionTime no pueden ser null");
+
         List<Transaction> transactions = transactionRepository.findByUserId(user.getId());
 
         List<LocalTime> transactionHours = transactions.stream()
@@ -276,11 +289,22 @@ public class TransactionService {
     }
 
     public boolean isNewDevice(Login login) {
+        //Validaciones NullPointerException
+        if (login == null || login.getUser() == null || login.getDevice() == null) {
+            throw new IllegalArgumentException("Login, User y Device no pueden ser null");
+        }
+
         User user = login.getUser();
+
+        // Inicializar el set de devices si es null
+        if (user.getDevices() == null) {
+            user.setDevices(new HashSet<>());
+        }
 
         // Verificar si el device ya existe en el set
         boolean deviceExists = user.getDevices().stream()
-            .anyMatch(d -> d.getDeviceID().equals(login.getDevice().getDeviceID()));
+            .anyMatch(d -> d.getDeviceID() != null
+                && d.getDeviceID().equals(login.getDevice().getDeviceID()));
 
         if (deviceExists) {
             return false; // dispositivo ya conocido
@@ -292,12 +316,15 @@ public class TransactionService {
     }
 
 
+
     public void updateAverageMonthlySpending(User user) {
+        if (user == null) return;
         LocalDateTime fromDate = LocalDateTime.now().minusMonths(1);
+
         BigDecimal total = transactionRepository.sumTransactionsFromDate(user.getId(), fromDate);
         Integer count = transactionRepository.countTransactionsFromDate(user.getId(), fromDate);
 
-        BigDecimal average = (count != null && count > 0) ?
+        BigDecimal average = (count != null && count > 0 && total != null) ?
             total.divide(BigDecimal.valueOf(count), RoundingMode.HALF_UP) :
             BigDecimal.ZERO;
 

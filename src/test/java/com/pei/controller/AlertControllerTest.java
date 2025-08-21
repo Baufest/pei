@@ -13,8 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import com.pei.domain.*;
 import com.pei.dto.*;
@@ -541,22 +540,34 @@ class AlertControllerTest {
 
         @Test
         void shouldReturnAlertWhenBehaviorIsUnusual() throws Exception {
+            // Usuario
             User user = new User();
             ReflectionTestUtils.setField(user, "id", 1L);
+            user.setDevices(new HashSet<>()); // Para isNewDevice
 
+            // Transaction
             Transaction transaction = new Transaction();
+            ReflectionTestUtils.setField(transaction, "id", 12L);
             ReflectionTestUtils.setField(transaction, "user", user);
 
+            // Login
+            Device device = new Device();
+            ReflectionTestUtils.setField(device, "deviceID", "device123");
+
             Login login = new Login();
+            ReflectionTestUtils.setField(login, "id", 5L);
             ReflectionTestUtils.setField(login, "user", user);
+            ReflectionTestUtils.setField(login, "device", device);
 
-            TransactionLogin transactionLogin = new TransactionLogin(login, transaction);
+            // TransactionLogin DTO usando IDs
+            TransactionLogin transactionLogin = new TransactionLogin(transaction.getId(), login.getId());
 
+            // Mock alerta
             Alert alert = new Alert(user.getId(), "Dispositivo nuevo y horario inusual");
-
-            when(alertService.evaluateTransactionBehavior(any(Transaction.class), any(Login.class)))
+            when(alertService.evaluateTransactionBehavior(anyLong(), anyLong()))
                 .thenReturn(alert);
 
+            // Test MVC
             mockMvc.perform(post("/api/alerta/comportamiento")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(transactionLogin)))
@@ -565,39 +576,44 @@ class AlertControllerTest {
                 .andExpect(jsonPath("$.description").value("Dispositivo nuevo y horario inusual"));
         }
 
+
+
         @Test
         void shouldReturnNotFoundWhenNoAlertGenerated() throws Exception {
-            TransactionLogin transactionLogin = new TransactionLogin(new Login(), new Transaction());
+            // Simulamos IDs
+            Long transactionId = 12L;
+            Long loginId = 5L;
 
-            when(alertService.evaluateTransactionBehavior(any(Transaction.class), any(Login.class)))
+            // Creamos el DTO con IDs
+            TransactionLogin transactionLogin = new TransactionLogin(transactionId, loginId);
+
+            // Mock: no se genera alerta
+            when(alertService.evaluateTransactionBehavior(anyLong(), anyLong()))
                 .thenReturn(null);
 
+            // Test MVC
             mockMvc.perform(post("/api/alerta/comportamiento")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(transactionLogin)))
                 .andExpect(status().isNotFound());
         }
+
         @Test
         void shouldReturnAlertWhenAmountExceedsThreshold() throws Exception {
-            User user = new User();
-            ReflectionTestUtils.setField(user, "id", 1L);
-            ReflectionTestUtils.setField(user, "averageMonthlySpending", new BigDecimal("5000"));
+            // IDs simulados
+            Long transactionId = 12L;
+            Long loginId = 5L;
+            Long userId = 1L;
 
-            Transaction transaction = new Transaction();
-            ReflectionTestUtils.setField(transaction, "user", user);
-            ReflectionTestUtils.setField(transaction, "amount", new BigDecimal("12500")); // > 200% del promedio
-            ReflectionTestUtils.setField(transaction, "date", LocalDateTime.now());
+            // DTO con IDs
+            TransactionLogin transactionLogin = new TransactionLogin(transactionId, loginId);
 
-            Login login = new Login();
-            ReflectionTestUtils.setField(login, "user", user);
-
-            TransactionLogin transactionLogin = new TransactionLogin(login, transaction);
-
-            Alert alert = new Alert(user.getId(), "Monto de transacción inusual");
-
-            when(alertService.evaluateTransactionBehavior(any(Transaction.class), any(Login.class)))
+            // Mock: alerta por monto inusual
+            Alert alert = new Alert(userId, "Monto de transacción inusual");
+            when(alertService.evaluateTransactionBehavior(anyLong(), anyLong()))
                 .thenReturn(alert);
 
+            // Test MVC
             mockMvc.perform(post("/api/alerta/comportamiento")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(transactionLogin)))
@@ -606,13 +622,21 @@ class AlertControllerTest {
                 .andExpect(jsonPath("$.description").value("Monto de transacción inusual"));
         }
 
+
         @Test
         void shouldReturnInternalServerErrorOnException() throws Exception {
-            TransactionLogin transactionLogin = new TransactionLogin(new Login(), new Transaction());
+            // IDs simulados
+            Long transactionId = 12L;
+            Long loginId = 5L;
 
-            when(alertService.evaluateTransactionBehavior(any(Transaction.class), any(Login.class)))
+            // DTO con IDs
+            TransactionLogin transactionLogin = new TransactionLogin(transactionId, loginId);
+
+            // Simular excepción en el servicio
+            when(alertService.evaluateTransactionBehavior(anyLong(), anyLong()))
                 .thenThrow(new RuntimeException("Error inesperado"));
 
+            // Test MVC
             mockMvc.perform(post("/api/alerta/comportamiento")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(transactionLogin)))
@@ -621,6 +645,7 @@ class AlertControllerTest {
                 .andExpect(jsonPath("$.description")
                     .value("Error interno del servidor. No se pudo procesar la solicitud."));
         }
+
     }
 
 

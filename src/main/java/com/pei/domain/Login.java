@@ -42,6 +42,10 @@ public class Login {
         this.success = success;
     }
 
+    public Long getId() {
+        return id;
+    }
+
     public User getUser() {
         return user;
     }
