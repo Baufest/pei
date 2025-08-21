@@ -22,8 +22,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
@@ -45,10 +43,10 @@ import com.pei.service.AlertService;
 import com.pei.service.ClienteService;
 import com.pei.service.GeoSimService;
 import com.pei.service.GeolocalizationService;
+import com.pei.service.LimitAmountTransactionService;
 import com.pei.service.TransactionService;
 
 @WebMvcTest(AlertController.class)
-@ExtendWith(MockitoExtension.class)
 class AlertControllerTest {
 
         @MockitoBean
@@ -71,6 +69,9 @@ class AlertControllerTest {
 
         @MockitoBean
         private TransactionService transactionService;
+
+        @MockitoBean
+        private LimitAmountTransactionService limitAmountTransactionService;
 
         @Autowired
         private ObjectMapper objectMapper;
@@ -463,6 +464,7 @@ class AlertControllerTest {
                         }
                 }
 
+                @Nested
                 @DisplayName("Tests para Evaluar el Account Takeover")
                 class EvaluateAccountTakeoverTests {
 

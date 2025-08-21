@@ -61,9 +61,7 @@ public class AlertController {
     public ResponseEntity<Alert> detectMoneyMule(@RequestBody List<Transaction> transactions) {
         try {
             boolean alertFlag = alertService.verifyMoneyMule(transactions);
-            // TODO: Deberíamos obtener el ID del usuario con Spring Security, pero aun no
-            // esta implementado
-            // Por ahora, asumimos que las transacciones tienen un usuario asociado
+
             Long userId = transactions.isEmpty() ? null : transactions.get(0).getUser().getId();
 
             if (alertFlag) {
