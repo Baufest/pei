@@ -16,7 +16,8 @@ public class AlertaSeveridadMEDIA extends ManejadorDeSeveridad {
     @Override
     protected boolean match(Transaction t) {
         List<BigDecimal> umbral = List.of(new BigDecimal(5000), new BigDecimal(10000));
-        boolean isBetweenUmbral = umbral.get(0).longValue() <= t.getAmount().longValue() && t.getAmount().longValue() >= umbral.get(1).longValue();
+        boolean isBetweenUmbral = umbral.get(0).longValue() <= t.getAmount().longValue()
+                && t.getAmount().longValue() <= umbral.get(1).longValue();
         return  isBetweenUmbral;
     }
 }

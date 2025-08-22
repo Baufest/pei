@@ -8,7 +8,7 @@ public abstract class ManejadorDeSeveridad {
     private ManejadorDeSeveridad next;
 
     public AlertaSeveridad procesarSeveridad(Transaction t) {
-        if (validTransaction(t)) {
+        if (!validTransaction(t)) {
             throw new IllegalArgumentException("Parametro invalido");
         } else {
             if (match(t))

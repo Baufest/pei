@@ -17,7 +17,8 @@ public class AlertaSeveridadALTA extends ManejadorDeSeveridad {
     protected boolean match(Transaction t) {
         BigDecimal amount = new BigDecimal(10000);
         boolean isOverLimitAmount = amount.longValue() < t.getAmount().longValue();
-        boolean isNewAccount = t.getDestinationAccount().getCreationDate().getMinute() < LocalDateTime.now().minusHours(48).getMinute();
+        boolean isNewAccount = t.getDestinationAccount().getCreationDate()
+                .isAfter(LocalDateTime.now().minusHours(48));
         return  isOverLimitAmount && isNewAccount;
     }
 }
