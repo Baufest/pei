@@ -134,7 +134,7 @@ class AlertControllerTest {
                 // controlador
                 // Simular el comportamiento del servicio
                 User user = new User(1L);
-                Account account = new Account(1L, user);
+                Account account = new Account(1L, user, "Argentina");
                 LocalDateTime now = LocalDateTime.now();
                 List<Transaction> inputTransactions = List
                                 .of(new Transaction(user, new BigDecimal("100.00"), now.minusHours(2), account,
