@@ -5,16 +5,17 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.pei.config.TransferenciaInternacionalProperties;
 import com.pei.domain.TimeRange;
 import com.pei.domain.Transaction;
-import java.util.Optional;
-
 import com.pei.dto.Alert;
+import com.pei.repository.AccountRepository;
 import com.pei.repository.ChargebackRepository;
 import com.pei.repository.PurchaseRepository;
 import com.pei.repository.TransactionRepository;
@@ -23,23 +24,34 @@ import com.pei.service.bbva.ScoringService;
 @Service
 public class TransactionService {
 
+    private final AccountRepository accountRepository;
+
     private final ChargebackRepository chargebackRepository;
     private final PurchaseRepository purchaseRepository;
     private final TransactionRepository transactionRepository;
     private final TransactionVelocityDetectorService transactionVelocityDetectorService;
     private final ScoringServiceInterno scoringServiceInterno;
     private final Gson gson;
+    private final NotificationService notificationService;
+    private final RiskCountryService riskCountryService;
+    private final TransactionParamsService transactionParamsService;
 
     public TransactionService(ChargebackRepository chargebackRepository,
             PurchaseRepository purchaseRepository, TransactionRepository transactionRepository,
             TransactionVelocityDetectorService transactionVelocityDetectorService,
-            Gson gson, ScoringServiceInterno scoringServiceInterno) {
+            Gson gson, ScoringServiceInterno scoringServiceInterno, AccountRepository accountRepository,
+            TransferenciaInternacionalProperties internationalCountryConfig, NotificationService notificationService,
+            RiskCountryService riskCountryService, TransactionParamsService transactionParamsService) {
         this.chargebackRepository = chargebackRepository;
         this.purchaseRepository = purchaseRepository;
         this.transactionRepository = transactionRepository;
         this.transactionVelocityDetectorService = transactionVelocityDetectorService;
         this.gson = gson;
         this.scoringServiceInterno = scoringServiceInterno;
+        this.accountRepository = accountRepository;
+        this.notificationService = notificationService;
+        this.riskCountryService = riskCountryService;
+        this.transactionParamsService = transactionParamsService;
     }
 
     // TODO: Probablemente tengamos que hacer una Query SQL para obtener las
@@ -115,7 +127,75 @@ public class TransactionService {
         return transaction.getApprovalList().size();
     }
 
-    public Alert processTransaction(Long idCliente) {
+    // PROCESAR TRANSACCION GENERAL
+    // @Transactional
+    // public List<Alert> processTransactionGeneral(Transaction transaction){
+    // //Alert alertCountryInternational =
+    // processVerifyCountryInternational(transaction); DEVUELVE BOOLEAN
+    // //Alert alertScoring = processVerifyScoring(transaction.getUser().getId());
+    // DEVUELVE COLOR
+    // //List..accountRepository
+
+    // //transactionRepository.save(transaction); (GUARDAMOS LA TRANSACCIÓN CON SU
+    // ESTADO (APROBADA, RECHAZADA, REQUIERE_APROBACION))
+    // return new Alert("")
+    // }
+
+    // @Transactional
+    public Alert processTransactionCountryInternational(Transaction transaction) {
+        if (transaction == null ||
+                transaction.getSourceAccount() == null ||
+                transaction.getDestinationAccount() == null ||
+                transaction.getUser() == null ||
+                transaction.getUser().getId() == null) {
+            return new Alert(null, "Alerta: Transacción inválida (faltan datos obligatorios)");
+        }
+
+        if (transaction.getAmount() == null || transaction.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            return new Alert(transaction.getUser().getId(), "Alerta: Monto de transacción inválido");
+        }
+
+        String origen = transaction.getSourceAccount().getCountry();
+        String destino = transaction.getDestinationAccount().getCountry();
+
+        if (origen == null || origen.isBlank() || destino == null || destino.isBlank()) {
+            return new Alert(transaction.getUser().getId(), "Alerta: País de origen o destino inválido");
+        }
+
+        if (riskCountryService.isRiskCountry(origen) || riskCountryService.isRiskCountry(destino)) {
+            transaction.setStatus(Transaction.TransactionStatus.REQUIERE_APROBACION);
+            return new Alert(transaction.getUser().getId(),
+                    "Alerta: Transacción hacia/desde país de riesgo (origen: " + origen + ", destino: " + destino
+                            + ")");
+        }
+
+        if (transaction.isInternational()) {
+            BigDecimal limiteInternacional = transactionParamsService.getMontoAlertaInternacional();
+            if (limiteInternacional == null) {
+                throw new IllegalStateException("Parámetro de monto internacional no configurado");
+            }
+            if (transaction.getAmount().compareTo(limiteInternacional) > 0) {
+                transaction.setStatus(Transaction.TransactionStatus.APROBADA);
+
+                Alert alert = new Alert(transaction.getUser().getId(),
+                        "Alerta: Transacción internacional con monto mayor a: "
+                                + limiteInternacional);
+                notificationService.notifyCompliance(transaction, alert);
+
+                return alert;
+            } else {
+                transaction.setStatus(Transaction.TransactionStatus.APROBADA);
+                return new Alert(transaction.getUser().getId(), "Alerta: Transacción internacional aprobada");
+            }
+        }
+
+        transaction.setStatus(Transaction.TransactionStatus.APROBADA);
+        // transactionRepository.save(transaction); -> DESCOMENTAR AL IMPLEMENTAR BD
+        return new Alert(transaction.getUser().getId(), "Alerta: Transacción aprobada");
+    }
+
+    public Alert processTransactionScoring(Long idCliente) { // processVerifyScoring
+
         String scoringJson = ScoringService.consultarScoring(idCliente.intValue());
 
         JsonObject responseScoringService = gson.fromJson(scoringJson, JsonObject.class);

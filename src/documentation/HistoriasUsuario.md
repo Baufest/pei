@@ -590,7 +590,7 @@ GET /api/alerta-cliente-alto-riesgo/1
 ```json
 {
   "userId": 1,
-  "description": "Alerta: El cliente es de alto riesgo."
+  "description": "Alerta: Cliente individual de alto riesgo, con chargebacks: 5"
 }
 ```
 
@@ -599,9 +599,12 @@ GET /api/alerta-cliente-alto-riesgo/1
 ## 🧪 Pruebas Unitarias
 
 ### 🧪 Escenarios Cubiertos
-- `testHighRiskUser`: Alerta si el usuario es de alto riesgo.
-- `testLowRiskUser`: Mensaje de verificado si el usuario es de bajo riesgo.
-- `testNotFoundUser`: Alerta si el usuario no es encontrado.
+- `testClientTypeNull`: Alerta si el clientType es null.
+- `testChargebacksMissing`: Alerta si chargebacks es null.
+- `testEmpresaHighRisk`: Alerta si el cliente empresa es de alto riesgo.
+- `testEmpretestIndividuoHighRisksaHighRisk`: Alerta si el cliente individuo es de alto riesgo.
+- `testClienteValidadoSinAlertas`: Alerta si el cliente es validado sin alertas de riesgo.
+- `testJsonProcessingException`: Alerta si el json está mal procesado.
 
 ### 🧪 Endpoints Probados
 | Método HTTP | URL                                 | Escenario de Test         | Resultado Esperado |
@@ -1398,6 +1401,128 @@ Content-Type: application/json
 - **Servicio de Alertas**  
   - Ubicación: `AlertService`
   - Descripción: Lógica de negocio para detección de patrones sospechosos en transacciones entre cuentas no relacionadas.  
+
+
+## 🧑‍💻 Historia de Usuario #234
+
+### 📝 Título
+Alerta de Transacción Internacional y Países de Riesgo
+
+---
+
+### 📌 Descripción Breve
+Se implementa la lógica para generar alertas en transacciones internacionales, considerando países de riesgo y límites configurables de monto. El objetivo es identificar operaciones sospechosas y notificar al usuario cuando se detecta un país de riesgo o se supera el monto permitido. Se agregan servicios para parametrización y validación de países, así como la configuración de límites en archivos de propiedades.
+
+---
+
+### ⚙️ Detalles Técnicos
+
+#### 🧩 Clases/Métodos Afectados
+- `TransactionService`
+  - Método: `processTransactionCountryInternational(Transaction transaction)`
+- `TransactionParamsService`
+  - Método: `getMontoAlertaInternacional()`
+- `RiskCountryService`
+  - Método: `isRiskCountry(String country)`
+- Configuración: Parámetros de transferencia internacional (`application.yml` / `application.properties`)
+- `AlertController`
+  - Método: `postMethodName(Transaction transaction)` (endpoint `/api/alerta-transaccion-internacional`)
+
+#### 🌐 Endpoints Nuevos/Modificados
+| Método HTTP | URL                                 | Parámetros (Body)      | Respuesta                      |
+|-------------|-------------------------------------|------------------------|-------------------------------|
+| POST        | `/api/alerta-transaccion-internacional` | `Transaction` (JSON)   | `Alert` con mensaje de alerta |
+
+#### 🗃️ Cambios en Base de Datos
+- No se realizaron cambios estructurales en la base de datos.
+- Se utilizan datos existentes de transacciones y cuentas.
+
+---
+
+### 🔍 Impacto en el Sistema
+- Módulo afectado: `com.pei.controller`, `com.pei.service`
+- Dependencias relevantes: `TransactionService`, `TransactionParamsService`, `RiskCountryService`, configuración de límites internacionales
+
+---
+
+### 💻 Ejemplo de Uso
+
+**Request**
+```http
+POST /api/alerta-transaccion-internacional
+Content-Type: application/json
+{
+  "id": 123,
+  "user": { "id": 1 },
+  "amount": 100000,
+  "sourceAccount": { "country": "Argentina" },
+  "destinationAccount": { "country": "Chile" }
+}
+```
+
+**Response (caso país de riesgo)**
+```json
+{
+  "userId": 1,
+  "description": "Alerta: Transacción internacional hacia un país de riesgo"
+}
+```
+
+**Response (caso monto mayor al límite)**
+```json
+{
+  "userId": 1,
+  "description": "Alerta: Transacción internacional con monto mayor a: 50000"
+}
+```
+
+**Response (caso internacional normal)**
+```json
+{
+  "userId": 1,
+  "description": "Alerta: Transacción internacional aprobada"
+}
+```
+
+**Response (caso no internacional)**
+```json
+{
+  "userId": 1,
+  "description": "Alerta: Transacción aprobada"
+}
+```
+
+**Response (caso negativo)**
+```http
+404 Not Found
+```
+
+---
+
+## 🧪 Pruebas Unitarias
+
+### 🧪 Escenarios Cubiertos
+- `testCargaConfigTransferenciaInternacional`: Verifica que los parámetros de transferencia internacional se cargan correctamente desde la configuración.
+- `procesoTransaccion_PaisDeRiesgo_AlertaGenerada`: Transacción internacional hacia país de riesgo → **alerta generada**.
+- `procesoTransaccion_MontoMayorAlLimite_AlertaGenerada`: Transacción internacional con monto mayor al límite → **alerta generada**.
+- `procesoTransaccion_InternacionalNormal_AlertaAprobada`: Transacción internacional válida → **alerta de aprobación**.
+- `procesoTransaccion_NoInternacional_AlertaAprobada`: Transacción nacional → **alerta de aprobación**.
+- `riskCountryService_PaisRiesgo_True`: Verifica que el servicio identifica correctamente un país de riesgo.
+- `riskCountryService_PaisSeguro_False`: Verifica que el servicio identifica correctamente un país seguro.
+
+### 🧪 Endpoints Probados
+| Método HTTP | URL                                 | Escenario de Test                                 | Resultado Esperado                |
+|-------------|-------------------------------------|---------------------------------------------------|-----------------------------------|
+| POST        | `/api/alerta-transaccion-internacional` | País de riesgo                                    | Alerta generada                   |
+| POST        | `/api/alerta-transaccion-internacional` | Monto mayor al límite                             | Alerta generada                   |
+| POST        | `/api/alerta-transaccion-internacional` | Transacción internacional válida                  | Alerta de aprobación              |
+| POST        | `/api/alerta-transaccion-internacional` | Transacción nacional                              | Alerta de aprobación              |
+
+---
+
+## ✅ Estado
+✔️ Completado
+
 ---
 
 ## 🧑‍💻 Historia de Usuario #250
@@ -1481,6 +1606,34 @@ Content-Type: application/json
 
 ## ✅ Estado
 ✔️ Completado
+
+---
+
+## 📦 Documentación de Integraciones Externas
+
+- **Servicio de Email (JavaMail)**: Envío real de alertas por correo electrónico.
+- **SMS y Slack**: Métodos simulados para pruebas y demostración.
+
+---
+
+## 🗃️ Cambios en Entidades
+
+### Transaction
+- Se agregaron los campos:
+    - `dateTime`: Fecha y hora de la transacción.
+    - `codCoelsa`: Código regulatorio alfanumérico de 22 caracteres.
+
+### TransactionDTO
+- Incluye los campos:
+    - `id`, `codCoelsa`, `amount`, `currency`, `accountDestinationId`, `dateTime`.
+
+---
+
+## 🧪 Pruebas Implementadas
+
+- Se implementaron tests unitarios en `AlertNotificatorServiceTest` usando JUnit 5 y Mockito, cubriendo casos de éxito y error en el envío de alertas por canal.
+
+---
 
 ---
 

@@ -1,37 +1,32 @@
 package com.pei.controller;
 
-import com.pei.domain.Transaction;
-import com.pei.dto.Alert;
-import com.pei.dto.Logins;
-import com.pei.dto.TimeRangeRequest;
-import com.pei.service.AlertService;
-import com.pei.service.ClienteService;
-
-import org.springframework.http.ResponseEntity;
-
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
-import com.pei.service.GeolocalizationService;
-import com.pei.service.LimitAmountTransactionService;
-import com.pei.service.TransactionService;
-
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
+import com.pei.domain.Transaction;
 import com.pei.domain.Account.Account;
-
 import com.pei.domain.UserEvent.UserEvent;
-
+import com.pei.dto.Alert;
+import com.pei.dto.Logins;
+import com.pei.dto.TimeRangeRequest;
 import com.pei.dto.TransferRequest;
 import com.pei.dto.UserTransaction;
 import com.pei.service.AccountService;
+import com.pei.service.AlertService;
+import com.pei.service.ClienteService;
+import com.pei.service.GeolocalizationService;
+import com.pei.service.LimitAmountTransactionService;
+import com.pei.service.TransactionService;
 
 @RestController
 @RequestMapping("/api")
@@ -45,9 +40,9 @@ public class AlertController {
     private final LimitAmountTransactionService limitAmountTransactionService;
 
     public AlertController(AlertService alertService,
-                AccountService accountService, TransactionService transactionService,
-                GeolocalizationService geolocalizationService, ClienteService clienteService,
-                LimitAmountTransactionService limitAmountTransactionService) {
+            AccountService accountService, TransactionService transactionService,
+            GeolocalizationService geolocalizationService, ClienteService clienteService,
+            LimitAmountTransactionService limitAmountTransactionService) {
 
         this.alertService = alertService;
         this.accountService = accountService;
@@ -55,7 +50,7 @@ public class AlertController {
         this.geolocalizationService = geolocalizationService;
         this.clienteService = clienteService;
         this.limitAmountTransactionService = limitAmountTransactionService;
-    
+
     }
 
     @PostMapping("/alerta-money-mule")
@@ -195,25 +190,25 @@ public class AlertController {
     @GetMapping("/alerta-fast-multiple-transaction/{userId}")
     public ResponseEntity<Alert> getFastMultipleTransactionsAlert(@PathVariable Long userId) {
 
-    Optional<String> clientTypeOpt = clienteService.getClientType(userId);
+        Optional<String> clientTypeOpt = clienteService.getClientType(userId);
 
-    if (clientTypeOpt.isEmpty()) {
-        return ResponseEntity.notFound().build();
-    }
+        if (clientTypeOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
 
-    String clientType = clientTypeOpt.get();
+        String clientType = clientTypeOpt.get();
 
-    if (!clientType.equals("individuo") && !clientType.equals("empresa")) {
-        return ResponseEntity.notFound().build();
-    }
+        if (!clientType.equals("individuo") && !clientType.equals("empresa")) {
+            return ResponseEntity.notFound().build();
+        }
 
-    Alert alert = transactionService.getFastMultipleTransactionAlert(userId, clientType);
+        Alert alert = transactionService.getFastMultipleTransactionAlert(userId, clientType);
 
-    if (alert != null) {
-        return ResponseEntity.ok(alert);
-    } else {
-        return ResponseEntity.notFound().build();
-    }
+        if (alert != null) {
+            return ResponseEntity.ok(alert);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping("/alerta-canales")
@@ -229,7 +224,7 @@ public class AlertController {
     @PostMapping("/alerta-scoring")
     public ResponseEntity<Alert> checkProccesTransaction(@RequestBody Long idCliente) {
         try {
-            Alert alerta = transactionService.processTransaction(idCliente);
+            Alert alerta = transactionService.processTransactionScoring(idCliente);
             if (alerta != null) {
                 return ResponseEntity.ok(alerta);
             } else {
@@ -272,18 +267,37 @@ public class AlertController {
         }
     }
 
+    @PostMapping("/alerta-transaccion-internacional")
+    public ResponseEntity<Alert> InternationalTransactionAlert(@RequestBody Transaction transaction) {
+
+        try {
+            Alert alert = transactionService.processTransactionCountryInternational(transaction);
+            if (alert != null) {
+                return ResponseEntity.ok(alert);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(500)
+                    .body(new Alert(null, "Error interno del servidor. Contacte a soporte."));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new Alert(null, "Error interno del servidor."));
+        }
+    }
+
     @GetMapping("/alerta-amount-limit/{userId}")
     public ResponseEntity<Alert> getAmountLimitAlert(@PathVariable Long userId) {
-        
+
         BigDecimal limitAmount = limitAmountTransactionService.getAvailableAmount(userId);
         Boolean isANewUser = clienteService.isANewUser(userId);
         try {
             Alert totalAmountAlert = transactionService.getAmountLimitAlert(userId, limitAmount, isANewUser);
             if (totalAmountAlert == null) {
                 return ResponseEntity.notFound().build();
-            } else { 
-                
-                return ResponseEntity.ok(totalAmountAlert);}
+            } else {
+
+                return ResponseEntity.ok(totalAmountAlert);
+            }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
