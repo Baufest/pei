@@ -17,7 +17,6 @@ public class UserController {
         this.userService = userService;
     }
 
-
     // Guardar un nuevo usuario
     @PostMapping
     public ResponseEntity<List<User>> saverUsers(@RequestBody List<User> users) {
