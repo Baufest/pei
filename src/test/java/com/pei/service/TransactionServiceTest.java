@@ -6,9 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -102,6 +100,9 @@ class TransactionServiceTest {
                 List<Transaction> transactions = List.of(t1, t2, t3);
 
                 List<Transaction> expected = List.of(t1, t3);
+
+                when(transactionRepository.findByIdsAndDateAfter(anyList(), any())).thenReturn(expected);
+
                 // When
                 List<Transaction> actual = transactionService.getLast24HoursTransactions(transactions);
                 // Then

@@ -41,13 +41,25 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
       @Param("startOfDay") LocalDateTime startOfDay,
       @Param("endOfDay") LocalDateTime endOfDay);
 
-@Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.user.id = :userId AND t.date >= :fromDate")
-BigDecimal sumTransactionsFromDate(@Param("userId") Long userId, @Param("fromDate") LocalDateTime fromDate);
+    @Query("""
+        SELECT t
+        FROM Transaction t
+        WHERE t.id IN :ids
+          AND t.date >= :fromDate
+    """)
+    List<Transaction> findByIdsAndDateAfter(
+        @Param("ids") List<Long> ids,
+        @Param("fromDate") LocalDateTime fromDate
+    );
 
-@Query("SELECT COUNT(t) FROM Transaction  t WHERE t.user.id= :userId AND t.date>= :fromDate")
-Integer countTransactionsFromDate(
-    @Param("userId") Long userId,
-    @Param("fromDate") LocalDateTime fromDate
-);
+
+    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.user.id = :userId AND t.date >= :fromDate")
+    BigDecimal sumTransactionsFromDate(@Param("userId") Long userId, @Param("fromDate") LocalDateTime fromDate);
+
+    @Query("SELECT COUNT(t) FROM Transaction  t WHERE t.user.id= :userId AND t.date>= :fromDate")
+    Integer countTransactionsFromDate(
+        @Param("userId") Long userId,
+        @Param("fromDate") LocalDateTime fromDate
+    );
 
 }

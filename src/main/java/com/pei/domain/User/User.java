@@ -193,11 +193,11 @@ public class User {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
-        return Objects.equals(id, user.id) && Objects.equals(name, user.name) && Objects.equals(risk, user.risk) && Objects.equals(profile, user.profile) && Objects.equals(averageMonthlySpending, user.averageMonthlySpending) && Objects.equals(creationDate, user.creationDate) && Objects.equals(accounts, user.accounts) && Objects.equals(purchases, user.purchases) && Objects.equals(chargebacks, user.chargebacks);
+        return Objects.equals(id, user.id) && Objects.equals(name, user.name) && Objects.equals(risk, user.risk) && Objects.equals(profile, user.profile) && clientType == user.clientType && Objects.equals(averageMonthlySpending, user.averageMonthlySpending) && Objects.equals(creationDate, user.creationDate) && Objects.equals(email, user.email) && Objects.equals(avgTimeRange, user.avgTimeRange);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, risk, profile, averageMonthlySpending, creationDate, accounts, purchases, chargebacks);
+        return Objects.hash(id, name, risk, profile, clientType, averageMonthlySpending, creationDate, email, avgTimeRange);
     }
 }

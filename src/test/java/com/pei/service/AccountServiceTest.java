@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.BeforeEach;
+import com.pei.repository.AccountRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -40,13 +41,16 @@ class AccountServiceTest {
     private AccountParamsService accountParamsService;
 
     @Mock
+    private AccountRepository accountRepository;
+
+    @Mock
     private Transaction transaccionActual;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
         ObjectMapper realMapper = new ObjectMapper();
-        accountService = new AccountService(accountParamsService, realMapper);
+        accountService = new AccountService(accountParamsService, realMapper, accountRepository);
     }
 
     @Nested

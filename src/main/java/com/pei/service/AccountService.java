@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.pei.repository.AccountRepository;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -17,13 +18,27 @@ import com.pei.dto.ChargebackDTO;
 @Service
 public class AccountService {
 
-    private ObjectMapper objectMapper;
+    private final AccountRepository accountRepository;
 
     private AccountParamsService accountParamsService;
+    private ObjectMapper objectMapper;
 
-    public AccountService(AccountParamsService accountParamsService, ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-        this.accountParamsService = accountParamsService;
+    public AccountService(AccountParamsService accountParamsService, ObjectMapper realMapper, AccountRepository accountRepository) {
+        this.accountParamsService= accountParamsService;
+        this.objectMapper = realMapper;
+        this.accountRepository = accountRepository;
+    }
+
+    public List<Account> saveAll(List<Account> accounts) {
+        return accountRepository.saveAll(accounts);
+    }
+
+    public List<Account> findByUserId(Long userId) {
+        // acá aprovechamos que Account tiene relación ManyToOne con User
+        return accountRepository.findAll()
+            .stream()
+            .filter(a -> a.getOwner() != null && a.getOwner().getId().equals(userId))
+            .toList();
     }
 
     public Alert validateNewAccountTransfers(Account destinationAccount, Transaction currentTransaction) {
@@ -49,7 +64,7 @@ public class AccountService {
         }
         List<ChargebackDTO> chargebacks = new ArrayList<>();
 
-        try { 
+        try {
             JsonNode root = objectMapper.readTree(clientJson);
 
             String clientType = root.path("clientType").asText(null);
