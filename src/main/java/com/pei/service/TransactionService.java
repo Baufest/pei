@@ -12,6 +12,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.pei.domain.TimeRange;
 import com.pei.domain.Transaction;
+
+import java.util.Objects;
 import java.util.Optional;
 
 import com.pei.dto.Alert;
@@ -42,20 +44,26 @@ public class TransactionService {
         this.scoringServiceInterno = scoringServiceInterno;
     }
 
-    // TODO: Probablemente tengamos que hacer una Query SQL para obtener las
-    // transacciones, sería más performante
-    public List<Transaction> getLast24HoursTransactions(List<Transaction> transactions) {
-        return transactions.stream()
-                .filter(transaction -> transaction.getDate().isAfter(
-                        java.time.LocalDateTime.now().minusDays(1)))
-                .toList();
+    public List<Transaction> saveAll(List<Transaction> transactions) {
+        return transactionRepository.saveAll(transactions);
     }
+
+    public List<Transaction> getLast24HoursTransactions(List<Transaction> transactions) {
+        List<Long> ids = transactions.stream()
+            .map(Transaction::getId)
+            .toList();
+
+        LocalDateTime fromDate = LocalDateTime.now().minusDays(1);
+
+        return transactionRepository.findByIdsAndDateAfter(ids, fromDate);
+    }
+
 
     public BigDecimal totalDeposits(List<Transaction> transactions) {
         // Obtengo los montos de los depósitos
         // donde la cuenta de destino es la del usuario
         return transactions.stream()
-                .filter(transaction -> transaction.getDestinationAccount().getOwner().equals(transaction.getUser()))
+                .filter(transaction -> Objects.equals(transaction.getDestinationAccount().getOwner().getId(), transaction.getUser().getId()))
                 .map(Transaction::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
@@ -64,7 +72,7 @@ public class TransactionService {
         // Obtengo los montos de las transferencias
         // donde la cuenta de destino es diferente a la del usuario
         return transactions.stream()
-                .filter(transaction -> !transaction.getDestinationAccount().getOwner().equals(transaction.getUser()))
+                .filter(transaction -> !transaction.getDestinationAccount().getOwner().getId().equals(transaction.getUser().getId()))
                 .map(Transaction::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
