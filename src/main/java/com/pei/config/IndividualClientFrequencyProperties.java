@@ -13,6 +13,7 @@ public class IndividualClientFrequencyProperties {
     private int maxDepositsAccountHolder; // Máximo de depósitos al titular de la cuenta
     private List<String> typesAccountHolder; // Tipos de cuentas que se chequean
 
+
     public int getCheckWindowHs() {
         return checkWindowHs;
     }

@@ -50,7 +50,7 @@ class AccountServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         ObjectMapper realMapper = new ObjectMapper();
-        accountService = new AccountService(accountParamsService, realMapper);
+        accountService = new AccountService(accountParamsService, realMapper, accountRepository);
     }
 
     @Nested

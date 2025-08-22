@@ -23,10 +23,10 @@ public class AccountService {
     private AccountParamsService accountParamsService;
     private ObjectMapper objectMapper;
 
-    public AccountService(AccountRepository accountRepository, AccountParamsService accountParamsService) {
+    public AccountService(AccountParamsService accountParamsService, ObjectMapper realMapper, AccountRepository accountRepository) {
+        this.accountParamsService= accountParamsService;
+        this.objectMapper = realMapper;
         this.accountRepository = accountRepository;
-        this.accountParamsService = accountParamsService;
-        this.objectMapper = new ObjectMapper();
     }
 
     public List<Account> saveAll(List<Account> accounts) {
