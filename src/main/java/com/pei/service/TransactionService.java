@@ -7,14 +7,17 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.hibernate.annotations.Check;
 import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.pei.domain.AlertaSeveridad;
 import com.pei.config.TransferenciaInternacionalProperties;
 import com.pei.domain.TimeRange;
 import com.pei.domain.Transaction;
 import com.pei.dto.Alert;
+import com.pei.handler.severidadAlertaHandler.ManejadorDeSeveridad;
 import com.pei.repository.AccountRepository;
 import com.pei.repository.ChargebackRepository;
 import com.pei.repository.PurchaseRepository;
@@ -30,6 +33,7 @@ public class TransactionService {
     private final PurchaseRepository purchaseRepository;
     private final TransactionRepository transactionRepository;
     private final TransactionVelocityDetectorService transactionVelocityDetectorService;
+    private final CheckSeverityService checkSeverityService;
     private final ScoringRangesService scoringRangesService;
     private final Gson gson;
     private final NotificationService notificationService;
@@ -41,7 +45,7 @@ public class TransactionService {
             TransactionVelocityDetectorService transactionVelocityDetectorService,
             Gson gson, ScoringRangesService scoringServiceInterno, AccountRepository accountRepository,
             TransferenciaInternacionalProperties internationalCountryConfig, NotificationService notificationService,
-            RiskCountryService riskCountryService, TransactionParamsService transactionParamsService) {
+            RiskCountryService riskCountryService, TransactionParamsService transactionParamsService, CheckSeverityService checkSeverityService) {
         this.chargebackRepository = chargebackRepository;
         this.purchaseRepository = purchaseRepository;
         this.transactionRepository = transactionRepository;
@@ -52,6 +56,7 @@ public class TransactionService {
         this.notificationService = notificationService;
         this.riskCountryService = riskCountryService;
         this.transactionParamsService = transactionParamsService;
+        this.checkSeverityService = checkSeverityService;
     }
 
     // TODO: Probablemente tengamos que hacer una Query SQL para obtener las
@@ -262,7 +267,6 @@ public class TransactionService {
         if (numTransactions > maxTransactions) {
             return new Alert(userId, "Fast multiple transactions detected for user " + userId);
         }
-
         return null;
     }
 
@@ -280,6 +284,36 @@ public class TransactionService {
         // Considera sospechoso si la transferencia es posterior al evento y dentro de
         // 60 minutos
         return minutesDifference >= 0 && minutesDifference <= 60;
+    }
+
+    /*
+     * Service creado para pruebas del chains of responsability
+     */
+    public Alert checkTransactionAmount(Transaction t) {
+        if (t == null) {
+            throw new IllegalArgumentException("Parametro invalido");
+        }
+        String msj = "No hay nada malo aca.";
+        Long idCliente = t.getUser().getId();
+
+        AlertaSeveridad result = checkSeverityService.checkSeveridad(t);
+
+        switch (result.toString()) {
+            case "BAJA":
+                msj = "Alerta BAJA: Monto bajo";
+                break;
+            case "MEDIA":
+                msj = "Alerta MEDIA: Monto maomeno";
+                break;
+            case "ALTA":
+                msj = "Alerta ALTA: Monto grande y cuenta nueva";
+                break;
+            default:
+                msj = "Alerta ALTA: Monto grande y cuenta nueva";
+                break;
+        }
+
+        return new Alert(idCliente, msj);
     }
 
     public Alert getAmountLimitAlert(Long userId, BigDecimal limitAmount, Boolean isANewUser) {

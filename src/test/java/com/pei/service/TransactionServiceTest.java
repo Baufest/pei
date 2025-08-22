@@ -29,13 +29,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.pei.domain.Account.Account;
+import com.pei.domain.AlertaSeveridad;
 import com.pei.config.TransferenciaInternacionalProperties;
 import com.pei.domain.Transaction;
-import com.pei.domain.Account.Account;
 import com.pei.domain.User.User;
 import com.pei.dto.Alert;
 import com.pei.dto.Chargeback;
@@ -50,7 +52,8 @@ class TransactionServiceTest {
 
         User user1, user2;
         Account account1, account2;
-
+        @Mock
+        private CheckSeverityService checkSeverityService;
         @Mock
         private TransferenciaInternacionalProperties internacionalConfig;
         @Mock
@@ -88,15 +91,15 @@ class TransactionServiceTest {
                 LocalDateTime now = LocalDateTime.now();
                 Transaction t1 = new Transaction(user1, new BigDecimal("100.00"), now.minusHours(2), account1,
                                 account1); // dentro
-                                           // de
-                                           // 24h
+                                                                                                                                          // de
+                                                                                                                                          // 24h
                 Transaction t2 = new Transaction(user1, new BigDecimal("200.00"), now.minusDays(2), account1, account1); // fuera
                                                                                                                          // de
                                                                                                                          // 24h
                 Transaction t3 = new Transaction(user2, new BigDecimal("300.00"), now.minusHours(10), account2,
                                 account2); // dentro
-                                           // de
-                                           // 24h
+                                                                                                                                           // de
+                                                                                                                                           // 24h
                 List<Transaction> transactions = List.of(t1, t2, t3);
 
                 List<Transaction> expected = List.of(t1, t3);
@@ -515,169 +518,226 @@ class TransactionServiceTest {
         }
 
         @Nested
-        @DisplayName("Tests de transacción internacional")
-        class TransaccionInternacionalTests {
+        @DisplayName("Test cases para probar Severidad de alerta - chains of responsibility pattern")
+        public class SeveridadAlertaChainTests {
+                private Transaction transaction;
+                private User user;
+
+                @BeforeEach
+                void setUp() {
+                        MockitoAnnotations.openMocks(this);
+
+                        user = new User(1L);
+                        transaction = new Transaction();
+                        transaction.setUser(user);
+                }
 
                 @Test
-                @DisplayName("processTransactionCountryInternational - país de riesgo")
-                void processTransactionCountryInternational_CuandoPaisRiesgo_RetornaAlertaRequiereAprobacion() {
-                        User user = new User(1L);
-                        Account destino = new Account();
-                        destino.setCountry("Venezuela");
-                        Transaction transaction = new Transaction();
-                        transaction.setUser(user);
-                        transaction.setAmount(BigDecimal.valueOf(1000));
-                        transaction.setSourceAccount(new Account(1L, user, "Argentina"));
-                        transaction.setDestinationAccount(destino);
+                void checkTransactionAmount_CuandoSeveridadBaja_RetornaAlertaBaja() {
+                        // Arrange
+                        when(checkSeverityService.checkSeveridad(transaction)).thenReturn(AlertaSeveridad.BAJA);
 
-                        when(riskCountryService.isRiskCountry("Venezuela")).thenReturn(true);
-                        when(riskCountryService.isRiskCountry("Argentina")).thenReturn(false);
+                        // Act
+                        Alert alert = transactionService.checkTransactionAmount(transaction);
 
-                        Alert alert = transactionService.processTransactionCountryInternational(transaction);
-
-                        assertNotNull(alert);
+                        // Assert
+                        assertEquals("Alerta BAJA: Monto bajo", alert.description());
                         assertEquals(user.getId(), alert.userId());
-                        assertEquals(Transaction.TransactionStatus.REQUIERE_APROBACION, transaction.getStatus());
-                        verify(riskCountryService).isRiskCountry("Venezuela");
                 }
 
                 @Test
-                @DisplayName("processTransactionCountryInternational - monto mayor al límite")
-                void processTransactionCountryInternational_CuandoMontoMayor_RetornaAlertaYNotificaCompliance() {
-                        User user = new User(2L);
-                        Account destino = new Account();
-                        destino.setCountry("Chile");
-                        Transaction transaction = new Transaction();
-                        transaction.setUser(user);
-                        transaction.setAmount(BigDecimal.valueOf(100_001));
-                        transaction.setSourceAccount(new Account(1L, user, "Argentina"));
-                        transaction.setDestinationAccount(destino);
+                void checkTransactionAmount_CuandoSeveridadMedia_RetornaAlertaMedia() {
+                        // Arrange
+                        when(checkSeverityService.checkSeveridad(transaction)).thenReturn(AlertaSeveridad.MEDIA);
 
-                        when(riskCountryService.isRiskCountry("Chile")).thenReturn(false);
-                        when(riskCountryService.isRiskCountry("Argentina")).thenReturn(false);
-                        when(transactionParamsService.getMontoAlertaInternacional())
-                                        .thenReturn(BigDecimal.valueOf(100_000));
+                        // Act
+                        Alert alert = transactionService.checkTransactionAmount(transaction);
 
-                        Alert alert = transactionService.processTransactionCountryInternational(transaction);
-
-                        assertNotNull(alert);
+                        // Assert
+                        assertEquals("Alerta MEDIA: Monto maomeno", alert.description());
                         assertEquals(user.getId(), alert.userId());
-                        assertEquals(Transaction.TransactionStatus.APROBADA, transaction.getStatus());
-                        verify(riskCountryService).isRiskCountry("Chile");
-                        verify(transactionParamsService).getMontoAlertaInternacional();
-                        verify(notificationService).notifyCompliance(eq(transaction), any(Alert.class));
                 }
 
                 @Test
-                @DisplayName("processTransactionCountryInternational - transacción internacional normal")
-                void processTransactionCountryInternational_CuandoInternacionalNormal_RetornaAlertaAprobada() {
-                        User user = new User(3L);
-                        Account destino = new Account();
-                        destino.setCountry("Uruguay");
-                        Transaction transaction = new Transaction();
-                        transaction.setUser(user);
-                        transaction.setAmount(BigDecimal.valueOf(10_000));
-                        transaction.setSourceAccount(new Account(1L, user, "Argentina"));
-                        transaction.setDestinationAccount(destino);
+                void checkTransactionAmount_CuandoSeveridadAlta_RetornaAlertaAlta() {
+                        // Arrange
+                        when(checkSeverityService.checkSeveridad(transaction)).thenReturn(AlertaSeveridad.ALTA);
 
-                        when(riskCountryService.isRiskCountry("Uruguay")).thenReturn(false);
-                        when(riskCountryService.isRiskCountry("Argentina")).thenReturn(false);
+                        // Act
+                        Alert alert = transactionService.checkTransactionAmount(transaction);
 
-                        when(transactionParamsService.getMontoAlertaInternacional())
-                                        .thenReturn(BigDecimal.valueOf(100_000));
-
-                        Alert alert = transactionService.processTransactionCountryInternational(transaction);
-
-                        assertNotNull(alert);
+                        // Assert
+                        assertEquals("Alerta ALTA: Monto grande y cuenta nueva", alert.description());
                         assertEquals(user.getId(), alert.userId());
-                        assertEquals(Transaction.TransactionStatus.APROBADA, transaction.getStatus());
-                        verify(riskCountryService).isRiskCountry("Uruguay");
-                        verify(transactionParamsService).getMontoAlertaInternacional();
                 }
 
-                @Test
-                @DisplayName("processTransactionCountryInternational - transacción no internacional")
-                void processTransactionCountryInternational_CuandoNoInternacional_RetornaAlertaAprobada() {
-                        User user = new User(4L);
-                        Account destino = new Account();
-                        destino.setCountry("Argentina");
-                        Transaction transaction = new Transaction();
-                        transaction.setUser(user);
-                        transaction.setAmount(BigDecimal.valueOf(10_000));
-                        transaction.setSourceAccount(new Account(1L, user, "Argentina"));
-                        transaction.setDestinationAccount(destino);
+                @Nested
+                @DisplayName("Tests de transacción internacional")
+                class TransaccionInternacionalTests {
 
-                        Alert alert = transactionService.processTransactionCountryInternational(transaction);
+                        @Test
+                        @DisplayName("processTransactionCountryInternational - país de riesgo")
+                        void processTransactionCountryInternational_CuandoPaisRiesgo_RetornaAlertaRequiereAprobacion() {
+                                User user = new User(1L);
+                                Account destino = new Account();
+                                destino.setCountry("Venezuela");
+                                Transaction transaction = new Transaction();
+                                transaction.setUser(user);
+                                transaction.setAmount(BigDecimal.valueOf(1000));
+                                transaction.setSourceAccount(new Account(1L, user, "Argentina"));
+                                transaction.setDestinationAccount(destino);
 
-                        assertNotNull(alert);
-                        assertEquals(user.getId(), alert.userId());
-                        assertEquals(Transaction.TransactionStatus.APROBADA, transaction.getStatus());
+                                when(riskCountryService.isRiskCountry("Venezuela")).thenReturn(true);
+                                when(riskCountryService.isRiskCountry("Argentina")).thenReturn(false);
+
+                                Alert alert = transactionService.processTransactionCountryInternational(transaction);
+
+                                assertNotNull(alert);
+                                assertEquals(user.getId(), alert.userId());
+                                assertEquals(Transaction.TransactionStatus.REQUIERE_APROBACION,
+                                                transaction.getStatus());
+                                verify(riskCountryService).isRiskCountry("Venezuela");
+                        }
+
+                        @Test
+                        @DisplayName("processTransactionCountryInternational - monto mayor al límite")
+                        void processTransactionCountryInternational_CuandoMontoMayor_RetornaAlertaYNotificaCompliance() {
+                                User user = new User(2L);
+                                Account destino = new Account();
+                                destino.setCountry("Chile");
+                                Transaction transaction = new Transaction();
+                                transaction.setUser(user);
+                                transaction.setAmount(BigDecimal.valueOf(100_001));
+                                transaction.setSourceAccount(new Account(1L, user, "Argentina"));
+                                transaction.setDestinationAccount(destino);
+
+                                when(riskCountryService.isRiskCountry("Chile")).thenReturn(false);
+                                when(riskCountryService.isRiskCountry("Argentina")).thenReturn(false);
+                                when(transactionParamsService.getMontoAlertaInternacional())
+                                                .thenReturn(BigDecimal.valueOf(100_000));
+
+                                Alert alert = transactionService.processTransactionCountryInternational(transaction);
+
+                                assertNotNull(alert);
+                                assertEquals(user.getId(), alert.userId());
+                                assertEquals(Transaction.TransactionStatus.APROBADA, transaction.getStatus());
+                                verify(riskCountryService).isRiskCountry("Chile");
+                                verify(transactionParamsService).getMontoAlertaInternacional();
+                                verify(notificationService).notifyCompliance(eq(transaction), any(Alert.class));
+                        }
+
+                        @Test
+                        @DisplayName("processTransactionCountryInternational - transacción internacional normal")
+                        void processTransactionCountryInternational_CuandoInternacionalNormal_RetornaAlertaAprobada() {
+                                User user = new User(3L);
+                                Account destino = new Account();
+                                destino.setCountry("Uruguay");
+                                Transaction transaction = new Transaction();
+                                transaction.setUser(user);
+                                transaction.setAmount(BigDecimal.valueOf(10_000));
+                                transaction.setSourceAccount(new Account(1L, user, "Argentina"));
+                                transaction.setDestinationAccount(destino);
+
+                                when(riskCountryService.isRiskCountry("Uruguay")).thenReturn(false);
+                                when(riskCountryService.isRiskCountry("Argentina")).thenReturn(false);
+
+                                when(transactionParamsService.getMontoAlertaInternacional())
+                                                .thenReturn(BigDecimal.valueOf(100_000));
+
+                                Alert alert = transactionService.processTransactionCountryInternational(transaction);
+
+                                assertNotNull(alert);
+                                assertEquals(user.getId(), alert.userId());
+                                assertEquals(Transaction.TransactionStatus.APROBADA, transaction.getStatus());
+                                verify(riskCountryService).isRiskCountry("Uruguay");
+                                verify(transactionParamsService).getMontoAlertaInternacional();
+                        }
+
+                        @Test
+                        @DisplayName("processTransactionCountryInternational - transacción no internacional")
+                        void processTransactionCountryInternational_CuandoNoInternacional_RetornaAlertaAprobada() {
+                                User user = new User(4L);
+                                Account destino = new Account();
+                                destino.setCountry("Argentina");
+                                Transaction transaction = new Transaction();
+                                transaction.setUser(user);
+                                transaction.setAmount(BigDecimal.valueOf(10_000));
+                                transaction.setSourceAccount(new Account(1L, user, "Argentina"));
+                                transaction.setDestinationAccount(destino);
+
+                                Alert alert = transactionService.processTransactionCountryInternational(transaction);
+
+                                assertNotNull(alert);
+                                assertEquals(user.getId(), alert.userId());
+                                assertEquals(Transaction.TransactionStatus.APROBADA, transaction.getStatus());
+                        }
+
+                        @Test
+                        @DisplayName("processTransactionCountryInternational - transacción inválida")
+                        void transaccionInvalida_RetornaAlerta() {
+                                Alert alert = transactionService.processTransactionCountryInternational(null);
+                                assertNotNull(alert);
+                                assertNull(alert.userId());
+                                assertTrue(alert.description().contains("Transacción inválida"));
+                        }
+
+                        // 7️⃣ Monto inválido (null o ≤0)
+                        @Test
+                        @DisplayName("processTransactionCountryInternational - monto inválido")
+                        void montoInvalido_RetornaAlerta() {
+                                User user = new User(6L);
+                                Transaction transaction = new Transaction();
+                                transaction.setUser(user);
+                                transaction.setAmount(BigDecimal.ZERO);
+                                transaction.setSourceAccount(new Account(1L, user, "Argentina"));
+                                transaction.setDestinationAccount(new Account(2L, user, "Chile"));
+
+                                Alert alert = transactionService.processTransactionCountryInternational(transaction);
+
+                                assertNotNull(alert);
+                                assertEquals(user.getId(), alert.userId());
+                                assertTrue(alert.description().contains("Monto de transacción inválido"));
+                        }
+
+                        // 8️⃣ País origen o destino inválido (null o blank)
+                        @Test
+                        @DisplayName("processTransactionCountryInternational - país inválido")
+                        void paisInvalido_RetornaAlerta() {
+                                User user = new User(7L);
+                                Transaction transaction = new Transaction();
+                                transaction.setUser(user);
+                                transaction.setAmount(BigDecimal.valueOf(1000));
+                                transaction.setSourceAccount(new Account(1L, user, ""));
+                                transaction.setDestinationAccount(new Account(2L, user, null));
+
+                                Alert alert = transactionService.processTransactionCountryInternational(transaction);
+
+                                assertNotNull(alert);
+                                assertEquals(user.getId(), alert.userId());
+                                assertTrue(alert.description().contains("País de origen o destino inválido"));
+                        }
+
+                        // 9️⃣ Transacción internacional con límite null (lanza excepción)
+                        @Test
+                        @DisplayName("processTransactionCountryInternational - límite null lanza excepción")
+                        void limiteInternacionalNull_LanzaExcepcion() {
+                                User user = new User(8L);
+                                Account destino = new Account();
+                                destino.setCountry("Uruguay");
+                                Transaction transaction = new Transaction();
+                                transaction.setUser(user);
+                                transaction.setAmount(BigDecimal.valueOf(50_000));
+                                transaction.setSourceAccount(new Account(1L, user, "Argentina"));
+                                transaction.setDestinationAccount(destino);
+
+                                when(riskCountryService.isRiskCountry(anyString())).thenReturn(false);
+                                when(transactionParamsService.getMontoAlertaInternacional()).thenReturn(null);
+
+                                assertThrows(IllegalStateException.class,
+                                                () -> transactionService
+                                                                .processTransactionCountryInternational(transaction));
+                        }
+
                 }
-
-                @Test
-                @DisplayName("processTransactionCountryInternational - transacción inválida")
-                void transaccionInvalida_RetornaAlerta() {
-                        Alert alert = transactionService.processTransactionCountryInternational(null);
-                        assertNotNull(alert);
-                        assertNull(alert.userId());
-                        assertTrue(alert.description().contains("Transacción inválida"));
-                }
-
-                // 7️⃣ Monto inválido (null o ≤0)
-                @Test
-                @DisplayName("processTransactionCountryInternational - monto inválido")
-                void montoInvalido_RetornaAlerta() {
-                        User user = new User(6L);
-                        Transaction transaction = new Transaction();
-                        transaction.setUser(user);
-                        transaction.setAmount(BigDecimal.ZERO);
-                        transaction.setSourceAccount(new Account(1L, user, "Argentina"));
-                        transaction.setDestinationAccount(new Account(2L, user, "Chile"));
-
-                        Alert alert = transactionService.processTransactionCountryInternational(transaction);
-
-                        assertNotNull(alert);
-                        assertEquals(user.getId(), alert.userId());
-                        assertTrue(alert.description().contains("Monto de transacción inválido"));
-                }
-
-                // 8️⃣ País origen o destino inválido (null o blank)
-                @Test
-                @DisplayName("processTransactionCountryInternational - país inválido")
-                void paisInvalido_RetornaAlerta() {
-                        User user = new User(7L);
-                        Transaction transaction = new Transaction();
-                        transaction.setUser(user);
-                        transaction.setAmount(BigDecimal.valueOf(1000));
-                        transaction.setSourceAccount(new Account(1L, user, ""));
-                        transaction.setDestinationAccount(new Account(2L, user, null));
-
-                        Alert alert = transactionService.processTransactionCountryInternational(transaction);
-
-                        assertNotNull(alert);
-                        assertEquals(user.getId(), alert.userId());
-                        assertTrue(alert.description().contains("País de origen o destino inválido"));
-                }
-
-                // 9️⃣ Transacción internacional con límite null (lanza excepción)
-                @Test
-                @DisplayName("processTransactionCountryInternational - límite null lanza excepción")
-                void limiteInternacionalNull_LanzaExcepcion() {
-                        User user = new User(8L);
-                        Account destino = new Account();
-                        destino.setCountry("Uruguay");
-                        Transaction transaction = new Transaction();
-                        transaction.setUser(user);
-                        transaction.setAmount(BigDecimal.valueOf(50_000));
-                        transaction.setSourceAccount(new Account(1L, user, "Argentina"));
-                        transaction.setDestinationAccount(destino);
-
-                        when(riskCountryService.isRiskCountry(anyString())).thenReturn(false);
-                        when(transactionParamsService.getMontoAlertaInternacional()).thenReturn(null);
-
-                        assertThrows(IllegalStateException.class,
-                                        () -> transactionService.processTransactionCountryInternational(transaction));
-                }
-
         }
 }

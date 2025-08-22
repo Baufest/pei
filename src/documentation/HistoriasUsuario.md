@@ -1812,3 +1812,62 @@ GET /api/alerta-fast-multiple-transaction?userId=123
 --
 
 ## ✅ Estado
+
+## 👨‍💻 Historia de Usuario #230
+## 📝 Título
+Implementación de Chain of Responsibility para Manejo de Severidad en Alertas
+
+## 📌 Descripción Breve
+Se implementó un patrón Chain of Responsibility para manejar diferentes niveles de severidad en las alertas de transacciones. El sistema evalúa una transacción y determina su nivel de severidad (ALTA, MEDIA, BAJA) basado en diferentes criterios como monto y antigüedad de cuenta.
+
+## ⚙️ Detalles Técnicos
+## 🧩 Clases/Métodos Afectados
+- ManejadorDeSeveridad
+  - Método: procesarSeveridad(Transaction t)
+  - Método: validTransaction(Transaction t)
+  - Método: setNextComponent(ManejadorDeSeveridad next)
+
+- AlertaSeveridadALTA
+  - Método: match(Transaction t) - Evalúa transacciones mayores a 10000 con cuentas nuevas
+  - Método: getSeveridad() - Retorna ALTA
+
+AlertaSeveridadMEDIA
+  - Método: match(Transaction t) - Evalúa transacciones entre 5000 y 10000
+  - Método: getSeveridad() - Retorna MEDIA
+
+AlertaSeveridadBAJA
+  - Método: match(Transaction t) - Evalúa transacciones entre 0 y 50000
+  - Método: getSeveridad() - Retorna BAJA
+
+CheckSeverityService
+  - Constructor: Configura la cadena de responsabilidad
+  - Método: checkSeveridad(Transaction t)
+
+## 🗃️ Cambios en Base de Datos
+No se realizaron cambios en la estructura de la base de datos.
+
+## 🔍 Impacto en el Sistema
+Módulo afectado: com.pei.handler.severidadAlertaHandler
+Dependencias relevantes: Transaction, AlertaSeveridad
+
+## 💻 Ejemplo de Uso
+
+// Crear una transacciónTransaction transaction = new Transaction();transaction.setAmount(new BigDecimal("15000"));transaction.setDestinationAccount(destinationAccount);
+// Verificar severidadCheckSeverityService service = new CheckSeverityService();AlertaSeveridad severidad = service.checkSeveridad(transaction);
+
+## 🧪 Pruebas Unitarias
+## 🧪 Escenarios Cubiertos
+testAlertaAlta: Transacción > 10000 con cuenta nueva
+testAlertaMedia: Transacción entre 5000 y 10000
+testAlertaBaja: Transacción < 5000
+testTransaccionInvalida: Transacción con datos nulos
+testCadenaCompleta: Verificación de procesamiento completo de la cadena
+
+## ✅ Estado
+  ✔️ Completado
+
+## 📌 Notas Adicionales
+- La implementación sigue el patrón Chain of Responsibility para mayor flexibilidad y mantenibilidad. Se opto por este patron por las ventajas mencionadas anteriormente y por lo escalable que es, teniendo en cuenta que una transaccion puede pasar por muchas validaciones, su implementacion seria sencilla con este patron.
+- Cada manejador puede procesar la transacción o pasarla al siguiente en la cadena
+- Los umbrales de montos están configurados en cada manejador específico
+- Se incluye validación de transacciones para evitar procesamiento de datos inválidos
