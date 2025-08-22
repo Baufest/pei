@@ -1,6 +1,5 @@
 package com.pei.domain.User;
 
-
 import com.pei.domain.Device;
 import com.pei.domain.Country;
 import java.math.BigDecimal;
@@ -10,13 +9,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Objects;
+import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import com.pei.domain.Account.Account;
 import com.pei.domain.TimeRange;
 import com.pei.dto.Chargeback;
 import com.pei.dto.Purchase;
-import jakarta.persistence.*;
-
-import org.hibernate.annotations.CreationTimestamp;
 
 @Entity @Table(name = "client")
 public class User {

@@ -32,6 +32,14 @@ velocity-transaction-params:
         min-monto: 150000
         max-monto: 400000
 
+transferencias:
+  internacionales:
+    paises-riesgo:
+      - Venezuela
+      - Rusia
+      - Iran
+    monto-alerta: 50000.00
+
 transaction:
     frequency:
         client:

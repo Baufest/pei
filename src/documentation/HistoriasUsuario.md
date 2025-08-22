@@ -590,7 +590,7 @@ GET /api/alerta-cliente-alto-riesgo/1
 ```json
 {
   "userId": 1,
-  "description": "Alerta: El cliente es de alto riesgo."
+  "description": "Alerta: Cliente individual de alto riesgo, con chargebacks: 5"
 }
 ```
 
@@ -599,9 +599,12 @@ GET /api/alerta-cliente-alto-riesgo/1
 ## 🧪 Pruebas Unitarias
 
 ### 🧪 Escenarios Cubiertos
-- `testHighRiskUser`: Alerta si el usuario es de alto riesgo.
-- `testLowRiskUser`: Mensaje de verificado si el usuario es de bajo riesgo.
-- `testNotFoundUser`: Alerta si el usuario no es encontrado.
+- `testClientTypeNull`: Alerta si el clientType es null.
+- `testChargebacksMissing`: Alerta si chargebacks es null.
+- `testEmpresaHighRisk`: Alerta si el cliente empresa es de alto riesgo.
+- `testEmpretestIndividuoHighRisksaHighRisk`: Alerta si el cliente individuo es de alto riesgo.
+- `testClienteValidadoSinAlertas`: Alerta si el cliente es validado sin alertas de riesgo.
+- `testJsonProcessingException`: Alerta si el json está mal procesado.
 
 ### 🧪 Endpoints Probados
 | Método HTTP | URL                                 | Escenario de Test         | Resultado Esperado |
@@ -1091,7 +1094,9 @@ Para probar correctamente el sistema de envío de mails se utilizó Ethereal, un
 ---
 
 
-## 👨‍💻 Historia de Usuario #232
+## 👨‍💻 Historia de Usuario #232 
+## LA FUNCIONALIDAD DE ESTA HISTORIA DE USUARIO HA SIDO ACTUALIZADA
+## EN LA HISTORIA DE USUARIO #252 
 
 ### 📝 Título  
 Integración y alerta de scoring externo BBVA
@@ -1398,6 +1403,128 @@ Content-Type: application/json
 - **Servicio de Alertas**  
   - Ubicación: `AlertService`
   - Descripción: Lógica de negocio para detección de patrones sospechosos en transacciones entre cuentas no relacionadas.  
+
+
+## 🧑‍💻 Historia de Usuario #234
+
+### 📝 Título
+Alerta de Transacción Internacional y Países de Riesgo
+
+---
+
+### 📌 Descripción Breve
+Se implementa la lógica para generar alertas en transacciones internacionales, considerando países de riesgo y límites configurables de monto. El objetivo es identificar operaciones sospechosas y notificar al usuario cuando se detecta un país de riesgo o se supera el monto permitido. Se agregan servicios para parametrización y validación de países, así como la configuración de límites en archivos de propiedades.
+
+---
+
+### ⚙️ Detalles Técnicos
+
+#### 🧩 Clases/Métodos Afectados
+- `TransactionService`
+  - Método: `processTransactionCountryInternational(Transaction transaction)`
+- `TransactionParamsService`
+  - Método: `getMontoAlertaInternacional()`
+- `RiskCountryService`
+  - Método: `isRiskCountry(String country)`
+- Configuración: Parámetros de transferencia internacional (`application.yml` / `application.properties`)
+- `AlertController`
+  - Método: `postMethodName(Transaction transaction)` (endpoint `/api/alerta-transaccion-internacional`)
+
+#### 🌐 Endpoints Nuevos/Modificados
+| Método HTTP | URL                                 | Parámetros (Body)      | Respuesta                      |
+|-------------|-------------------------------------|------------------------|-------------------------------|
+| POST        | `/api/alerta-transaccion-internacional` | `Transaction` (JSON)   | `Alert` con mensaje de alerta |
+
+#### 🗃️ Cambios en Base de Datos
+- No se realizaron cambios estructurales en la base de datos.
+- Se utilizan datos existentes de transacciones y cuentas.
+
+---
+
+### 🔍 Impacto en el Sistema
+- Módulo afectado: `com.pei.controller`, `com.pei.service`
+- Dependencias relevantes: `TransactionService`, `TransactionParamsService`, `RiskCountryService`, configuración de límites internacionales
+
+---
+
+### 💻 Ejemplo de Uso
+
+**Request**
+```http
+POST /api/alerta-transaccion-internacional
+Content-Type: application/json
+{
+  "id": 123,
+  "user": { "id": 1 },
+  "amount": 100000,
+  "sourceAccount": { "country": "Argentina" },
+  "destinationAccount": { "country": "Chile" }
+}
+```
+
+**Response (caso país de riesgo)**
+```json
+{
+  "userId": 1,
+  "description": "Alerta: Transacción internacional hacia un país de riesgo"
+}
+```
+
+**Response (caso monto mayor al límite)**
+```json
+{
+  "userId": 1,
+  "description": "Alerta: Transacción internacional con monto mayor a: 50000"
+}
+```
+
+**Response (caso internacional normal)**
+```json
+{
+  "userId": 1,
+  "description": "Alerta: Transacción internacional aprobada"
+}
+```
+
+**Response (caso no internacional)**
+```json
+{
+  "userId": 1,
+  "description": "Alerta: Transacción aprobada"
+}
+```
+
+**Response (caso negativo)**
+```http
+404 Not Found
+```
+
+---
+
+## 🧪 Pruebas Unitarias
+
+### 🧪 Escenarios Cubiertos
+- `testCargaConfigTransferenciaInternacional`: Verifica que los parámetros de transferencia internacional se cargan correctamente desde la configuración.
+- `procesoTransaccion_PaisDeRiesgo_AlertaGenerada`: Transacción internacional hacia país de riesgo → **alerta generada**.
+- `procesoTransaccion_MontoMayorAlLimite_AlertaGenerada`: Transacción internacional con monto mayor al límite → **alerta generada**.
+- `procesoTransaccion_InternacionalNormal_AlertaAprobada`: Transacción internacional válida → **alerta de aprobación**.
+- `procesoTransaccion_NoInternacional_AlertaAprobada`: Transacción nacional → **alerta de aprobación**.
+- `riskCountryService_PaisRiesgo_True`: Verifica que el servicio identifica correctamente un país de riesgo.
+- `riskCountryService_PaisSeguro_False`: Verifica que el servicio identifica correctamente un país seguro.
+
+### 🧪 Endpoints Probados
+| Método HTTP | URL                                 | Escenario de Test                                 | Resultado Esperado                |
+|-------------|-------------------------------------|---------------------------------------------------|-----------------------------------|
+| POST        | `/api/alerta-transaccion-internacional` | País de riesgo                                    | Alerta generada                   |
+| POST        | `/api/alerta-transaccion-internacional` | Monto mayor al límite                             | Alerta generada                   |
+| POST        | `/api/alerta-transaccion-internacional` | Transacción internacional válida                  | Alerta de aprobación              |
+| POST        | `/api/alerta-transaccion-internacional` | Transacción nacional                              | Alerta de aprobación              |
+
+---
+
+## ✅ Estado
+✔️ Completado
+
 ---
 
 ## 🧑‍💻 Historia de Usuario #250
@@ -1484,8 +1611,6 @@ Content-Type: application/json
 
 ---
 
-## 📦 Documentación de Integraciones Externas
-
 - **Servicio de Email (JavaMail)**: Envío real de alertas por correo electrónico.
 - **SMS y Slack**: Métodos simulados para pruebas y demostración.
 
@@ -1508,12 +1633,91 @@ Content-Type: application/json
 
 - Se implementaron tests unitarios en `AlertNotificatorServiceTest` usando JUnit 5 y Mockito, cubriendo casos de éxito y error en el envío de alertas por canal.
 
+---------------------
+
+## 🧑‍💻 Historia de Usuario #252
+
+### 📝 Título
+Alerta por scoring de transacción con integración de tipo de cliente
+
+### 📌 Descripción Breve
+
+Se implementó el endpoint `/api/alerta-scoring` que permite analizar el scoring de un usuario al procesar una transacción, considerando el tipo de cliente obtenido dinámicamente. El sistema consulta el tipo de cliente, ejecuta la lógica de scoring y, si detecta un scoring bajo o riesgoso, genera una alerta. Si el scoring es aceptable, retorna 404 (no hay alerta).
+
+### ⚙️ Detalles Técnicos
+
+#### 🧩 Clases/Métodos Afectados
+- `AlertController`
+    - Método: `checkProcessTransaction(Long userId)`
+- `ClienteService`
+    - Método: `getClientType(Long userId)`
+- `TransactionService`
+    - Método: `processTransactionScoring(Long userId, String clientType)`
+- `Alert` (DTO)
+
+#### 🌐 Endpoints Nuevos/Modificados
+| Método HTTP | URL                | Parámetros (Body) | Respuesta                                      |
+|-------------|--------------------|-------------------|------------------------------------------------|
+| POST        | `/api/alerta-scoring` | `Long userId`      | `Alert` con mensaje si se detecta scoring bajo |
+
+#### 🗃️ Cambios en Base de Datos
+- No aplica. El endpoint realiza análisis sobre datos existentes, sin modificar la estructura ni los datos de la base.
+
+### 🔍 Impacto en el Sistema
+- Módulo afectado: `AlertController`
+- Dependencias relevantes: `ClienteService`, `TransactionService`, configuración de scoring
+
+### 💻 Ejemplo de Uso
+
+**Request**
+```http
+POST /api/alerta-scoring
+Content-Type: application/json
+
+12345
+```
+**Response (caso positivo)**
+```json
+{
+  "userId": 12345,
+  "description": "Alerta: Scoring bajo detectado para el usuario 12345"
+}
+```
+
+**Response (caso negativo)**
+```http
+404 Not Found
+```
+
+## 🧪 Pruebas Unitarias
+
+### 🧪 Escenarios Cubiertos
+
+- `checkProcessTransaction_CuandoScoringBajo_RetornaAlerta`: Usuario con scoring bajo → alerta generada.
+- `checkProcessTransaction_CuandoScoringAlto_NoRetornaAlerta`: Usuario con scoring alto → no genera alerta.
+- `checkProcessTransaction_CuandoTipoClienteNoValido_RetornaNotFound`: Tipo de cliente inválido → 404 Not Found.
+
+### 🧪 Endpoints Probados
+| Método HTTP | URL                | Escenario de Test                  | Resultado Esperado |
+|-------------|--------------------|------------------------------------|--------------------|
+| POST        | `/api/alerta-scoring` | Scoring bajo                       | Alerta generada    |
+| POST        | `/api/alerta-scoring` | Scoring alto                       | 404 Not Found      |
+| POST        | `/api/alerta-scoring` | Tipo de cliente inválido           | 404 Not Found      |
+
 ---
 
+## ✅ Estado
+✔️ Completado
+
+---
+
+## 📦 Documentación de Integraciones Externas
+
+_No aplica para este endpoint. No se utilizan servicios
 
 ---------------------
 
-  ## 🧑‍💻 Historia de Usuario #251
+## 🧑‍💻 Historia de Usuario #251
 
 ### 📝 Título
 Modificacion umbral de velocidades de transacciones
@@ -1521,6 +1725,7 @@ Modificacion umbral de velocidades de transacciones
 ---
 
 ### 📌 Descripción Breve
+
 Se implementa la configuración de umbrales de monto mínimo y máximo para la alerta de transacciones rápidas, permitiendo que el sistema detecte actividad sospechosa solo si las transacciones se encuentran dentro de un rango de monto configurable según el tipo de cliente ("individuo" o "empresa"). Esto mejora la flexibilidad y precisión de la lógica antifraude.
 
 ---
@@ -1607,6 +1812,65 @@ GET /api/alerta-fast-multiple-transaction?userId=123
 --
 
 ## ✅ Estado
+
+## 👨‍💻 Historia de Usuario #230
+## 📝 Título
+Implementación de Chain of Responsibility para Manejo de Severidad en Alertas
+
+## 📌 Descripción Breve
+Se implementó un patrón Chain of Responsibility para manejar diferentes niveles de severidad en las alertas de transacciones. El sistema evalúa una transacción y determina su nivel de severidad (ALTA, MEDIA, BAJA) basado en diferentes criterios como monto y antigüedad de cuenta.
+
+## ⚙️ Detalles Técnicos
+## 🧩 Clases/Métodos Afectados
+- ManejadorDeSeveridad
+  - Método: procesarSeveridad(Transaction t)
+  - Método: validTransaction(Transaction t)
+  - Método: setNextComponent(ManejadorDeSeveridad next)
+
+- AlertaSeveridadALTA
+  - Método: match(Transaction t) - Evalúa transacciones mayores a 10000 con cuentas nuevas
+  - Método: getSeveridad() - Retorna ALTA
+
+AlertaSeveridadMEDIA
+  - Método: match(Transaction t) - Evalúa transacciones entre 5000 y 10000
+  - Método: getSeveridad() - Retorna MEDIA
+
+AlertaSeveridadBAJA
+  - Método: match(Transaction t) - Evalúa transacciones entre 0 y 50000
+  - Método: getSeveridad() - Retorna BAJA
+
+CheckSeverityService
+  - Constructor: Configura la cadena de responsabilidad
+  - Método: checkSeveridad(Transaction t)
+
+## 🗃️ Cambios en Base de Datos
+No se realizaron cambios en la estructura de la base de datos.
+
+## 🔍 Impacto en el Sistema
+Módulo afectado: com.pei.handler.severidadAlertaHandler
+Dependencias relevantes: Transaction, AlertaSeveridad
+
+## 💻 Ejemplo de Uso
+
+// Crear una transacciónTransaction transaction = new Transaction();transaction.setAmount(new BigDecimal("15000"));transaction.setDestinationAccount(destinationAccount);
+// Verificar severidadCheckSeverityService service = new CheckSeverityService();AlertaSeveridad severidad = service.checkSeveridad(transaction);
+
+## 🧪 Pruebas Unitarias
+## 🧪 Escenarios Cubiertos
+testAlertaAlta: Transacción > 10000 con cuenta nueva
+testAlertaMedia: Transacción entre 5000 y 10000
+testAlertaBaja: Transacción < 5000
+testTransaccionInvalida: Transacción con datos nulos
+testCadenaCompleta: Verificación de procesamiento completo de la cadena
+
+## ✅ Estado
+  ✔️ Completado
+
+## 📌 Notas Adicionales
+- La implementación sigue el patrón Chain of Responsibility para mayor flexibilidad y mantenibilidad. Se opto por este patron por las ventajas mencionadas anteriormente y por lo escalable que es, teniendo en cuenta que una transaccion puede pasar por muchas validaciones, su implementacion seria sencilla con este patron.
+- Cada manejador puede procesar la transacción o pasarla al siguiente en la cadena
+- Los umbrales de montos están configurados en cada manejador específico
+- Se incluye validación de transacciones para evitar procesamiento de datos inválidos
 
 ----
 

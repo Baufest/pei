@@ -1,15 +1,24 @@
 package com.pei.service;
 
-import com.pei.config.CompanyClientFrequencyProperties;
-import com.pei.config.IndividualClientFrequencyProperties;
-import com.pei.domain.Account.Account;
-import com.pei.domain.Account.AccountType;
-import com.pei.domain.User.ClientType;
-import com.pei.domain.User.User;
-import com.pei.domain.Transaction;
-import com.pei.domain.alerts.RecurringBeneficiaryAlert;
-import com.pei.repository.RecurringBeneficiaryAlertRepository;
-import com.pei.service.exceptions.VerificadorBeneficiarioRecurrenteException;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,11 +28,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
-import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import com.pei.config.CompanyClientFrequencyProperties;
+import com.pei.config.IndividualClientFrequencyProperties;
+import com.pei.domain.Transaction;
+import com.pei.domain.Account.Account;
+import com.pei.domain.Account.AccountType;
+import com.pei.domain.User.ClientType;
+import com.pei.domain.User.User;
+import com.pei.domain.alerts.RecurringBeneficiaryAlert;
+import com.pei.repository.RecurringBeneficiaryAlertRepository;
+import com.pei.service.exceptions.VerificadorBeneficiarioRecurrenteException;
 
 @ExtendWith(MockitoExtension.class)
 class TransactionFrequencyServiceTest {

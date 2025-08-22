@@ -1,24 +1,18 @@
 package com.pei.service;
 
 import java.math.*;
-import java.util.HashSet;
 import java.time.*;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 import com.pei.config.AlertProperties;
+import com.pei.config.*;
 import com.pei.domain.*;
 import com.pei.domain.User.User;
 import org.springframework.stereotype.Service;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.pei.domain.TimeRange;
-import com.pei.domain.Transaction;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 import com.pei.dto.Alert;
+import com.pei.repository.AccountRepository;
 import com.pei.repository.ChargebackRepository;
 import com.pei.repository.PurchaseRepository;
 import com.pei.repository.TransactionRepository;
@@ -27,24 +21,36 @@ import com.pei.service.bbva.ScoringService;
 @Service
 public class TransactionService {
 
+    private final AccountRepository accountRepository;
     private final ChargebackRepository chargebackRepository;
     private final PurchaseRepository purchaseRepository;
     private final TransactionRepository transactionRepository;
     private final TransactionVelocityDetectorService transactionVelocityDetectorService;
-    private final ScoringServiceInterno scoringServiceInterno;
+    private final CheckSeverityService checkSeverityService;
+    private final ScoringRangesService scoringRangesService;
     private final Gson gson;
+    private final NotificationService notificationService;
+    private final RiskCountryService riskCountryService;
+    private final TransactionParamsService transactionParamsService;
     private final AlertProperties alertProperties;
 
     public TransactionService(ChargebackRepository chargebackRepository,
             PurchaseRepository purchaseRepository, TransactionRepository transactionRepository,
             TransactionVelocityDetectorService transactionVelocityDetectorService,
-            Gson gson, ScoringServiceInterno scoringServiceInterno, AlertProperties alertProperties) {
+            Gson gson, ScoringRangesService scoringServiceInterno, AccountRepository accountRepository,
+            TransferenciaInternacionalProperties internationalCountryConfig, NotificationService notificationService,
+            RiskCountryService riskCountryService, TransactionParamsService transactionParamsService, CheckSeverityService checkSeverityService, AlertProperties alertProperties) {
         this.chargebackRepository = chargebackRepository;
         this.purchaseRepository = purchaseRepository;
         this.transactionRepository = transactionRepository;
         this.transactionVelocityDetectorService = transactionVelocityDetectorService;
         this.gson = gson;
-        this.scoringServiceInterno = scoringServiceInterno;
+        this.scoringRangesService = scoringServiceInterno;
+        this.accountRepository = accountRepository;
+        this.notificationService = notificationService;
+        this.riskCountryService = riskCountryService;
+        this.transactionParamsService = transactionParamsService;
+        this.checkSeverityService = checkSeverityService;
         this.alertProperties = alertProperties;
     }
 
@@ -121,39 +127,110 @@ public class TransactionService {
         return transaction.getApprovalList().size();
     }
 
-    public Alert processTransaction(Long idCliente) {
-        String scoringJson = ScoringService.consultarScoring(idCliente.intValue());
+    // PROCESAR TRANSACCION GENERAL
+    // @Transactional
+    // public List<Alert> processTransactionGeneral(Transaction transaction){
+    // //Alert alertCountryInternational =
+    // processVerifyCountryInternational(transaction); DEVUELVE BOOLEAN
+    // //Alert alertScoring = processVerifyScoring(transaction.getUser().getId());
+    // DEVUELVE COLOR
+    // //List..accountRepository
 
+    // //transactionRepository.save(transaction); (GUARDAMOS LA TRANSACCIÓN CON SU
+    // ESTADO (APROBADA, RECHAZADA, REQUIERE_APROBACION))
+    // return new Alert("")
+    // }
+
+    // @Transactional
+    public Alert processTransactionCountryInternational(Transaction transaction) {
+        if (transaction == null ||
+                transaction.getSourceAccount() == null ||
+                transaction.getDestinationAccount() == null ||
+                transaction.getUser() == null ||
+                transaction.getUser().getId() == null) {
+            return new Alert(null, "Alerta: Transacción inválida (faltan datos obligatorios)");
+        }
+
+        if (transaction.getAmount() == null || transaction.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            return new Alert(transaction.getUser().getId(), "Alerta: Monto de transacción inválido");
+        }
+
+        String origen = transaction.getSourceAccount().getCountry();
+        String destino = transaction.getDestinationAccount().getCountry();
+
+        if (origen == null || origen.isBlank() || destino == null || destino.isBlank()) {
+            return new Alert(transaction.getUser().getId(), "Alerta: País de origen o destino inválido");
+        }
+
+        if (riskCountryService.isRiskCountry(origen) || riskCountryService.isRiskCountry(destino)) {
+            transaction.setStatus(Transaction.TransactionStatus.REQUIERE_APROBACION);
+            return new Alert(transaction.getUser().getId(),
+                    "Alerta: Transacción hacia/desde país de riesgo (origen: " + origen + ", destino: " + destino
+                            + ")");
+        }
+
+        if (transaction.isInternational()) {
+            BigDecimal limiteInternacional = transactionParamsService.getMontoAlertaInternacional();
+            if (limiteInternacional == null) {
+                throw new IllegalStateException("Parámetro de monto internacional no configurado");
+            }
+            if (transaction.getAmount().compareTo(limiteInternacional) > 0) {
+                transaction.setStatus(Transaction.TransactionStatus.APROBADA);
+
+                Alert alert = new Alert(transaction.getUser().getId(),
+                        "Alerta: Transacción internacional con monto mayor a: "
+                                + limiteInternacional);
+                notificationService.notifyCompliance(transaction, alert);
+
+                return alert;
+            } else {
+                transaction.setStatus(Transaction.TransactionStatus.APROBADA);
+                return new Alert(transaction.getUser().getId(), "Alerta: Transacción internacional aprobada");
+            }
+        }
+
+        transaction.setStatus(Transaction.TransactionStatus.APROBADA);
+        // transactionRepository.save(transaction); -> DESCOMENTAR AL IMPLEMENTAR BD
+        return new Alert(transaction.getUser().getId(), "Alerta: Transacción aprobada");
+    }
+
+    public Alert processTransactionScoring(Long userId, String clientType) {
+        String scoringJson = ScoringService.consultarScoring(userId.intValue());
         JsonObject responseScoringService = gson.fromJson(scoringJson, JsonObject.class);
         int status = responseScoringService.get("status").getAsInt();
 
         if (status != 200) {
-            return new Alert(idCliente, "Alerta: Transaccion rechazada");
+            return new Alert(userId, "Alerta: Transaccion rechazada");
         }
-        int scoringCliente = responseScoringService.get("scoring").getAsInt();
 
-        String color = scoringServiceInterno.getScoringColorBasedInUserScore(scoringCliente);
+        int clientScoring = responseScoringService.get("scoring").getAsInt();
+
+        String color = scoringRangesService.getScoringColor(clientScoring, clientType);
 
         String msj = null;
         switch (color) {
-            case "Verde":
-                msj = "Alerta: Transaccion aprobada para cliente " + idCliente
-                        + " con scoring de: " + scoringCliente;
+            case "VERDE":
+                msj = "Alerta: Transaccion aprobada para cliente " + userId
+                        + " con scoring de: " + clientScoring;
                 break;
-            case "Amarillo":
-                msj = "Alerta: Transaccion en revision para cliente " + idCliente
-                        + " con scoring de: " + scoringCliente;
+            case "AMARILLO":
+                msj = "Alerta: Transaccion en revision para cliente " + userId
+                        + " con scoring de: " + clientScoring;
 
                 break;
-            case "Rojo":
-                msj = "Alerta: Transaccion rechazada para cliente " + idCliente
-                        + " con scoring de: " + scoringCliente;
+            case "ROJO":
+                msj = "Alerta: Transaccion rechazada para cliente " + userId
+                        + " con scoring de: " + clientScoring;
                 break;
         }
-        return new Alert(idCliente, msj);
+        return new Alert(userId, msj);
     }
 
     public Alert getFastMultipleTransactionAlert(Long userId, String clientType) {
+
+        if (userId == null || clientType == null || clientType.isBlank()) {
+            throw new IllegalArgumentException("Parametros invalidos");
+        }
 
         Integer minutesRange;
         Integer maxTransactions;
@@ -165,11 +242,17 @@ public class TransactionService {
             maxTransactions = transactionVelocityDetectorService.getIndividuoMaxTransactions();
             minMonto = transactionVelocityDetectorService.getIndividuoUmbralMonto().get("minMonto");
             maxMonto = transactionVelocityDetectorService.getIndividuoUmbralMonto().get("maxMonto");
-        } else {
+        } else if ("empresa".equals(clientType)) {
             minutesRange = transactionVelocityDetectorService.getEmpresaMinutesRange();
             maxTransactions = transactionVelocityDetectorService.getEmpresaMaxTransactions();
             minMonto = transactionVelocityDetectorService.getEmpresaUmbralMonto().get("minMonto");
             maxMonto = transactionVelocityDetectorService.getEmpresaUmbralMonto().get("maxMonto");
+        } else {
+            throw new IllegalArgumentException();
+        }
+
+        if (minutesRange == null || maxTransactions == null || minMonto == null || maxMonto == null) {
+            return null;
         }
 
         LocalDateTime fromDate = LocalDateTime.now().minusMinutes(minutesRange);
@@ -179,7 +262,6 @@ public class TransactionService {
         if (numTransactions > maxTransactions) {
             return new Alert(userId, "Fast multiple transactions detected for user " + userId);
         }
-
         return null;
     }
 
@@ -197,6 +279,55 @@ public class TransactionService {
         // Considera sospechoso si la transferencia es posterior al evento y dentro de
         // 60 minutos
         return minutesDifference >= 0 && minutesDifference <= 60;
+    }
+
+    /*
+     * Service creado para pruebas del chains of responsability
+     */
+    public Alert checkTransactionAmount(Transaction t) {
+        if (t == null) {
+            throw new IllegalArgumentException("Parametro invalido");
+        }
+        String msj = "No hay nada malo aca.";
+        Long idCliente = t.getUser().getId();
+
+        AlertaSeveridad result = checkSeverityService.checkSeveridad(t);
+
+        switch (result.toString()) {
+            case "BAJA":
+                msj = "Alerta BAJA: Monto bajo";
+                break;
+            case "MEDIA":
+                msj = "Alerta MEDIA: Monto maomeno";
+                break;
+            case "ALTA":
+                msj = "Alerta ALTA: Monto grande y cuenta nueva";
+                break;
+            default:
+                msj = "Alerta ALTA: Monto grande y cuenta nueva";
+                break;
+        }
+
+        return new Alert(idCliente, msj);
+    }
+
+    public Alert getAmountLimitAlert(Long userId, BigDecimal limitAmount, Boolean isANewUser) {
+        BigDecimal totalAmountToday = getTotalAmountByUserAndDate(userId);
+
+        if (isANewUser) {
+            limitAmount = limitAmount.multiply(BigDecimal.valueOf(0.5)); }
+        if (totalAmountToday.compareTo(limitAmount) > 0) {
+            return new Alert(userId, "Amount limit exceeded for user " + userId);
+        }
+
+        return null;
+    }
+
+    public BigDecimal getTotalAmountByUserAndDate(Long userId) {
+        LocalDate date = LocalDate.now();
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.atTime(23, 59, 59);
+        return transactionRepository.getTotalAmountByUserAndDate(userId, startOfDay, endOfDay);
     }
 
     public List<Transaction> getAllTransactionsByUserId(Long userId) {

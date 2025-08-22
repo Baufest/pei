@@ -1,0 +1,60 @@
+@startuml name
+entity "User" as User {
+  +id : Long <<PK>>
+  // otros atributos
+}
+
+entity "Account" as Account {
+  +id : Long <<PK>>
+  user_id : Long <<FK>>
+  // otros atributos
+}
+
+entity "Transaction" as Transaction {
+  +id : Long <<PK>>
+  user_id : Long <<FK>>
+  from_account_id : Long <<FK>>
+  to_account_id : Long <<FK>>
+  amount : BigDecimal
+  date : LocalDateTime
+  // otros atributos
+}
+
+entity "Purchase" as Purchase {
+  +id : Long <<PK>>
+  user_id : Long <<FK>>
+  // otros atributos
+}
+
+entity "Chargeback" as Chargeback {
+  +id : Long <<PK>>
+  user_id : Long <<FK>>
+  // otros atributos
+}
+
+entity "Logins" as Logins {
+  +id : Long <<PK>>
+  user_id : Long <<FK>>
+  country : String
+  date : LocalDateTime
+  // otros atributos
+}
+
+entity "ScoringRanges" as ScoringRanges {
+  +id : Long <<PK>>
+  client_type : String
+  start_date : LocalDateTime
+  end_date : LocalDateTime
+  // otros atributos
+}
+
+User ||--o{ Account : "tiene"
+User ||--o{ Transaction : "realiza"
+User ||--o{ Purchase : "realiza"
+User ||--o{ Chargeback : "tiene"
+User ||--o{ Logins : "realiza"
+Account ||--o{ Transaction : "origen/destino"
+Transaction }o--|| Account : "from_account"
+Transaction }o--|| Account : "to_account"
+
+@enduml

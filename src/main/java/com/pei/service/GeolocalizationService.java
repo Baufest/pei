@@ -17,7 +17,6 @@ public class GeolocalizationService {
     private LoginRepository loginRepository;
     private GeoSimService geoSimService;
 
-
     public GeolocalizationService(GeoSimService geoSimService, LoginRepository loginRepository) {
         this.geoSimService = geoSimService;
         this.loginRepository = loginRepository;
@@ -32,7 +31,7 @@ public class GeolocalizationService {
                 .collect(Collectors.toSet());
 
         if (paises.size() >= 2) {
-            return new Alert(userId, "Multiple countries Login detected for user " + userId);
+            return new Alert(userId, "Multiple countries logins detected for user " + userId);
         }
 
         return null; 
