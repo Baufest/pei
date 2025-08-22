@@ -1,0 +1,24 @@
+package com.pei.handler.severidadAlertaHandler;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import com.pei.domain.AlertaSeveridad;
+import com.pei.domain.Transaction;
+
+public class AlertaSeveridadBAJA extends ManejadorDeSeveridad {
+    
+    @Override
+    protected AlertaSeveridad getSeveridad() {
+        return AlertaSeveridad.BAJA;
+    }
+
+    @Override
+    protected boolean match(Transaction t) {
+       List<BigDecimal> umbral = List.of(new BigDecimal(0), new BigDecimal(50000));
+       boolean isBetweenUmbral = umbral.get(0).longValue() < t.getAmount().longValue()
+               && t.getAmount().longValue() < umbral.get(1).longValue();
+        return  isBetweenUmbral;
+    }
+}

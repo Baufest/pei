@@ -2,12 +2,14 @@ package com.pei.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import org.junit.jupiter.api.BeforeEach;
 import com.pei.repository.AccountRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -16,10 +18,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.pei.domain.Account.Account;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pei.domain.Transaction;
+import com.pei.domain.Account.Account;
 import com.pei.domain.User.User;
 import com.pei.dto.Alert;
 
@@ -34,54 +38,122 @@ class AccountServiceTest {
     private Account cuentaDestino;
 
     @Mock
+    private AccountParamsService accountParamsService;
+
+    @Mock
     private AccountRepository accountRepository;
 
     @Mock
     private Transaction transaccionActual;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+        ObjectMapper realMapper = new ObjectMapper();
+        accountService = new AccountService(accountParamsService, realMapper);
+    }
 
     @Nested
     @DisplayName("Tests for validateHighRiskClient")
     class ValidateHighRiskClientTests {
 
         @Test
-        @DisplayName("Debe retornar alerta de alto riesgo si el usuario es de alto riesgo")
-        void testHighRiskUser() {
+        @DisplayName("Debe retornar alerta de tipo cliente no encontrado si clientType es null")
+        void testClientTypeNull() throws Exception {
             Long userId = 1L;
-            // Simula un usuario de alto riesgo
-            String json = "{\"id\":1,\"name\":\"Juan\",\"risk\":\"alto\",\"accounts\":[]}";
+            String json = "{\"clientType\":null,\"chargebacks\":[]}";
             try (MockedStatic<ClienteService> mock = mockStatic(ClienteService.class)) {
                 mock.when(() -> ClienteService.obtenerClienteJson(userId.intValue())).thenReturn(json);
+
                 Alert alert = accountService.validateHighRiskClient(userId);
+
                 assertNotNull(alert);
-                assertEquals("Alerta: El cliente es de alto riesgo.", alert.description());
+                assertEquals("Alerta: Tipo de cliente no encontrado. (NULL)", alert.description());
             }
         }
 
         @Test
-        @DisplayName("Debe retornar alerta de bajo riesgo si el usuario es de bajo riesgo")
-        void testLowRiskUser() {
+        @DisplayName("Debe retornar alerta si chargebacks no existe o no es array")
+        void testChargebacksMissing() throws Exception {
             Long userId = 2L;
-            // Simula un usuario de bajo riesgo
-            String json = "{\"id\":2,\"name\":\"Ana\",\"risk\":\"bajo\",\"accounts\":[]}";
+            String json = "{\"clientType\":\"empresa\"}"; // no tiene chargebacks
             try (MockedStatic<ClienteService> mock = mockStatic(ClienteService.class)) {
                 mock.when(() -> ClienteService.obtenerClienteJson(userId.intValue())).thenReturn(json);
+
                 Alert alert = accountService.validateHighRiskClient(userId);
+
                 assertNotNull(alert);
-                assertEquals("Cliente verificado como de bajo riesgo.", alert.description());
+                assertEquals("Alerta: Lista de chargebacks no encontrada. (NULL)", alert.description());
             }
         }
 
         @Test
-        @DisplayName("Debe retornar alerta de usuario no encontrado si el usuario no es encontrado")
-        void testNotFoundUser() {
+        @DisplayName("Debe retornar alerta de alto riesgo para cliente empresa")
+        void testEmpresaHighRisk() throws Exception {
             Long userId = 3L;
-            // Simula un JSON vacío o inválido
-            String json = "{}";
+            String json = "{\"clientType\":\"empresa\",\"chargebacks\":[{\"fechaCreacion\":\"2025-08-01\",\"monto\":100,\"aceptado\":false}]}";
+
+            when(accountParamsService.getLimiteAlertaAltoRiesgoEmpresa()).thenReturn(1);
+
             try (MockedStatic<ClienteService> mock = mockStatic(ClienteService.class)) {
                 mock.when(() -> ClienteService.obtenerClienteJson(userId.intValue())).thenReturn(json);
+
                 Alert alert = accountService.validateHighRiskClient(userId);
+
                 assertNotNull(alert);
-                assertEquals("Alerta: Usuario no encontrado.", alert.description());
+                assertTrue(alert.description().contains("Alerta: Cliente empresarial de alto riesgo"));
+            }
+        }
+
+        @Test
+        @DisplayName("Debe retornar alerta de alto riesgo para cliente individuo")
+        void testIndividuoHighRisk() throws Exception {
+            Long userId = 4L;
+            String json = "{\"clientType\":\"individuo\",\"chargebacks\":[{\"fechaCreacion\":\"2025-08-01\",\"monto\":100,\"aceptado\":false}]}";
+
+            when(accountParamsService.getLimiteAlertaAltoRiesgoIndividuo()).thenReturn(1);
+
+            try (MockedStatic<ClienteService> mock = mockStatic(ClienteService.class)) {
+                mock.when(() -> ClienteService.obtenerClienteJson(userId.intValue())).thenReturn(json);
+
+                Alert alert = accountService.validateHighRiskClient(userId);
+
+                assertNotNull(alert);
+                assertTrue(alert.description().contains("Alerta: Cliente individual de alto riesgo"));
+            }
+        }
+
+        @Test
+        @DisplayName("Debe retornar cliente validado sin alertas si no hay riesgo")
+        void testClienteValidadoSinAlertas() throws Exception {
+            Long userId = 5L;
+            String json = "{\"clientType\":\"individuo\",\"chargebacks\":[]}";
+
+            when(accountParamsService.getLimiteAlertaAltoRiesgoIndividuo()).thenReturn(1);
+
+            try (MockedStatic<ClienteService> mock = mockStatic(ClienteService.class)) {
+                mock.when(() -> ClienteService.obtenerClienteJson(userId.intValue())).thenReturn(json);
+
+                Alert alert = accountService.validateHighRiskClient(userId);
+
+                assertNotNull(alert);
+                assertEquals("Alerta: Cliente validado sin alertas de riesgo.", alert.description());
+            }
+        }
+
+        @Test
+        @DisplayName("Debe retornar alerta de error si hay JsonProcessingException")
+        void testJsonProcessingException() throws Exception {
+            Long userId = 6L;
+
+            try (MockedStatic<ClienteService> mock = mockStatic(ClienteService.class)) {
+
+                mock.when(() -> ClienteService.obtenerClienteJson(userId.intValue())).thenReturn("BAD_JSON");
+
+                Alert alert = accountService.validateHighRiskClient(userId);
+
+                assertNotNull(alert);
+                assertEquals("Alerta: Error al procesar los datos del cliente.", alert.description());
             }
         }
     }
@@ -147,7 +219,8 @@ class AccountServiceTest {
         @Test
         @DisplayName("Debe retornar alerta si el usuario es null")
         void testUserNull() {
-            Alert alert = accountService.validateUserProfileTransaction(null, new Transaction(BigDecimal.valueOf(100.0)));
+            Alert alert = accountService.validateUserProfileTransaction(null,
+                    new Transaction(BigDecimal.valueOf(100.0)));
             assertNotNull(alert);
             assertEquals("Alerta: Datos de usuario inválidos.", alert.description());
         }
@@ -157,7 +230,8 @@ class AccountServiceTest {
         void testUserProfileNull() {
             User user = new User();
             user.setProfile(null);
-            Alert alert = accountService.validateUserProfileTransaction(user, new Transaction(BigDecimal.valueOf(100.0)));
+            Alert alert = accountService.validateUserProfileTransaction(user,
+                    new Transaction(BigDecimal.valueOf(100.0)));
             assertNotNull(alert);
             assertEquals("Alerta: Datos de usuario inválidos.", alert.description());
         }
@@ -191,7 +265,7 @@ class AccountServiceTest {
             User user = new User();
             user.setProfile("ahorrista");
             user.setAverageMonthlySpending(BigDecimal.valueOf(1000.0));
-            Transaction transaction = new Transaction(BigDecimal.valueOf(3500.0)); // > 3 * 1000 = 3000
+            Transaction transaction = new Transaction(BigDecimal.valueOf(3500.0));
 
             Alert alert = accountService.validateUserProfileTransaction(user, transaction);
 
@@ -205,7 +279,7 @@ class AccountServiceTest {
             User user = new User();
             user.setProfile("ahorrista");
             user.setAverageMonthlySpending(BigDecimal.valueOf(1000.0));
-            Transaction transaction = new Transaction(BigDecimal.valueOf(2500.0)); // <= 3 * 1000
+            Transaction transaction = new Transaction(BigDecimal.valueOf(2500.0));
 
             Alert alert = accountService.validateUserProfileTransaction(user, transaction);
 
@@ -219,7 +293,7 @@ class AccountServiceTest {
             User user = new User();
             user.setProfile("normal");
             user.setAverageMonthlySpending(BigDecimal.valueOf(1000.0));
-            Transaction transaction = new Transaction(BigDecimal.valueOf(5000.0)); // monto alto, pero perfil distinto
+            Transaction transaction = new Transaction(BigDecimal.valueOf(5000.0));
 
             Alert alert = accountService.validateUserProfileTransaction(user, transaction);
 
