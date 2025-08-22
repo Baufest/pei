@@ -1,22 +1,29 @@
 package com.pei.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pei.domain.Account.Account;
 import com.pei.domain.Transaction;
+import com.pei.domain.Account.Account;
 import com.pei.domain.User.User;
 import com.pei.dto.Alert;
+import com.pei.dto.ChargebackDTO;
 
 @Service
 public class AccountService {
 
     private ObjectMapper objectMapper;
 
-    public AccountService() {
-        this.objectMapper = new ObjectMapper();
+    private AccountParamsService accountParamsService;
+
+    public AccountService(AccountParamsService accountParamsService, ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+        this.accountParamsService = accountParamsService;
     }
 
     public Alert validateNewAccountTransfers(Account destinationAccount, Transaction currentTransaction) {
@@ -33,23 +40,72 @@ public class AccountService {
     }
 
     public Alert validateHighRiskClient(Long userId) {
+        if (userId == null) {
+            return new Alert(null, "Alerta: userId no puede ser null.");
+        }
         String clientJson = ClienteService.obtenerClienteJson(userId.intValue());
-        User user = null;
-        try {
-            user = objectMapper.readValue(clientJson, User.class);
+        if (clientJson == null || clientJson.isBlank()) {
+            return new Alert(userId, "Alerta: Datos de cliente no encontrados. (JSON vacío)");
+        }
+        List<ChargebackDTO> chargebacks = new ArrayList<>();
+
+        try { 
+            JsonNode root = objectMapper.readTree(clientJson);
+
+            String clientType = root.path("clientType").asText(null);
+            if (clientType == null) {
+                return new Alert(userId, "Alerta: Tipo de cliente no encontrado. (NULL)");
+            }
+
+            JsonNode chargebacksNode = root.path("chargebacks");
+            if (chargebacksNode.isMissingNode() || !chargebacksNode.isArray()) {
+                return new Alert(userId, "Alerta: Lista de chargebacks no encontrada. (NULL)");
+            }
+
+            for (JsonNode cbNode : chargebacksNode) {
+                if (!cbNode.hasNonNull("fechaCreacion")) {
+                    return new Alert(userId, "Alerta: Chargeback con fecha de creación inválida.");
+                }
+                if (!cbNode.hasNonNull("monto") || cbNode.get("monto").asInt() <= 0) {
+                    return new Alert(userId, "Alerta: Chargeback con monto inválido.");
+                }
+                if (!cbNode.has("aceptado")) {
+                    return new Alert(userId, "Alerta: Chargeback sin campo 'aceptado'.");
+                }
+                String fechaPago = "";
+                if (cbNode.has("fechaPago") && !cbNode.get("fechaPago").isNull()) {
+                    String valor = cbNode.get("fechaPago").asText();
+                    if (!valor.isBlank()) {
+                        fechaPago = valor;
+                    }
+                }
+                ChargebackDTO cb = new ChargebackDTO();
+                cb.setFechaCreacion(cbNode.path("fechaCreacion").asText());
+                cb.setMonto(cbNode.path("monto").asInt());
+                cb.setAceptado(cbNode.path("aceptado").asBoolean());
+                cb.setFechaPago(fechaPago);
+                chargebacks.add(cb);
+            }
+
+            if (clientType.equals("empresa")) {
+                if (chargebacks.size() >= accountParamsService.getLimiteAlertaAltoRiesgoEmpresa()) {
+                    return new Alert(userId, "Alerta: Cliente empresarial de alto riesgo, con múltiples chargebacks: "
+                            + chargebacks.size());
+                }
+            } else if (clientType.equals("individuo")) {
+                if (chargebacks.size() >= accountParamsService.getLimiteAlertaAltoRiesgoIndividuo()) {
+                    return new Alert(userId,
+                            "Alerta: Cliente individual de alto riesgo, con chargebacks: " + chargebacks.size());
+                }
+            } else {
+                return new Alert(userId, "Alerta: Tipo de cliente desconocido: " + clientType);
+            }
+            return new Alert(userId, "Alerta: Cliente validado sin alertas de riesgo.");
+
         } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-            return new Alert(userId, "Alerta: Error al procesar los datos del usuario.");
+            return new Alert(userId, "Alerta: Error al procesar los datos del cliente.");
         }
 
-        if (user != null && user.getRisk() != null) {
-            if (user.getRisk().equals("alto")) {
-                return new Alert(userId, "Alerta: El cliente es de alto riesgo.");
-            } else {
-                return new Alert(userId, "Cliente verificado como de bajo riesgo.");
-            }
-        } else {
-            return new Alert(userId, "Alerta: Usuario no encontrado.");
-        }
     }
 
     public Alert validateUserProfileTransaction(User user, Transaction transaction) {
@@ -57,12 +113,13 @@ public class AccountService {
             return new Alert(null, "Alerta: Datos de usuario inválidos.");
         }
 
-        if(transaction == null || transaction.getAmount() == null) {
+        if (transaction == null || transaction.getAmount() == null) {
             return new Alert(null, "Alerta: Datos de transacción inválidos.");
         }
 
         if (user.getAverageMonthlySpending() != null
-                && transaction.getAmount().compareTo(user.getAverageMonthlySpending().multiply(java.math.BigDecimal.valueOf(3))) > 0
+                && transaction.getAmount()
+                        .compareTo(user.getAverageMonthlySpending().multiply(java.math.BigDecimal.valueOf(3))) > 0
                 && user.getProfile().equals("ahorrista")) {
             return new Alert(null, "Alerta: Monto inusual para perfil.");
         }

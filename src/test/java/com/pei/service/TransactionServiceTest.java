@@ -1,12 +1,24 @@
 package com.pei.service;
 
-import com.pei.dto.Alert;
-import com.pei.dto.Chargeback;
-import com.pei.dto.Purchase;
-import com.pei.repository.ChargebackRepository;
-import com.pei.repository.PurchaseRepository;
-import com.pei.repository.TransactionRepository;
-import com.pei.service.bbva.ScoringService;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,30 +32,32 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Collections;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.pei.domain.Account.Account;
 import com.pei.domain.AlertaSeveridad;
+import com.pei.config.TransferenciaInternacionalProperties;
 import com.pei.domain.Transaction;
 import com.pei.domain.User.User;
+import com.pei.dto.Alert;
+import com.pei.dto.Chargeback;
+import com.pei.dto.Purchase;
+import com.pei.repository.ChargebackRepository;
+import com.pei.repository.PurchaseRepository;
+import com.pei.repository.TransactionRepository;
+import com.pei.service.bbva.ScoringService;
 
 @ExtendWith(MockitoExtension.class)
 class TransactionServiceTest {
 
         User user1, user2;
         Account account1, account2;
+        @Mock
+        private CheckSeverityService checkSeverityService;
+        @Mock
+        private TransferenciaInternacionalProperties internacionalConfig;
+        @Mock
+        private NotificationService notificationService;
         @Mock
         private ChargebackRepository chargebackRepository;
         @Mock
@@ -53,11 +67,13 @@ class TransactionServiceTest {
         @Mock
         private TransactionVelocityDetectorService transactionVelocityDetectorService;
         @Mock
-        private ScoringServiceInterno scoringServiceInterno;
+        private ScoringRangesService scoringServiceInterno;
         @Mock
         private Gson gson;
         @Mock
-        private CheckSeverityService checkSeverityService;
+        private RiskCountryService riskCountryService;
+        @Mock
+        private TransactionParamsService transactionParamsService;
         @InjectMocks
         private TransactionService transactionService;
 
@@ -75,15 +91,15 @@ class TransactionServiceTest {
                 LocalDateTime now = LocalDateTime.now();
                 Transaction t1 = new Transaction(user1, new BigDecimal("100.00"), now.minusHours(2), account1,
                                 account1); // dentro
-                                           // de
-                                           // 24h
+                                                                                                                                          // de
+                                                                                                                                          // 24h
                 Transaction t2 = new Transaction(user1, new BigDecimal("200.00"), now.minusDays(2), account1, account1); // fuera
                                                                                                                          // de
                                                                                                                          // 24h
                 Transaction t3 = new Transaction(user2, new BigDecimal("300.00"), now.minusHours(10), account2,
                                 account2); // dentro
-                                           // de
-                                           // 24h
+                                                                                                                                           // de
+                                                                                                                                           // 24h
                 List<Transaction> transactions = List.of(t1, t2, t3);
 
                 List<Transaction> expected = List.of(t1, t3);
@@ -247,10 +263,20 @@ class TransactionServiceTest {
                 int minutesRange = 10;
                 int maxTransactions = 5;
                 int numTransactions = 6;
+                BigDecimal minMonto = new BigDecimal(10000);
+                BigDecimal maxMonto = new BigDecimal(50000);
+
+                Map<String, BigDecimal> umbralMonto = Map.of(
+                                "minMonto", minMonto,
+                                "maxMonto", maxMonto);
 
                 when(transactionVelocityDetectorService.getIndividuoMinutesRange()).thenReturn(minutesRange);
                 when(transactionVelocityDetectorService.getIndividuoMaxTransactions()).thenReturn(maxTransactions);
-                when(transactionRepository.countTransactionsFromDate(eq(userId), any(LocalDateTime.class)))
+                when(transactionVelocityDetectorService.getIndividuoUmbralMonto()).thenReturn(umbralMonto);
+                when(transactionRepository.countTransactionsByUserAfterDateBetweenMontos(eq(1L),
+                                any(LocalDateTime.class),
+                                eq(new BigDecimal("10000")),
+                                eq(new BigDecimal("50000"))))
                                 .thenReturn(numTransactions);
 
                 Alert alert = transactionService.getFastMultipleTransactionAlert(userId, clientType);
@@ -258,9 +284,11 @@ class TransactionServiceTest {
                 assertNotNull(alert);
                 assertEquals(userId, alert.userId());
                 assertTrue(alert.description().contains("Fast multiple transactions detected"));
-                verify(transactionVelocityDetectorService).getIndividuoMinutesRange();
-                verify(transactionVelocityDetectorService).getIndividuoMaxTransactions();
-                verify(transactionRepository).countTransactionsFromDate(eq(userId), any(LocalDateTime.class));
+                verify(transactionVelocityDetectorService, times(1)).getIndividuoMinutesRange();
+                verify(transactionVelocityDetectorService, times(1)).getIndividuoMaxTransactions();
+                verify(transactionVelocityDetectorService, times(2)).getIndividuoUmbralMonto();
+                verify(transactionRepository).countTransactionsByUserAfterDateBetweenMontos(eq(userId),
+                                any(LocalDateTime.class), eq(minMonto), eq(maxMonto));
         }
 
         @Test
@@ -270,18 +298,30 @@ class TransactionServiceTest {
                 int minutesRange = 10;
                 int maxTransactions = 5;
                 int numTransactions = 5;
+                BigDecimal minMonto = new BigDecimal(10000);
+                BigDecimal maxMonto = new BigDecimal(50000);
+
+                Map<String, BigDecimal> umbralMonto = Map.of(
+                                "minMonto", minMonto,
+                                "maxMonto", maxMonto);
 
                 when(transactionVelocityDetectorService.getIndividuoMinutesRange()).thenReturn(minutesRange);
                 when(transactionVelocityDetectorService.getIndividuoMaxTransactions()).thenReturn(maxTransactions);
-                when(transactionRepository.countTransactionsFromDate(eq(userId), any(LocalDateTime.class)))
+                when(transactionVelocityDetectorService.getIndividuoUmbralMonto()).thenReturn(umbralMonto);
+                when(transactionRepository.countTransactionsByUserAfterDateBetweenMontos(eq(1L),
+                                any(LocalDateTime.class),
+                                eq(new BigDecimal("10000")),
+                                eq(new BigDecimal("50000"))))
                                 .thenReturn(numTransactions);
 
                 Alert alert = transactionService.getFastMultipleTransactionAlert(userId, clientType);
 
                 assertNull(alert);
-                verify(transactionVelocityDetectorService).getIndividuoMinutesRange();
-                verify(transactionVelocityDetectorService).getIndividuoMaxTransactions();
-                verify(transactionRepository).countTransactionsFromDate(eq(userId), any(LocalDateTime.class));
+                verify(transactionVelocityDetectorService, times(1)).getIndividuoMinutesRange();
+                verify(transactionVelocityDetectorService, times(1)).getIndividuoMaxTransactions();
+                verify(transactionVelocityDetectorService, times(2)).getIndividuoUmbralMonto();
+                verify(transactionRepository).countTransactionsByUserAfterDateBetweenMontos(eq(userId),
+                                any(LocalDateTime.class), eq(minMonto), eq(maxMonto));
         }
 
         @Test
@@ -291,10 +331,19 @@ class TransactionServiceTest {
                 int minutesRange = 20;
                 int maxTransactions = 10;
                 int numTransactions = 11;
+                BigDecimal minMonto = new BigDecimal(100000);
+                BigDecimal maxMonto = new BigDecimal(300000);
+                Map<String, BigDecimal> umbralMonto = Map.of(
+                                "minMonto", minMonto,
+                                "maxMonto", maxMonto);
 
                 when(transactionVelocityDetectorService.getEmpresaMinutesRange()).thenReturn(minutesRange);
                 when(transactionVelocityDetectorService.getEmpresaMaxTransactions()).thenReturn(maxTransactions);
-                when(transactionRepository.countTransactionsFromDate(eq(userId), any(LocalDateTime.class)))
+                when(transactionVelocityDetectorService.getEmpresaUmbralMonto()).thenReturn(umbralMonto);
+                when(transactionRepository.countTransactionsByUserAfterDateBetweenMontos(eq(2L),
+                                any(LocalDateTime.class),
+                                eq(new BigDecimal("100000")),
+                                eq(new BigDecimal("300000"))))
                                 .thenReturn(numTransactions);
 
                 Alert alert = transactionService.getFastMultipleTransactionAlert(userId, clientType);
@@ -302,9 +351,11 @@ class TransactionServiceTest {
                 assertNotNull(alert);
                 assertEquals(userId, alert.userId());
                 assertTrue(alert.description().contains("Fast multiple transactions detected"));
-                verify(transactionVelocityDetectorService).getEmpresaMinutesRange();
-                verify(transactionVelocityDetectorService).getEmpresaMaxTransactions();
-                verify(transactionRepository).countTransactionsFromDate(eq(userId), any(LocalDateTime.class));
+                verify(transactionVelocityDetectorService, times(1)).getEmpresaMinutesRange();
+                verify(transactionVelocityDetectorService, times(1)).getEmpresaMaxTransactions();
+                verify(transactionVelocityDetectorService, times(2)).getEmpresaUmbralMonto();
+                verify(transactionRepository).countTransactionsByUserAfterDateBetweenMontos(eq(userId),
+                                any(LocalDateTime.class), eq(minMonto), eq(maxMonto));
         }
 
         @Test
@@ -314,23 +365,36 @@ class TransactionServiceTest {
                 int minutesRange = 20;
                 int maxTransactions = 10;
                 int numTransactions = 10;
+                BigDecimal minMonto = new BigDecimal(100000);
+                BigDecimal maxMonto = new BigDecimal(300000);
+                Map<String, BigDecimal> umbralMonto = Map.of(
+                                "minMonto", minMonto,
+                                "maxMonto", maxMonto);
 
                 when(transactionVelocityDetectorService.getEmpresaMinutesRange()).thenReturn(minutesRange);
                 when(transactionVelocityDetectorService.getEmpresaMaxTransactions()).thenReturn(maxTransactions);
-                when(transactionRepository.countTransactionsFromDate(eq(userId), any(LocalDateTime.class)))
+                when(transactionVelocityDetectorService.getEmpresaUmbralMonto()).thenReturn(umbralMonto);
+                when(transactionRepository.countTransactionsByUserAfterDateBetweenMontos(eq(2L),
+                                any(LocalDateTime.class),
+                                eq(new BigDecimal("100000")),
+                                eq(new BigDecimal("300000"))))
                                 .thenReturn(numTransactions);
 
                 Alert alert = transactionService.getFastMultipleTransactionAlert(userId, clientType);
 
                 assertNull(alert);
-                verify(transactionVelocityDetectorService).getEmpresaMinutesRange();
-                verify(transactionVelocityDetectorService).getEmpresaMaxTransactions();
-                verify(transactionRepository).countTransactionsFromDate(eq(userId), any(LocalDateTime.class));
+                verify(transactionVelocityDetectorService, times(1)).getEmpresaMinutesRange();
+                verify(transactionVelocityDetectorService, times(1)).getEmpresaMaxTransactions();
+                verify(transactionVelocityDetectorService, times(2)).getEmpresaUmbralMonto();
+
+                verify(transactionRepository).countTransactionsByUserAfterDateBetweenMontos(eq(userId),
+                                any(LocalDateTime.class), eq(minMonto), eq(maxMonto));
         }
 
         @Test
-        void processTransaction_CuandoStatusDistintoDe200_RetornaAlertRechazada() {
+        void processTransactionScoring_CuandoStatusDistintoDe200_RetornaAlertRechazada() {
                 Long idCliente = 1L;
+                String clientType = "individuo";
                 String scoringJson = "{\"status\":500,\"mensaje\":\"Error interno del servidor de scoring\",\"timestamp\":2025-08-18T10:00:00Z}";
 
                 try (MockedStatic<ScoringService> mocked = Mockito.mockStatic(ScoringService.class)) {
@@ -344,7 +408,7 @@ class TransactionServiceTest {
 
                         when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
 
-                        Alert result = transactionService.processTransaction(idCliente);
+                        Alert result = transactionService.processTransactionScoring(idCliente, clientType);
 
                         assertNotNull(result);
                         assertEquals(idCliente, result.userId());
@@ -353,8 +417,9 @@ class TransactionServiceTest {
         }
 
         @Test
-        void processTransaction_CuandoColorVerde_RetornaAlertAprobada() {
+        void processTransactionScoring_CuandoColorVerde_RetornaAlertAprobada() {
                 Long idCliente = 2L;
+                String clientType = "individuo";
                 int scoringCliente = 70;
 
                 String scoringJson = "{\"status\":200,\"mensaje\":\"Consulta exitosa\",\"idCliente\":2,\"scoring\":" +
@@ -373,10 +438,10 @@ class TransactionServiceTest {
 
                         when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
 
-                        when(scoringServiceInterno.getScoringColorBasedInUserScore(scoringCliente))
-                                        .thenReturn("Verde");
+                        when(scoringServiceInterno.getScoringColor(scoringCliente, clientType))
+                                        .thenReturn("VERDE");
 
-                        Alert result = transactionService.processTransaction(idCliente);
+                        Alert result = transactionService.processTransactionScoring(idCliente, clientType);
 
                         assertNotNull(result);
                         assertEquals(idCliente, result.userId());
@@ -386,8 +451,9 @@ class TransactionServiceTest {
         }
 
         @Test
-        void processTransaction_CuandoColorAmarillo_RetornaAlertRevision() {
+        void processTransactionScoring_CuandoColorAmarillo_RetornaAlertRevision() {
                 Long idCliente = 3L;
+                String clientType = "individuo";
                 int scoringCliente = 60;
                 String scoringJson = "{\"status\":200,\"mensaje\":\"Consulta exitosa\",\"idCliente\":3,\"scoring\":" +
                                 scoringCliente + ",\"timestamp\":\"2025-08-18T10:00:00Z\"}";
@@ -405,10 +471,10 @@ class TransactionServiceTest {
 
                         when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
 
-                        when(scoringServiceInterno.getScoringColorBasedInUserScore(scoringCliente))
-                                        .thenReturn("Amarillo");
+                        when(scoringServiceInterno.getScoringColor(scoringCliente, clientType))
+                                        .thenReturn("AMARILLO");
 
-                        Alert result = transactionService.processTransaction(idCliente);
+                        Alert result = transactionService.processTransactionScoring(idCliente, clientType);
 
                         assertNotNull(result);
                         assertEquals(idCliente, result.userId());
@@ -418,8 +484,9 @@ class TransactionServiceTest {
         }
 
         @Test
-        void processTransaction_CuandoColorRojo_RetornaAlertRechazada() {
+        void processTransactionScoring_CuandoColorRojo_RetornaAlertRechazada() {
                 Long idCliente = 4L;
+                String clientType = "individuo";
                 int scoringCliente = 20;
 
                 String scoringJson = "{\"status\":200,\"mensaje\":\"Consulta exitosa\",\"idCliente\":4,\"scoring\":" +
@@ -438,10 +505,10 @@ class TransactionServiceTest {
 
                         when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
 
-                        when(scoringServiceInterno.getScoringColorBasedInUserScore(scoringCliente))
-                                        .thenReturn("Rojo");
+                        when(scoringServiceInterno.getScoringColor(scoringCliente, clientType))
+                                        .thenReturn("ROJO");
 
-                        Alert result = transactionService.processTransaction(idCliente);
+                        Alert result = transactionService.processTransactionScoring(idCliente, clientType);
 
                         assertNotNull(result);
                         assertEquals(idCliente, result.userId());
@@ -502,6 +569,175 @@ class TransactionServiceTest {
                         // Assert
                         assertEquals("Alerta ALTA: Monto grande y cuenta nueva", alert.description());
                         assertEquals(user.getId(), alert.userId());
+                }
+
+                @Nested
+                @DisplayName("Tests de transacción internacional")
+                class TransaccionInternacionalTests {
+
+                        @Test
+                        @DisplayName("processTransactionCountryInternational - país de riesgo")
+                        void processTransactionCountryInternational_CuandoPaisRiesgo_RetornaAlertaRequiereAprobacion() {
+                                User user = new User(1L);
+                                Account destino = new Account();
+                                destino.setCountry("Venezuela");
+                                Transaction transaction = new Transaction();
+                                transaction.setUser(user);
+                                transaction.setAmount(BigDecimal.valueOf(1000));
+                                transaction.setSourceAccount(new Account(1L, user, "Argentina"));
+                                transaction.setDestinationAccount(destino);
+
+                                when(riskCountryService.isRiskCountry("Venezuela")).thenReturn(true);
+                                when(riskCountryService.isRiskCountry("Argentina")).thenReturn(false);
+
+                                Alert alert = transactionService.processTransactionCountryInternational(transaction);
+
+                                assertNotNull(alert);
+                                assertEquals(user.getId(), alert.userId());
+                                assertEquals(Transaction.TransactionStatus.REQUIERE_APROBACION,
+                                                transaction.getStatus());
+                                verify(riskCountryService).isRiskCountry("Venezuela");
+                        }
+
+                        @Test
+                        @DisplayName("processTransactionCountryInternational - monto mayor al límite")
+                        void processTransactionCountryInternational_CuandoMontoMayor_RetornaAlertaYNotificaCompliance() {
+                                User user = new User(2L);
+                                Account destino = new Account();
+                                destino.setCountry("Chile");
+                                Transaction transaction = new Transaction();
+                                transaction.setUser(user);
+                                transaction.setAmount(BigDecimal.valueOf(100_001));
+                                transaction.setSourceAccount(new Account(1L, user, "Argentina"));
+                                transaction.setDestinationAccount(destino);
+
+                                when(riskCountryService.isRiskCountry("Chile")).thenReturn(false);
+                                when(riskCountryService.isRiskCountry("Argentina")).thenReturn(false);
+                                when(transactionParamsService.getMontoAlertaInternacional())
+                                                .thenReturn(BigDecimal.valueOf(100_000));
+
+                                Alert alert = transactionService.processTransactionCountryInternational(transaction);
+
+                                assertNotNull(alert);
+                                assertEquals(user.getId(), alert.userId());
+                                assertEquals(Transaction.TransactionStatus.APROBADA, transaction.getStatus());
+                                verify(riskCountryService).isRiskCountry("Chile");
+                                verify(transactionParamsService).getMontoAlertaInternacional();
+                                verify(notificationService).notifyCompliance(eq(transaction), any(Alert.class));
+                        }
+
+                        @Test
+                        @DisplayName("processTransactionCountryInternational - transacción internacional normal")
+                        void processTransactionCountryInternational_CuandoInternacionalNormal_RetornaAlertaAprobada() {
+                                User user = new User(3L);
+                                Account destino = new Account();
+                                destino.setCountry("Uruguay");
+                                Transaction transaction = new Transaction();
+                                transaction.setUser(user);
+                                transaction.setAmount(BigDecimal.valueOf(10_000));
+                                transaction.setSourceAccount(new Account(1L, user, "Argentina"));
+                                transaction.setDestinationAccount(destino);
+
+                                when(riskCountryService.isRiskCountry("Uruguay")).thenReturn(false);
+                                when(riskCountryService.isRiskCountry("Argentina")).thenReturn(false);
+
+                                when(transactionParamsService.getMontoAlertaInternacional())
+                                                .thenReturn(BigDecimal.valueOf(100_000));
+
+                                Alert alert = transactionService.processTransactionCountryInternational(transaction);
+
+                                assertNotNull(alert);
+                                assertEquals(user.getId(), alert.userId());
+                                assertEquals(Transaction.TransactionStatus.APROBADA, transaction.getStatus());
+                                verify(riskCountryService).isRiskCountry("Uruguay");
+                                verify(transactionParamsService).getMontoAlertaInternacional();
+                        }
+
+                        @Test
+                        @DisplayName("processTransactionCountryInternational - transacción no internacional")
+                        void processTransactionCountryInternational_CuandoNoInternacional_RetornaAlertaAprobada() {
+                                User user = new User(4L);
+                                Account destino = new Account();
+                                destino.setCountry("Argentina");
+                                Transaction transaction = new Transaction();
+                                transaction.setUser(user);
+                                transaction.setAmount(BigDecimal.valueOf(10_000));
+                                transaction.setSourceAccount(new Account(1L, user, "Argentina"));
+                                transaction.setDestinationAccount(destino);
+
+                                Alert alert = transactionService.processTransactionCountryInternational(transaction);
+
+                                assertNotNull(alert);
+                                assertEquals(user.getId(), alert.userId());
+                                assertEquals(Transaction.TransactionStatus.APROBADA, transaction.getStatus());
+                        }
+
+                        @Test
+                        @DisplayName("processTransactionCountryInternational - transacción inválida")
+                        void transaccionInvalida_RetornaAlerta() {
+                                Alert alert = transactionService.processTransactionCountryInternational(null);
+                                assertNotNull(alert);
+                                assertNull(alert.userId());
+                                assertTrue(alert.description().contains("Transacción inválida"));
+                        }
+
+                        // 7️⃣ Monto inválido (null o ≤0)
+                        @Test
+                        @DisplayName("processTransactionCountryInternational - monto inválido")
+                        void montoInvalido_RetornaAlerta() {
+                                User user = new User(6L);
+                                Transaction transaction = new Transaction();
+                                transaction.setUser(user);
+                                transaction.setAmount(BigDecimal.ZERO);
+                                transaction.setSourceAccount(new Account(1L, user, "Argentina"));
+                                transaction.setDestinationAccount(new Account(2L, user, "Chile"));
+
+                                Alert alert = transactionService.processTransactionCountryInternational(transaction);
+
+                                assertNotNull(alert);
+                                assertEquals(user.getId(), alert.userId());
+                                assertTrue(alert.description().contains("Monto de transacción inválido"));
+                        }
+
+                        // 8️⃣ País origen o destino inválido (null o blank)
+                        @Test
+                        @DisplayName("processTransactionCountryInternational - país inválido")
+                        void paisInvalido_RetornaAlerta() {
+                                User user = new User(7L);
+                                Transaction transaction = new Transaction();
+                                transaction.setUser(user);
+                                transaction.setAmount(BigDecimal.valueOf(1000));
+                                transaction.setSourceAccount(new Account(1L, user, ""));
+                                transaction.setDestinationAccount(new Account(2L, user, null));
+
+                                Alert alert = transactionService.processTransactionCountryInternational(transaction);
+
+                                assertNotNull(alert);
+                                assertEquals(user.getId(), alert.userId());
+                                assertTrue(alert.description().contains("País de origen o destino inválido"));
+                        }
+
+                        // 9️⃣ Transacción internacional con límite null (lanza excepción)
+                        @Test
+                        @DisplayName("processTransactionCountryInternational - límite null lanza excepción")
+                        void limiteInternacionalNull_LanzaExcepcion() {
+                                User user = new User(8L);
+                                Account destino = new Account();
+                                destino.setCountry("Uruguay");
+                                Transaction transaction = new Transaction();
+                                transaction.setUser(user);
+                                transaction.setAmount(BigDecimal.valueOf(50_000));
+                                transaction.setSourceAccount(new Account(1L, user, "Argentina"));
+                                transaction.setDestinationAccount(destino);
+
+                                when(riskCountryService.isRiskCountry(anyString())).thenReturn(false);
+                                when(transactionParamsService.getMontoAlertaInternacional()).thenReturn(null);
+
+                                assertThrows(IllegalStateException.class,
+                                                () -> transactionService
+                                                                .processTransactionCountryInternational(transaction));
+                        }
+
                 }
         }
 }

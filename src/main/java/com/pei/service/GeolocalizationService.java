@@ -17,7 +17,6 @@ public class GeolocalizationService {
     private LoginsRepository loginsRepository;
     private GeoSimService geoSimService;
 
-
     public GeolocalizationService(GeoSimService geoSimService, LoginsRepository loginsRepository) {
         this.geoSimService = geoSimService;
         this.loginsRepository = loginsRepository;

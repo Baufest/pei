@@ -1,14 +1,22 @@
 package com.pei.domain.Account;
 
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
-
-import java.time.LocalDateTime;
+import org.hibernate.annotations.CreationTimestamp;
 
 import com.pei.domain.User.User;
-import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 
 @Entity
 public class Account {
@@ -26,6 +34,9 @@ public class Account {
     @JoinColumn(name = "owner", referencedColumnName = "id", nullable = false)
     private User owner;
 
+    @Column(nullable = false)
+    private String country;
+
     public Account() {
     }
 
@@ -38,8 +49,28 @@ public class Account {
         this.owner = owner;
     }
 
+    public Account(Long id, User owner, String country) {
+        this.id = id;
+        this.owner = owner;
+        this.country = country;
+    }
+
+    public Account(AccountType accountType, User owner, String country) {
+        this.accountType = accountType;
+        this.owner = owner;
+        this.country = country;
+    }
+
     public Long getId() {
         return id;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
     }
 
     public LocalDateTime getCreationDate() {
@@ -50,11 +81,11 @@ public class Account {
         this.creationDate = creationDate;
     }
 
-    public AccountType getType() {
+    public AccountType getAccountType() {
         return accountType;
     }
 
-    public void setType(AccountType type) {
+    public void setAccountType(AccountType type) {
         this.accountType = type;
     }
 

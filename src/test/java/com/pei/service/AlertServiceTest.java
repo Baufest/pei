@@ -124,15 +124,14 @@ class AlertServiceTest {
             // y que el usuario A ha realizado depósitos y transferencias en las últimas 24 horas.
 
             // Depósitos a las Cuentas del Usuario A (A1 y A2) por parte del Usuario B
-            Transaction deposit1 = new Transaction(userA, new BigDecimal("6.00"), LocalDateTime.now().minusDays(3), accountB1, accountA1);
+            //Transaction deposit1 = new Transaction(userA, new BigDecimal("6.00"), LocalDateTime.now().minusDays(3), accountB1, accountA1);
 
             // Transferencias desde las Cuentas del Usuario A (A1 y A2) a la Cuenta del Usuario C
-            Transaction transfer1 = new Transaction(userA, new BigDecimal("50.00"), LocalDateTime.now().minusDays(7), accountA1, accountC1);
+            //Transaction transfer1 = new Transaction(userA, new BigDecimal("50.00"), LocalDateTime.now().minusDays(7), accountA1, accountC1);
 
-            List<Transaction> transactions = List.of( // TODO:Unused
-                deposit1,
-                transfer1
-            );
+            //List<Transaction> transactions = List.of( //Unused
+            //    deposit1,
+            //    transfer1);
 
             when(transactionService.getLast24HoursTransactions(anyList()))
                 .thenReturn(List.of());
