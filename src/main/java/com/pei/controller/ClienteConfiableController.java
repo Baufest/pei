@@ -7,16 +7,23 @@ import com.pei.service.ClienteConfiableService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Optional;
 
 
-@RestController("/api/clientes-confiables")
+@RestController
+@RequestMapping("/api/clientes-confiables")
 public class ClienteConfiableController {
     private UserRepository userRepository;
 
     private ClienteConfiableService clienteConfiableService;
+
+    public ClienteConfiableController(UserRepository userRepository, ClienteConfiableService clienteConfiableService) {
+        this.userRepository = userRepository;
+        this.clienteConfiableService = clienteConfiableService;
+    }
 
     @PostMapping
     public ResponseEntity<Alert> clienteConfiable(@RequestBody User user) {

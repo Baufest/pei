@@ -42,7 +42,7 @@ public class User {
     @Column(nullable = false)
     private BigDecimal averageMonthlySpending;
 
-    @CreationTimestamp
+    @Column
     private LocalDate creationDate;
 
     @OneToMany(mappedBy = "owner")
