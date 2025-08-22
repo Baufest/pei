@@ -39,4 +39,16 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
       @Param("userId") Long userId,
       @Param("startOfDay") LocalDateTime startOfDay,
       @Param("endOfDay") LocalDateTime endOfDay);
+
+    @Query("""
+        SELECT t
+        FROM Transaction t
+        WHERE t.id IN :ids
+          AND t.date >= :fromDate
+    """)
+    List<Transaction> findByIdsAndDateAfter(
+        @Param("ids") List<Long> ids,
+        @Param("fromDate") LocalDateTime fromDate
+    );
+
 }
