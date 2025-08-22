@@ -49,25 +49,19 @@ public class AccountService {
         }
         List<ChargebackDTO> chargebacks = new ArrayList<>();
 
-        try { // Se implementa esta lógica a fin de no modificar generarChargebacks() en
-              // ClienteService
-            JsonNode root = objectMapper.readTree(clientJson); // Para leer campos que nos interesen (mapea a arbol de
-                                                               // nodos)
+        try { 
+            JsonNode root = objectMapper.readTree(clientJson);
 
-            // Guardamos clientType buscado por el fieldName
             String clientType = root.path("clientType").asText(null);
             if (clientType == null) {
                 return new Alert(userId, "Alerta: Tipo de cliente no encontrado. (NULL)");
             }
 
-            // Guardamos el JsonNode de chargebacks buscado por el fieldName
             JsonNode chargebacksNode = root.path("chargebacks");
             if (chargebacksNode.isMissingNode() || !chargebacksNode.isArray()) {
                 return new Alert(userId, "Alerta: Lista de chargebacks no encontrada. (NULL)");
             }
 
-            // Mapeamos cada JsonNode(chargebackNode) a un ChargebackDTO y lo añadimos a la
-            // lista de chargebacks(dto)
             for (JsonNode cbNode : chargebacksNode) {
                 if (!cbNode.hasNonNull("fechaCreacion")) {
                     return new Alert(userId, "Alerta: Chargeback con fecha de creación inválida.");
@@ -93,7 +87,6 @@ public class AccountService {
                 chargebacks.add(cb);
             }
 
-            // logica de negocio
             if (clientType.equals("empresa")) {
                 if (chargebacks.size() >= accountParamsService.getLimiteAlertaAltoRiesgoEmpresa()) {
                     return new Alert(userId, "Alerta: Cliente empresarial de alto riesgo, con múltiples chargebacks: "

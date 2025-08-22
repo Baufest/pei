@@ -49,6 +49,12 @@ public class Account {
         this.owner = owner;
     }
 
+    public Account(Long id, User owner, String country) {
+        this.id = id;
+        this.owner = owner;
+        this.country = country;
+    }
+
     public Account(AccountType accountType, User owner, String country) {
         this.accountType = accountType;
         this.owner = owner;

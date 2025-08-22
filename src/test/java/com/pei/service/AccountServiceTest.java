@@ -143,7 +143,7 @@ class AccountServiceTest {
             Long userId = 6L;
 
             try (MockedStatic<ClienteService> mock = mockStatic(ClienteService.class)) {
-                // Devolvemos un JSON mal formado
+
                 mock.when(() -> ClienteService.obtenerClienteJson(userId.intValue())).thenReturn("BAD_JSON");
 
                 Alert alert = accountService.validateHighRiskClient(userId);
@@ -261,7 +261,7 @@ class AccountServiceTest {
             User user = new User();
             user.setProfile("ahorrista");
             user.setAverageMonthlySpending(BigDecimal.valueOf(1000.0));
-            Transaction transaction = new Transaction(BigDecimal.valueOf(3500.0)); // > 3 * 1000 = 3000
+            Transaction transaction = new Transaction(BigDecimal.valueOf(3500.0));
 
             Alert alert = accountService.validateUserProfileTransaction(user, transaction);
 
@@ -275,7 +275,7 @@ class AccountServiceTest {
             User user = new User();
             user.setProfile("ahorrista");
             user.setAverageMonthlySpending(BigDecimal.valueOf(1000.0));
-            Transaction transaction = new Transaction(BigDecimal.valueOf(2500.0)); // <= 3 * 1000
+            Transaction transaction = new Transaction(BigDecimal.valueOf(2500.0));
 
             Alert alert = accountService.validateUserProfileTransaction(user, transaction);
 
@@ -289,7 +289,7 @@ class AccountServiceTest {
             User user = new User();
             user.setProfile("normal");
             user.setAverageMonthlySpending(BigDecimal.valueOf(1000.0));
-            Transaction transaction = new Transaction(BigDecimal.valueOf(5000.0)); // monto alto, pero perfil distinto
+            Transaction transaction = new Transaction(BigDecimal.valueOf(5000.0));
 
             Alert alert = accountService.validateUserProfileTransaction(user, transaction);
 

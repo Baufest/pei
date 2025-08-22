@@ -1,5 +1,18 @@
 package com.pei.service;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -7,34 +20,22 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.pei.config.TransferenciaInternacionalProperties;
-import com.pei.domain.Account.Account;
 import com.pei.domain.Transaction;
+import com.pei.domain.Account.Account;
 import com.pei.domain.User.User;
 import com.pei.dto.Alert;
 import com.pei.dto.Chargeback;
@@ -522,7 +523,7 @@ class TransactionServiceTest {
                         Transaction transaction = new Transaction();
                         transaction.setUser(user);
                         transaction.setAmount(BigDecimal.valueOf(1000));
-                        transaction.setSourceAccount(new Account(null, user, "Argentina"));
+                        transaction.setSourceAccount(new Account(1L, user, "Argentina"));
                         transaction.setDestinationAccount(destino);
 
                         when(riskCountryService.isRiskCountry("Venezuela")).thenReturn(true);
@@ -545,7 +546,7 @@ class TransactionServiceTest {
                         Transaction transaction = new Transaction();
                         transaction.setUser(user);
                         transaction.setAmount(BigDecimal.valueOf(100_001));
-                        transaction.setSourceAccount(new Account(null, user, "Argentina"));
+                        transaction.setSourceAccount(new Account(1L, user, "Argentina"));
                         transaction.setDestinationAccount(destino);
 
                         when(riskCountryService.isRiskCountry("Chile")).thenReturn(false);
@@ -572,7 +573,7 @@ class TransactionServiceTest {
                         Transaction transaction = new Transaction();
                         transaction.setUser(user);
                         transaction.setAmount(BigDecimal.valueOf(10_000));
-                        transaction.setSourceAccount(new Account(null, user, "Argentina"));
+                        transaction.setSourceAccount(new Account(1L, user, "Argentina"));
                         transaction.setDestinationAccount(destino);
 
                         when(riskCountryService.isRiskCountry("Uruguay")).thenReturn(false);
@@ -599,7 +600,7 @@ class TransactionServiceTest {
                         Transaction transaction = new Transaction();
                         transaction.setUser(user);
                         transaction.setAmount(BigDecimal.valueOf(10_000));
-                        transaction.setSourceAccount(new Account(null, user, "Argentina"));
+                        transaction.setSourceAccount(new Account(1L, user, "Argentina"));
                         transaction.setDestinationAccount(destino);
 
                         Alert alert = transactionService.processTransactionCountryInternational(transaction);
@@ -626,8 +627,8 @@ class TransactionServiceTest {
                         Transaction transaction = new Transaction();
                         transaction.setUser(user);
                         transaction.setAmount(BigDecimal.ZERO);
-                        transaction.setSourceAccount(new Account(null, user, "Argentina"));
-                        transaction.setDestinationAccount(new Account(null, user, "Chile"));
+                        transaction.setSourceAccount(new Account(1L, user, "Argentina"));
+                        transaction.setDestinationAccount(new Account(2L, user, "Chile"));
 
                         Alert alert = transactionService.processTransactionCountryInternational(transaction);
 
@@ -644,8 +645,8 @@ class TransactionServiceTest {
                         Transaction transaction = new Transaction();
                         transaction.setUser(user);
                         transaction.setAmount(BigDecimal.valueOf(1000));
-                        transaction.setSourceAccount(new Account(null, user, ""));
-                        transaction.setDestinationAccount(new Account(null, user, null));
+                        transaction.setSourceAccount(new Account(1L, user, ""));
+                        transaction.setDestinationAccount(new Account(2L, user, null));
 
                         Alert alert = transactionService.processTransactionCountryInternational(transaction);
 
@@ -664,7 +665,7 @@ class TransactionServiceTest {
                         Transaction transaction = new Transaction();
                         transaction.setUser(user);
                         transaction.setAmount(BigDecimal.valueOf(50_000));
-                        transaction.setSourceAccount(new Account(null, user, "Argentina"));
+                        transaction.setSourceAccount(new Account(1L, user, "Argentina"));
                         transaction.setDestinationAccount(destino);
 
                         when(riskCountryService.isRiskCountry(anyString())).thenReturn(false);

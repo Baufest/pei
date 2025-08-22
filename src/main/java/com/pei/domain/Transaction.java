@@ -63,7 +63,6 @@ public class Transaction {
         APROBADA,
         RECHAZADA
     }
-
     public Transaction() {
     }
 
@@ -90,17 +89,16 @@ public class Transaction {
         this.approvalList = approvalList;
     }
 
-    public Long getId() {
-        return id;
-    }
-
-
     public TransactionStatus getStatus() {
         return status;
     }
-
+ 
     public void setStatus(TransactionStatus status) {
         this.status = status;
+    }
+
+    public Long getId() {
+        return id;
     }
 
     public LocalDateTime getDate() {
@@ -150,11 +148,6 @@ public class Transaction {
     public void setApprovalList(List<Approval> approvalList) {
         this.approvalList = approvalList;
     }
-
-    /**
-     * Determina si la transacción es internacional comparando el país de origen y destino.
-     * @return true si los países son distintos, false en caso contrario.
-     */
     public boolean isInternational() {
         if (sourceAccount == null || destinationAccount == null) {
             return false;
@@ -162,7 +155,7 @@ public class Transaction {
         String sourceCountry = sourceAccount.getCountry();
         String destinationCountry = destinationAccount.getCountry();
         if (sourceCountry == null || destinationCountry == null) {
-            return false;
+            throw new IllegalArgumentException("sourceCountry o destinationCountry no pueden ser null");
         }
         return !sourceCountry.equalsIgnoreCase(destinationCountry);
     }

@@ -10,7 +10,9 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
   @Query("SELECT COUNT(t) FROM Transaction  t WHERE t.user.id= :userId AND t.date>= :fromDate AND  t.amount BETWEEN :minMonto AND :maxMonto")
@@ -28,4 +30,13 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
       ORDER BY t.date DESC
       """)
   List<Transaction> findRecentTransferByUserId(@Param("userId") Long userId);
+
+  @Query("SELECT COALESCE(SUM(t.amount), 0) " +
+      "FROM Transaction t " +
+      "WHERE t.user.id = :userId " +
+      "AND t.date BETWEEN :startOfDay AND :endOfDay")
+  BigDecimal getTotalAmountByUserAndDate(
+      @Param("userId") Long userId,
+      @Param("startOfDay") LocalDateTime startOfDay,
+      @Param("endOfDay") LocalDateTime endOfDay);
 }

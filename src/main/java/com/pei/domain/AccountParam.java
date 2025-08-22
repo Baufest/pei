@@ -14,10 +14,10 @@ public class AccountParam {
     private Long id;
 
     @Column(unique = true, nullable = false)
-    private String keyName; // ej: "monto_alerta_alto_riesgo"
+    private String keyName;
 
     @Column(nullable = false)
-    private String value; // guardado como String, lo convertís a BigDecimal/Integer/etc.
+    private String value;
 
     @Column(nullable = false)
     private boolean active = true;
