@@ -82,6 +82,9 @@ class TransactionServiceTest {
                 List<Transaction> transactions = List.of(t1, t2, t3);
 
                 List<Transaction> expected = List.of(t1, t3);
+
+                when(transactionRepository.findByIdsAndDateAfter(anyList(), any())).thenReturn(expected);
+
                 // When
                 List<Transaction> actual = transactionService.getLast24HoursTransactions(transactions);
                 // Then

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.pei.repository.AccountRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,9 @@ class AccountServiceTest {
 
     @Mock
     private Account cuentaDestino;
+
+    @Mock
+    private AccountRepository accountRepository;
 
     @Mock
     private Transaction transaccionActual;
