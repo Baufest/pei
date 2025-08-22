@@ -1,28 +1,20 @@
 package com.pei.domain.User;
 
+import com.pei.domain.Device;
+import com.pei.domain.Country;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.Objects;
-
+import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
-
 import com.pei.domain.Account.Account;
 import com.pei.domain.TimeRange;
 import com.pei.dto.Chargeback;
 import com.pei.dto.Purchase;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
 
 @Entity @Table(name = "client")
 public class User {
@@ -65,11 +57,11 @@ public class User {
     @Column(nullable = false, unique = true) // email único y obligatorio
     private String email;
     
-    /* @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, orphanRemoval = true)
     private Set<Device> devices = new HashSet<>();
 
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, orphanRemoval = true)
-    private Set<Country> countries = new HashSet<>(); */
+    private Set<Country> countries = new HashSet<>();
 
     @Embedded
     private TimeRange avgTimeRange;
@@ -188,6 +180,13 @@ public class User {
 
     public void setAvgTimeRange(TimeRange avgTimeRange) {
         this.avgTimeRange = avgTimeRange;
+    }
+
+    public Set<Device> getDevices() {
+        return devices;
+    }
+    public void setDevices(Set<Device> devices) {
+        this.devices = devices;
     }
 
     @Override

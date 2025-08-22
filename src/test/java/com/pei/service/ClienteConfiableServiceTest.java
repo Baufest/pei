@@ -13,7 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
+import java.util.*;
 
 
 class ClienteConfiableServiceTest {
@@ -28,17 +28,27 @@ class ClienteConfiableServiceTest {
         void setUp() {
             config = new ClienteConfiableProperties();
 
-            // Configuración simulada
-            ClienteConfiableProperties.Antiguedad antiguedad = new ClienteConfiableProperties.Antiguedad();
+            // Crear configuración específica para INDIVIDUAL
+            ClienteConfiableProperties.ClienteConfiableConfig individualConfig =
+                new ClienteConfiableProperties.ClienteConfiableConfig();
+
+            // Crear objeto de antigüedad
+            ClienteConfiableProperties.ClienteConfiableConfig.Antiguedad antiguedad = new ClienteConfiableProperties.ClienteConfiableConfig.Antiguedad();
             antiguedad.setMedicion("MES");
-            antiguedad.setMinimoMedicion(24);
-            config.setAntiguedad(antiguedad);
+            antiguedad.setMinimoMedicion(24); // el setter correcto es setMinimoMedicion
+            individualConfig.setAntiguedad(antiguedad);
 
-            config.setPerfilesNoConfiables(List.of("IRRECUPERABLE", "ALTO RIESGO"));
-            config.setLimiteChargeback(0);
+            // Perfiles no confiables y límite de chargebacks
+            individualConfig.setPerfilesNoConfiables(List.of("IRRECUPERABLE", "ALTO RIESGO"));
+            individualConfig.setLimiteChargeback(0);
 
+            // Asignar al map de tipos
+            config.setTipos(Map.of(com.pei.domain.User.ClientType.INDIVIDUAL, individualConfig));
+
+            // Crear instancia del service
             service = new ClienteConfiableService(config);
         }
+
 
         @Test
         void clienteCumpleTodosLosFiltros() {

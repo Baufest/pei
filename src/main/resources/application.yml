@@ -28,12 +28,25 @@ spring:
 
 cliente:
     confiable:
-        antiguedad:
-            medicion: MES       # MES, AÑO, DIA, SEMANA
-            minimo-medicion: 24          # Número entero o decimal (ej: 18, 1.5)
-        perfiles-no-confiables:
-            - IRRECUPERABLE     # Perfiles del cliente no confiable
-        limite-chargeback: 0
+        # Configuración específica por tipo de cliente
+        tipos:
+            INDIVIDUAL:
+                antiguedad:
+                    medicion: MES       # Unidad de medición de antigüedad: DIA, SEMANA, MES, AÑO
+                    minimo-medicion: 24 # Valor mínimo para considerar al cliente confiable (ej: 24 meses)
+                perfiles-no-confiables:
+                    - IRRECUPERABLE     # Perfiles de cliente no confiable
+                limite-chargeback: 0  # Máximo de chargebacks permitidos para ser considerado confiable
+
+            COMPANY:
+                antiguedad:
+                    medicion: MES
+                    minimo-medicion: 12       # Las empresas necesitan mayor antigüedad para ser confiables
+                perfiles-no-confiables:
+                    - CRITICO                  # Perfiles de empresa no confiable
+                limite-chargeback: 0      # Empresas pueden tener hasta 2 chargebacks y seguir siendo confiables
+
+
 
 velocity-transaction-params:
     individuo:
@@ -76,3 +89,8 @@ transaction:
                     - CUENTA_AHORRO
                     - CUENTA_PLAZO_FIJO
                     - CUENTA_INVERSION
+
+alert:
+    thresholds:
+        INDIVIDUAL: 2.0   # 200% del promedio histórico
+        COMPANY: 3.0      # 300% del promedio histórico

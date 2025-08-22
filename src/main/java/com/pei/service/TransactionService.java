@@ -1,15 +1,14 @@
 package com.pei.service;
 
-import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-
-import org.hibernate.annotations.Check;
+import java.math.*;
+import java.time.*;
+import java.util.*;
+import java.util.stream.Collectors;
+import com.pei.config.AlertProperties;
+import com.pei.config.*;
+import com.pei.domain.*;
+import com.pei.domain.User.User;
 import org.springframework.stereotype.Service;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.pei.domain.AlertaSeveridad;
@@ -21,7 +20,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import com.pei.dto.Alert;
-import com.pei.handler.severidadAlertaHandler.ManejadorDeSeveridad;
 import com.pei.repository.AccountRepository;
 import com.pei.repository.ChargebackRepository;
 import com.pei.repository.PurchaseRepository;
@@ -32,7 +30,6 @@ import com.pei.service.bbva.ScoringService;
 public class TransactionService {
 
     private final AccountRepository accountRepository;
-
     private final ChargebackRepository chargebackRepository;
     private final PurchaseRepository purchaseRepository;
     private final TransactionRepository transactionRepository;
@@ -43,13 +40,14 @@ public class TransactionService {
     private final NotificationService notificationService;
     private final RiskCountryService riskCountryService;
     private final TransactionParamsService transactionParamsService;
+    private final AlertProperties alertProperties;
 
     public TransactionService(ChargebackRepository chargebackRepository,
             PurchaseRepository purchaseRepository, TransactionRepository transactionRepository,
             TransactionVelocityDetectorService transactionVelocityDetectorService,
             Gson gson, ScoringRangesService scoringServiceInterno, AccountRepository accountRepository,
             TransferenciaInternacionalProperties internationalCountryConfig, NotificationService notificationService,
-            RiskCountryService riskCountryService, TransactionParamsService transactionParamsService, CheckSeverityService checkSeverityService) {
+            RiskCountryService riskCountryService, TransactionParamsService transactionParamsService, CheckSeverityService checkSeverityService, AlertProperties alertProperties) {
         this.chargebackRepository = chargebackRepository;
         this.purchaseRepository = purchaseRepository;
         this.transactionRepository = transactionRepository;
@@ -61,6 +59,7 @@ public class TransactionService {
         this.riskCountryService = riskCountryService;
         this.transactionParamsService = transactionParamsService;
         this.checkSeverityService = checkSeverityService;
+        this.alertProperties = alertProperties;
     }
 
     public List<Transaction> saveAll(List<Transaction> transactions) {
@@ -328,8 +327,8 @@ public class TransactionService {
 
     public Alert getAmountLimitAlert(Long userId, BigDecimal limitAmount, Boolean isANewUser) {
         BigDecimal totalAmountToday = getTotalAmountByUserAndDate(userId);
-        
-        if (isANewUser) { 
+
+        if (isANewUser) {
             limitAmount = limitAmount.multiply(BigDecimal.valueOf(0.5)); }
         if (totalAmountToday.compareTo(limitAmount) > 0) {
             return new Alert(userId, "Amount limit exceeded for user " + userId);
@@ -348,4 +347,151 @@ public class TransactionService {
     public List<Transaction> getAllTransactionsByUserId(Long userId) {
         return transactionRepository.findRecentTransferByUserId(userId);
     }
+
+    /**
+         * Verifica si el monto de la transacción supera el umbral esperado según el perfil del cliente.
+         */
+    public Alert checkUnusualAmount(User user, BigDecimal transactionAmount) {
+        //Validaciones NullPointeErException
+        if (user == null || transactionAmount == null) {
+            throw new IllegalArgumentException("User y transactionAmount no pueden ser null");
+        }
+        //Calculo el promedio de gasto mensual
+        updateAverageMonthlySpending(user);
+        BigDecimal avgSpending = user.getAverageMonthlySpending();
+        if (avgSpending == null || avgSpending.compareTo(BigDecimal.ZERO) == 0) {
+            return null; // No hay datos históricos para comparar
+        }
+        //Obtengo el umbral según el tipo de cliente
+        double thresholdMultiplier = alertProperties.getThresholdFor(user.getClientType());
+        BigDecimal thresholdAmount = avgSpending.multiply(BigDecimal.valueOf(thresholdMultiplier));
+
+        //Hago la comparacion entre el monto de la transaccion y el umbral
+        if (transactionAmount.compareTo(thresholdAmount) > 0) {
+            String reason = String.format(
+                "El monto de la transacción (%.2f) supera el %.0f%% del promedio histórico (%.2f).",
+                transactionAmount.doubleValue(),
+                thresholdMultiplier * 100,
+                avgSpending.doubleValue()
+            );
+            return new Alert(user.getId(), reason);
+        }
+        return null;
+    }
+
+    /**
+     * Verifica si la transacción tiene nuevo dispositivo y esta en horario fuera del rango típico).
+     */
+    public Alert checkUnusualBehavior(User user, Transaction transaction, Login login) {
+        //Validaciones NullPointerException
+        if (user == null || transaction == null || login == null) {
+            throw new IllegalArgumentException("User, Transaction y Login no pueden ser null");
+        }
+        if (transaction.getDate() == null) {
+            throw new IllegalArgumentException("Transaction date no puede ser null");
+        }
+        // Verifico si el dispositivo es nuevo y si la hora es inusual
+        boolean newDevice = isNewDevice(login);
+        boolean unusualTime = isUnusualTime(user, transaction.getDate());
+
+        // Si ambas condiciones se cumplen, genero una alerta
+        if ( newDevice && unusualTime) {
+            return new Alert(user.getId(),
+                "Dispositivo nuevo y horario de transacción fuera del rango esperado.");
+        }
+        return null;
+    }
+
+    /**
+     * Verifica si la hora de una nueva transacción está fuera del rango típico del usuario (percentiles 5 y 95).
+     */
+    private boolean isUnusualTime(User user, LocalDateTime transactionTime) {
+        //Validaciones NullPointerException
+        if (user == null || transactionTime == null) throw new IllegalArgumentException("User y transactionTime no pueden ser null");
+
+        List<Transaction> transactions = transactionRepository.findByUserId(user.getId());
+
+        List<LocalTime> transactionHours = transactions.stream()
+            .map(t -> t.getDate().toLocalTime())
+            .sorted()
+            .collect(Collectors.toList());
+
+        if (transactionHours.isEmpty()) {
+            return false;
+        }
+
+        LocalTime p5 = percentile(transactionHours, 5);
+        LocalTime p95 = percentile(transactionHours, 95);
+        LocalTime currentTime = transactionTime.toLocalTime();
+
+        return currentTime.isBefore(p5) || currentTime.isAfter(p95);
+    }
+
+    /**
+     * Calcula el percentil de una lista ORDENADA (resuelto con .sorted() cuando traigo la lista) de tiempos.
+     */
+    private LocalTime percentile(List<LocalTime> sortedTimes, double percentile) {
+        int n = sortedTimes.size();
+        double rank = percentile / 100.0 * (n - 1);
+        int lowerIndex = (int) Math.floor(rank);
+        int upperIndex = (int) Math.ceil(rank);
+
+        if (lowerIndex == upperIndex) {
+            return sortedTimes.get(lowerIndex);
+        }
+
+        LocalTime lower = sortedTimes.get(lowerIndex);
+        LocalTime upper = sortedTimes.get(upperIndex);
+
+        long secondsLower = lower.toSecondOfDay();
+        long secondsUpper = upper.toSecondOfDay();
+        long interpolated = (long) (secondsLower + (rank - lowerIndex) * (secondsUpper - secondsLower));
+
+        return LocalTime.ofSecondOfDay(interpolated);
+    }
+
+    public boolean isNewDevice(Login login) {
+        //Validaciones NullPointerException
+        if (login == null || login.getUser() == null || login.getDevice() == null) {
+            throw new IllegalArgumentException("Login, User y Device no pueden ser null");
+        }
+
+        User user = login.getUser();
+
+        // Inicializar el set de devices si es null
+        if (user.getDevices() == null) {
+            user.setDevices(new HashSet<>());
+        }
+
+        // Verificar si el device ya existe en el set
+        boolean deviceExists = user.getDevices().stream()
+            .anyMatch(d -> d.getDeviceId() != null
+                && d.getDeviceId().equals(login.getDevice().getDeviceId()));
+
+        if (deviceExists) {
+            return false; // dispositivo ya conocido
+        }
+
+        // Si no existe, agregarlo al set
+        user.getDevices().add(login.getDevice());
+        return true; // dispositivo nuevo
+    }
+
+
+
+    public void updateAverageMonthlySpending(User user) {
+        if (user == null) return;
+        LocalDateTime fromDate = LocalDateTime.now().minusMonths(1);
+
+        BigDecimal total = transactionRepository.sumTransactionsFromDate(user.getId(), fromDate);
+        Integer count = transactionRepository.countTransactionsFromDate(user.getId(), fromDate);
+
+        BigDecimal average = (count != null && count > 0 && total != null) ?
+            total.divide(BigDecimal.valueOf(count), RoundingMode.HALF_UP) :
+            BigDecimal.ZERO;
+
+        user.setAverageMonthlySpending(average);
+    }
+
+
 }

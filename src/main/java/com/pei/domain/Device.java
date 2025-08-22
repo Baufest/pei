@@ -11,37 +11,35 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "Device")
+@Table(name = "device")
 public class Device {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    private String devideID;
+    private Long deviceId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
     public Device() {
-        // constructor para jpa
     }
 
-    public Device(String deviceID) {
-        this.devideID = deviceID;
+    public Device(Long deviceId, User user) {
+        this.deviceId = deviceId;
+        this.user = user;
     }
 
     public Long getId() {
-        return id;
+        return deviceId;
     }
 
-    public String getDevideID() {
-        return devideID;
+    public Long getDeviceId() {
+        return deviceId;
     }
 
-    public void setDevideID(String devideID) {
-        this.devideID = devideID;
+    public void setDeviceId(Long deviceID) {
+        this.deviceId = deviceId;
     }
 
     public User getUser() {
