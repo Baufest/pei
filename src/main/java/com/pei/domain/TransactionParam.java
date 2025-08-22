@@ -18,7 +18,7 @@ public class TransactionParam {
     @Column(unique = true, nullable = false)
     private String keyName;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "param_value")
     private String value;
 
     @Column(nullable = false)
