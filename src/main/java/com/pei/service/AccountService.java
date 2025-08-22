@@ -1,7 +1,9 @@
 package com.pei.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
+import com.pei.repository.AccountRepository;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,10 +15,25 @@ import com.pei.dto.Alert;
 @Service
 public class AccountService {
 
+    private final AccountRepository accountRepository;
+
     private ObjectMapper objectMapper;
 
-    public AccountService() {
+    public AccountService(AccountRepository accountRepository) {
+        this.accountRepository = accountRepository;
         this.objectMapper = new ObjectMapper();
+    }
+
+    public List<Account> saveAll(List<Account> accounts) {
+        return accountRepository.saveAll(accounts);
+    }
+
+    public List<Account> findByUserId(Long userId) {
+        // acá aprovechamos que Account tiene relación ManyToOne con User
+        return accountRepository.findAll()
+            .stream()
+            .filter(a -> a.getOwner() != null && a.getOwner().getId().equals(userId))
+            .toList();
     }
 
     public Alert validateNewAccountTransfers(Account destinationAccount, Transaction currentTransaction) {
