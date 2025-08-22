@@ -3,7 +3,9 @@ package com.pei.service;
 import com.pei.domain.Account.Account;
 import com.pei.domain.Transaction;
 import com.pei.domain.*;
+import com.pei.domain.User.User;
 import com.pei.dto.Alert;
+import com.pei.repository.*;
 import com.pei.service.alertnotificator.AlertNotificatorService;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
@@ -16,10 +18,14 @@ import static com.pei.service.CriticalityService.getCriticality;
 public class AlertService {
     private TransactionService transactionService;
     private AlertNotificatorService alertNotificatorService;
+    private TransactionRepository transactionRepository;
+    private LoginRepository loginRepository;
 
-    public AlertService(TransactionService transactionService, AlertNotificatorService alertNotificatorService) {
+    public AlertService(TransactionService transactionService, AlertNotificatorService alertNotificatorService,TransactionRepository transactionRepository, LoginRepository loginRepository) {
         this.alertNotificatorService = alertNotificatorService;
         this.transactionService = transactionService;
+        this.transactionRepository = transactionRepository;
+        this.loginRepository = loginRepository;
     }
 
     public Alert approvalAlert(Long transactionId) {
@@ -90,4 +96,37 @@ public class AlertService {
             throw new RuntimeException("Error al determinar la criticidad de la transacción: " + e.getMessage());
         }
     }
+
+    /**
+     * Método principal que evalúa la transacción y devuelve la primera alerta encontrada.
+     * La lógica de verificación de monto y comportamiento está delegada a métodos auxiliares.
+     */
+    public Alert evaluateTransactionBehavior(Long idTransaction, Long idLogin) {
+        // Traer los objetos desde la base de datos
+        Transaction transaction = transactionRepository.findById(idTransaction)
+            .orElseThrow(() -> new RuntimeException("Transaction no encontrada"));
+
+        Login login = loginRepository.findById(idLogin)
+            .orElseThrow(() -> new RuntimeException("Login no encontrado"));
+
+        User user = transaction.getUser();
+
+        // 1. Verificación de monto inusual
+        Alert amountAlert = transactionService.checkUnusualAmount(user, transaction.getAmount());
+        if (amountAlert != null) {
+            return amountAlert;
+        }
+
+        // 2. Verificación de comportamiento inusual
+        Alert behaviorAlert = transactionService.checkUnusualBehavior(user, transaction, login);
+        if (behaviorAlert != null) {
+            return behaviorAlert;
+        }
+
+        return new Alert(user.getId(), "Alerta estándar");
+    }
+
+
+
+
 }

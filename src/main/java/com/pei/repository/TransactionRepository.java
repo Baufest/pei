@@ -30,6 +30,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
       ORDER BY t.date DESC
       """)
   List<Transaction> findRecentTransferByUserId(@Param("userId") Long userId);
+  List<Transaction> findByUserId(Long userId);
 
   @Query("SELECT COALESCE(SUM(t.amount), 0) " +
       "FROM Transaction t " +
@@ -39,4 +40,14 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
       @Param("userId") Long userId,
       @Param("startOfDay") LocalDateTime startOfDay,
       @Param("endOfDay") LocalDateTime endOfDay);
+
+@Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.user.id = :userId AND t.date >= :fromDate")
+BigDecimal sumTransactionsFromDate(@Param("userId") Long userId, @Param("fromDate") LocalDateTime fromDate);
+
+@Query("SELECT COUNT(t) FROM Transaction  t WHERE t.user.id= :userId AND t.date>= :fromDate")
+Integer countTransactionsFromDate(
+    @Param("userId") Long userId,
+    @Param("fromDate") LocalDateTime fromDate
+);
+
 }

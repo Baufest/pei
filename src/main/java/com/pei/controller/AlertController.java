@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+import com.pei.dto.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,11 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.pei.domain.Transaction;
 import com.pei.domain.Account.Account;
 import com.pei.domain.UserEvent.UserEvent;
-import com.pei.dto.Alert;
-import com.pei.dto.Logins;
-import com.pei.dto.TimeRangeRequest;
-import com.pei.dto.TransferRequest;
-import com.pei.dto.UserTransaction;
+import com.pei.domain.Login;
 import com.pei.service.AccountService;
 import com.pei.service.AlertService;
 import com.pei.service.ClienteService;
@@ -143,7 +140,7 @@ public class AlertController {
         }
     }
 
-    @GetMapping("/alerta-logins/{userId}")
+    @GetMapping("/alerta-login/{userId}")
     public ResponseEntity<Alert> getLoginAlert(@PathVariable Long userId) {
         Alert alert = geolocalizationService.getLoginAlert(userId);
 
@@ -174,7 +171,7 @@ public class AlertController {
     }
 
     @PostMapping("/alerta-dispositivo")
-    public ResponseEntity<Alert> checkDeviceLocalization(@RequestBody Logins login) {
+    public ResponseEntity<Alert> checkDeviceLocalization(@RequestBody Login login) {
         try {
             if (login == null) {
                 return ResponseEntity.badRequest().build();
@@ -223,14 +220,14 @@ public class AlertController {
 
     @PostMapping("/alerta-scoring")
     public ResponseEntity<Alert> checkProcessTransaction(@RequestBody Long userId) {
-        
+
         String clientType = clienteService.getClientType(userId).orElseThrow(() -> new RuntimeException("Tipo de cliente no encontrado"));
-        
+
             Alert alerta = transactionService.processTransactionScoring(userId, clientType);
             if (alerta != null) {
                 return ResponseEntity.ok(alerta);
-            } 
-                
+            }
+
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
@@ -299,6 +296,20 @@ public class AlertController {
             }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/alerta/comportamiento")
+    public ResponseEntity<Alert> checkUnusualBehavior(@RequestBody TransactionLogin transactionLogin) {
+        try {
+            Alert alerta = alertService.evaluateTransactionBehavior(transactionLogin.getIdTransaction(), transactionLogin.getIdLogin());
+            if (alerta != null) {
+                return ResponseEntity.ok(alerta);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new Alert(null, "Error interno del servidor. No se pudo procesar la solicitud."));
         }
     }
 
