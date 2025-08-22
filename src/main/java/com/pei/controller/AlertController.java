@@ -222,17 +222,16 @@ public class AlertController {
     }
 
     @PostMapping("/alerta-scoring")
-    public ResponseEntity<Alert> checkProccesTransaction(@RequestBody Long idCliente) {
-        try {
-            Alert alerta = transactionService.processTransactionScoring(idCliente);
+    public ResponseEntity<Alert> checkProcessTransaction(@RequestBody Long userId) {
+        
+        String clientType = clienteService.getClientType(userId).orElseThrow(() -> new RuntimeException("Tipo de cliente no encontrado"));
+        
+            Alert alerta = transactionService.processTransactionScoring(userId, clientType);
             if (alerta != null) {
                 return ResponseEntity.ok(alerta);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body(new Alert(null, "Error interno del servidor."));
-        }
+            } 
+                
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
     @PostMapping("/alerta-account-takeover")

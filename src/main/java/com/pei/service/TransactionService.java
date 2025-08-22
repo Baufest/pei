@@ -30,7 +30,7 @@ public class TransactionService {
     private final PurchaseRepository purchaseRepository;
     private final TransactionRepository transactionRepository;
     private final TransactionVelocityDetectorService transactionVelocityDetectorService;
-    private final ScoringServiceInterno scoringServiceInterno;
+    private final ScoringRangesService scoringRangesService;
     private final Gson gson;
     private final NotificationService notificationService;
     private final RiskCountryService riskCountryService;
@@ -39,7 +39,7 @@ public class TransactionService {
     public TransactionService(ChargebackRepository chargebackRepository,
             PurchaseRepository purchaseRepository, TransactionRepository transactionRepository,
             TransactionVelocityDetectorService transactionVelocityDetectorService,
-            Gson gson, ScoringServiceInterno scoringServiceInterno, AccountRepository accountRepository,
+            Gson gson, ScoringRangesService scoringServiceInterno, AccountRepository accountRepository,
             TransferenciaInternacionalProperties internationalCountryConfig, NotificationService notificationService,
             RiskCountryService riskCountryService, TransactionParamsService transactionParamsService) {
         this.chargebackRepository = chargebackRepository;
@@ -47,7 +47,7 @@ public class TransactionService {
         this.transactionRepository = transactionRepository;
         this.transactionVelocityDetectorService = transactionVelocityDetectorService;
         this.gson = gson;
-        this.scoringServiceInterno = scoringServiceInterno;
+        this.scoringRangesService = scoringServiceInterno;
         this.accountRepository = accountRepository;
         this.notificationService = notificationService;
         this.riskCountryService = riskCountryService;
@@ -194,37 +194,36 @@ public class TransactionService {
         return new Alert(transaction.getUser().getId(), "Alerta: Transacción aprobada");
     }
 
-    public Alert processTransactionScoring(Long idCliente) { // processVerifyScoring
-
-        String scoringJson = ScoringService.consultarScoring(idCliente.intValue());
-
+    public Alert processTransactionScoring(Long userId, String clientType) {
+        String scoringJson = ScoringService.consultarScoring(userId.intValue());
         JsonObject responseScoringService = gson.fromJson(scoringJson, JsonObject.class);
         int status = responseScoringService.get("status").getAsInt();
 
         if (status != 200) {
-            return new Alert(idCliente, "Alerta: Transaccion rechazada");
+            return new Alert(userId, "Alerta: Transaccion rechazada");
         }
-        int scoringCliente = responseScoringService.get("scoring").getAsInt();
+        
+        int clientScoring = responseScoringService.get("scoring").getAsInt();
 
-        String color = scoringServiceInterno.getScoringColorBasedInUserScore(scoringCliente);
+        String color = scoringRangesService.getScoringColor(clientScoring, clientType);
 
         String msj = null;
         switch (color) {
-            case "Verde":
-                msj = "Alerta: Transaccion aprobada para cliente " + idCliente
-                        + " con scoring de: " + scoringCliente;
+            case "VERDE":
+                msj = "Alerta: Transaccion aprobada para cliente " + userId
+                        + " con scoring de: " + clientScoring;
                 break;
-            case "Amarillo":
-                msj = "Alerta: Transaccion en revision para cliente " + idCliente
-                        + " con scoring de: " + scoringCliente;
+            case "AMARILLO":
+                msj = "Alerta: Transaccion en revision para cliente " + userId
+                        + " con scoring de: " + clientScoring;
 
                 break;
-            case "Rojo":
-                msj = "Alerta: Transaccion rechazada para cliente " + idCliente
-                        + " con scoring de: " + scoringCliente;
+            case "ROJO":
+                msj = "Alerta: Transaccion rechazada para cliente " + userId
+                        + " con scoring de: " + clientScoring;
                 break;
         }
-        return new Alert(idCliente, msj);
+        return new Alert(userId, msj);
     }
 
     public Alert getFastMultipleTransactionAlert(Long userId, String clientType) {

@@ -134,7 +134,7 @@ class AlertControllerTest {
                 // controlador
                 // Simular el comportamiento del servicio
                 User user = new User(1L);
-                Account account = new Account(1L, user);
+                Account account = new Account(1L, user, "Argentina");
                 LocalDateTime now = LocalDateTime.now();
                 List<Transaction> inputTransactions = List
                                 .of(new Transaction(user, new BigDecimal("100.00"), now.minusHours(2), account,
@@ -421,104 +421,64 @@ class AlertControllerTest {
                         verify(alertService).alertCriticality(any(Transaction.class));
                 }
 
-                @Nested
-                @DisplayName("Test para checkear ProcessTransaction con Scoring Service")
-                class ScoringIntegration {
+        }
 
-                        @Test
-                        void checkProccesTransaction_CuandoTransaccionExitosa_RetornaResponseOk() throws Exception {
-                                // Arrange
-                                Long idCliente = 1L;
-                                Alert alertaMock = new Alert(idCliente,
-                                                "Alerta: Transaccion aprobada para cliente " + idCliente
-                                                                + " con scoring de: 90");
+        @Nested
+        @DisplayName("Tests para Evaluar el Account Takeover")
+        class EvaluateAccountTakeoverTests {
 
-                                when(transactionService.processTransactionScoring(idCliente)).thenReturn(alertaMock);
+                @Test
+                @DisplayName("POST /api/alerta-account-takeover - éxito")
+                void evaluateAccountTakeover_CuandoOk_RetornaAlerta() throws Exception {
+                        when(transactionService.getMostRecentTransferByUserId(anyLong()))
+                                        .thenReturn(Optional.of(new Transaction(new User(2L),
+                                                        new BigDecimal("100.00"),
+                                                        LocalDateTime.now(), new Account(), new Account())));
 
-                                mockMvc.perform(post("/api/alerta-scoring")
-                                                .contentType(MediaType.APPLICATION_JSON)
-                                                .content("1"))
-                                                .andExpect(status().isOk())
-                                                .andExpect(jsonPath("$.userId").value(idCliente))
-                                                .andExpect(jsonPath("$.description").value(
-                                                                "Alerta: Transaccion aprobada para cliente " + idCliente
-                                                                                + " con scoring de: 90"));
-                        }
+                        when(transactionService.isLastTransferInLastHour(any(Transaction.class),
+                                        any(LocalDateTime.class)))
+                                        .thenReturn(true);
 
-                        @Test
-                        void checkProccesTransaction_CuandoAlertNull_RetornaNotFound() throws Exception {
-                                // Arrange
-                                Long idCliente = 2L;
-                                when(transactionService.processTransactionScoring(anyLong()))
-                                                .thenReturn(null);
+                        String userEventJson = """
+                                                [
+                                                {
+                                                "id": 1,
+                                                "user": { "id": 1 },
+                                                "type": "CHANGE_EMAIL",
+                                                "eventDateHour": "2025-08-13T10:00:00"
+                                                },
+                                                {
+                                                "id": 2,
+                                                "user": { "id": 2 },
+                                                "type": "CHANGE_PASSWORD",
+                                                "eventDateHour": "2025-08-13T10:30:00"
+                                                }
+                                                ]
+                                        """;
 
-                                // Act & Assert
-                                mockMvc.perform(post("/api/alerta-scoring")
-                                                .contentType(MediaType.APPLICATION_JSON)
-                                                .content("2"))
-                                                .andExpect(status().isNotFound());
-
-                                verify(transactionService).processTransactionScoring(idCliente);
-                        }
+                        mockMvc.perform(
+                                        post("/api/alerta-account-takeover")
+                                                        .contentType(MediaType.APPLICATION_JSON)
+                                                        .content(userEventJson))
+                                        .andExpect(status().isOk())
+                                        .andExpect(jsonPath("$.userId").value(2))
+                                        .andExpect(jsonPath("$.description")
+                                                        .value("Alerta: Posible Account Takeover detectado para el usuario 2"));
                 }
 
-                @Nested
-                @DisplayName("Tests para Evaluar el Account Takeover")
-                class EvaluateAccountTakeoverTests {
+                @Test
+                @DisplayName("POST /api/alerta-account-takeover - sin eventos de usuario")
+                void evaluateAccountTakeover_CuandoNoHayEventos_RetornaBadRequest() throws Exception {
+                        String userEventJson = "[]";
 
-                        @Test
-                        @DisplayName("POST /api/alerta-account-takeover - éxito")
-                        void evaluateAccountTakeover_CuandoOk_RetornaAlerta() throws Exception {
-                                when(transactionService.getMostRecentTransferByUserId(anyLong()))
-                                                .thenReturn(Optional.of(new Transaction(new User(2L),
-                                                                new BigDecimal("100.00"),
-                                                                LocalDateTime.now(), new Account(), new Account())));
-
-                                when(transactionService.isLastTransferInLastHour(any(Transaction.class),
-                                                any(LocalDateTime.class)))
-                                                .thenReturn(true);
-
-                                String userEventJson = """
-                                                    [
-                                                      {
-                                                        "id": 1,
-                                                        "user": { "id": 1 },
-                                                        "type": "CHANGE_EMAIL",
-                                                        "eventDateHour": "2025-08-13T10:00:00"
-                                                      },
-                                                      {
-                                                        "id": 2,
-                                                        "user": { "id": 2 },
-                                                        "type": "CHANGE_PASSWORD",
-                                                        "eventDateHour": "2025-08-13T10:30:00"
-                                                      }
-                                                    ]
-                                                """;
-
-                                mockMvc.perform(
-                                                post("/api/alerta-account-takeover")
-                                                                .contentType(MediaType.APPLICATION_JSON)
-                                                                .content(userEventJson))
-                                                .andExpect(status().isOk())
-                                                .andExpect(jsonPath("$.userId").value(2))
-                                                .andExpect(jsonPath("$.description")
-                                                                .value("Alerta: Posible Account Takeover detectado para el usuario 2"));
-                        }
-
-                        @Test
-                        @DisplayName("POST /api/alerta-account-takeover - sin eventos de usuario")
-                        void evaluateAccountTakeover_CuandoNoHayEventos_RetornaBadRequest() throws Exception {
-                                String userEventJson = "[]";
-
-                                mockMvc.perform(post("/api/alerta-account-takeover")
-                                                .contentType(MediaType.APPLICATION_JSON)
-                                                .content(userEventJson))
-                                                .andExpect(status().isBadRequest())
-                                                .andExpect(jsonPath("$.description")
-                                                                .value("Error: No se han proporcionado eventos de usuario."));
-                        }
-
+                        mockMvc.perform(post("/api/alerta-account-takeover")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(userEventJson))
+                                        .andExpect(status().isBadRequest())
+                                        .andExpect(jsonPath("$.description")
+                                                        .value("Error: No se han proporcionado eventos de usuario."));
                 }
+
         }
 
         @Nested

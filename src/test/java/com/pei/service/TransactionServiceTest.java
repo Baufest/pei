@@ -64,7 +64,7 @@ class TransactionServiceTest {
         @Mock
         private TransactionVelocityDetectorService transactionVelocityDetectorService;
         @Mock
-        private ScoringServiceInterno scoringServiceInterno;
+        private ScoringRangesService scoringServiceInterno;
         @Mock
         private Gson gson;
         @Mock
@@ -389,8 +389,9 @@ class TransactionServiceTest {
         }
 
         @Test
-        void processTransaction_CuandoStatusDistintoDe200_RetornaAlertRechazada() {
+        void processTransactionScoring_CuandoStatusDistintoDe200_RetornaAlertRechazada() {
                 Long idCliente = 1L;
+                String clientType = "individuo";
                 String scoringJson = "{\"status\":500,\"mensaje\":\"Error interno del servidor de scoring\",\"timestamp\":2025-08-18T10:00:00Z}";
 
                 try (MockedStatic<ScoringService> mocked = Mockito.mockStatic(ScoringService.class)) {
@@ -404,7 +405,7 @@ class TransactionServiceTest {
 
                         when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
 
-                        Alert result = transactionService.processTransactionScoring(idCliente);
+                        Alert result = transactionService.processTransactionScoring(idCliente, clientType);
 
                         assertNotNull(result);
                         assertEquals(idCliente, result.userId());
@@ -413,8 +414,9 @@ class TransactionServiceTest {
         }
 
         @Test
-        void processTransaction_CuandoColorVerde_RetornaAlertAprobada() {
+        void processTransactionScoring_CuandoColorVerde_RetornaAlertAprobada() {
                 Long idCliente = 2L;
+                String clientType = "individuo";
                 int scoringCliente = 70;
 
                 String scoringJson = "{\"status\":200,\"mensaje\":\"Consulta exitosa\",\"idCliente\":2,\"scoring\":" +
@@ -433,10 +435,10 @@ class TransactionServiceTest {
 
                         when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
 
-                        when(scoringServiceInterno.getScoringColorBasedInUserScore(scoringCliente))
-                                        .thenReturn("Verde");
+                        when(scoringServiceInterno.getScoringColor(scoringCliente, clientType))
+                                        .thenReturn("VERDE");
 
-                        Alert result = transactionService.processTransactionScoring(idCliente);
+                        Alert result = transactionService.processTransactionScoring(idCliente, clientType);
 
                         assertNotNull(result);
                         assertEquals(idCliente, result.userId());
@@ -446,8 +448,9 @@ class TransactionServiceTest {
         }
 
         @Test
-        void processTransaction_CuandoColorAmarillo_RetornaAlertRevision() {
+        void processTransactionScoring_CuandoColorAmarillo_RetornaAlertRevision() {
                 Long idCliente = 3L;
+                String clientType = "individuo";
                 int scoringCliente = 60;
                 String scoringJson = "{\"status\":200,\"mensaje\":\"Consulta exitosa\",\"idCliente\":3,\"scoring\":" +
                                 scoringCliente + ",\"timestamp\":\"2025-08-18T10:00:00Z\"}";
@@ -465,10 +468,10 @@ class TransactionServiceTest {
 
                         when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
 
-                        when(scoringServiceInterno.getScoringColorBasedInUserScore(scoringCliente))
-                                        .thenReturn("Amarillo");
+                        when(scoringServiceInterno.getScoringColor(scoringCliente, clientType))
+                                        .thenReturn("AMARILLO");
 
-                        Alert result = transactionService.processTransactionScoring(idCliente);
+                        Alert result = transactionService.processTransactionScoring(idCliente, clientType);
 
                         assertNotNull(result);
                         assertEquals(idCliente, result.userId());
@@ -478,8 +481,9 @@ class TransactionServiceTest {
         }
 
         @Test
-        void processTransaction_CuandoColorRojo_RetornaAlertRechazada() {
+        void processTransactionScoring_CuandoColorRojo_RetornaAlertRechazada() {
                 Long idCliente = 4L;
+                String clientType = "individuo";
                 int scoringCliente = 20;
 
                 String scoringJson = "{\"status\":200,\"mensaje\":\"Consulta exitosa\",\"idCliente\":4,\"scoring\":" +
@@ -498,10 +502,10 @@ class TransactionServiceTest {
 
                         when(gson.fromJson(scoringJson, JsonObject.class)).thenReturn(fakeJson);
 
-                        when(scoringServiceInterno.getScoringColorBasedInUserScore(scoringCliente))
-                                        .thenReturn("Rojo");
+                        when(scoringServiceInterno.getScoringColor(scoringCliente, clientType))
+                                        .thenReturn("ROJO");
 
-                        Alert result = transactionService.processTransactionScoring(idCliente);
+                        Alert result = transactionService.processTransactionScoring(idCliente, clientType);
 
                         assertNotNull(result);
                         assertEquals(idCliente, result.userId());

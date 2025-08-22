@@ -1094,7 +1094,9 @@ Para probar correctamente el sistema de envío de mails se utilizó Ethereal, un
 ---
 
 
-## 👨‍💻 Historia de Usuario #232
+## 👨‍💻 Historia de Usuario #232 
+## LA FUNCIONALIDAD DE ESTA HISTORIA DE USUARIO HA SIDO ACTUALIZADA
+## EN LA HISTORIA DE USUARIO #252 
 
 ### 📝 Título  
 Integración y alerta de scoring externo BBVA
@@ -1609,8 +1611,6 @@ Content-Type: application/json
 
 ---
 
-## 📦 Documentación de Integraciones Externas
-
 - **Servicio de Email (JavaMail)**: Envío real de alertas por correo electrónico.
 - **SMS y Slack**: Métodos simulados para pruebas y demostración.
 
@@ -1632,41 +1632,92 @@ Content-Type: application/json
 ## 🧪 Pruebas Implementadas
 
 - Se implementaron tests unitarios en `AlertNotificatorServiceTest` usando JUnit 5 y Mockito, cubriendo casos de éxito y error en el envío de alertas por canal.
-
----
-
----
-
-## 📦 Documentación de Integraciones Externas
-
-- **Servicio de Email (JavaMail)**: Envío real de alertas por correo electrónico.
-- **SMS y Slack**: Métodos simulados para pruebas y demostración.
-
----
-
-## 🗃️ Cambios en Entidades
-
-### Transaction
-- Se agregaron los campos:
-    - `dateTime`: Fecha y hora de la transacción.
-    - `codCoelsa`: Código regulatorio alfanumérico de 22 caracteres.
-
-### TransactionDTO
-- Incluye los campos:
-    - `id`, `codCoelsa`, `amount`, `currency`, `accountDestinationId`, `dateTime`.
-
----
-
-## 🧪 Pruebas Implementadas
-
-- Se implementaron tests unitarios en `AlertNotificatorServiceTest` usando JUnit 5 y Mockito, cubriendo casos de éxito y error en el envío de alertas por canal.
-
----
-
 
 ---------------------
 
-  ## 🧑‍💻 Historia de Usuario #251
+## 🧑‍💻 Historia de Usuario #252
+
+### 📝 Título
+Alerta por scoring de transacción con integración de tipo de cliente
+
+### 📌 Descripción Breve
+
+Se implementó el endpoint `/api/alerta-scoring` que permite analizar el scoring de un usuario al procesar una transacción, considerando el tipo de cliente obtenido dinámicamente. El sistema consulta el tipo de cliente, ejecuta la lógica de scoring y, si detecta un scoring bajo o riesgoso, genera una alerta. Si el scoring es aceptable, retorna 404 (no hay alerta).
+
+### ⚙️ Detalles Técnicos
+
+#### 🧩 Clases/Métodos Afectados
+- `AlertController`
+    - Método: `checkProcessTransaction(Long userId)`
+- `ClienteService`
+    - Método: `getClientType(Long userId)`
+- `TransactionService`
+    - Método: `processTransactionScoring(Long userId, String clientType)`
+- `Alert` (DTO)
+
+#### 🌐 Endpoints Nuevos/Modificados
+| Método HTTP | URL                | Parámetros (Body) | Respuesta                                      |
+|-------------|--------------------|-------------------|------------------------------------------------|
+| POST        | `/api/alerta-scoring` | `Long userId`      | `Alert` con mensaje si se detecta scoring bajo |
+
+#### 🗃️ Cambios en Base de Datos
+- No aplica. El endpoint realiza análisis sobre datos existentes, sin modificar la estructura ni los datos de la base.
+
+### 🔍 Impacto en el Sistema
+- Módulo afectado: `AlertController`
+- Dependencias relevantes: `ClienteService`, `TransactionService`, configuración de scoring
+
+### 💻 Ejemplo de Uso
+
+**Request**
+```http
+POST /api/alerta-scoring
+Content-Type: application/json
+
+12345
+```
+**Response (caso positivo)**
+```json
+{
+  "userId": 12345,
+  "description": "Alerta: Scoring bajo detectado para el usuario 12345"
+}
+```
+
+**Response (caso negativo)**
+```http
+404 Not Found
+```
+
+## 🧪 Pruebas Unitarias
+
+### 🧪 Escenarios Cubiertos
+
+- `checkProcessTransaction_CuandoScoringBajo_RetornaAlerta`: Usuario con scoring bajo → alerta generada.
+- `checkProcessTransaction_CuandoScoringAlto_NoRetornaAlerta`: Usuario con scoring alto → no genera alerta.
+- `checkProcessTransaction_CuandoTipoClienteNoValido_RetornaNotFound`: Tipo de cliente inválido → 404 Not Found.
+
+### 🧪 Endpoints Probados
+| Método HTTP | URL                | Escenario de Test                  | Resultado Esperado |
+|-------------|--------------------|------------------------------------|--------------------|
+| POST        | `/api/alerta-scoring` | Scoring bajo                       | Alerta generada    |
+| POST        | `/api/alerta-scoring` | Scoring alto                       | 404 Not Found      |
+| POST        | `/api/alerta-scoring` | Tipo de cliente inválido           | 404 Not Found      |
+
+---
+
+## ✅ Estado
+✔️ Completado
+
+---
+
+## 📦 Documentación de Integraciones Externas
+
+_No aplica para este endpoint. No se utilizan servicios
+
+---------------------
+
+## 🧑‍💻 Historia de Usuario #251
 
 ### 📝 Título
 Modificacion umbral de velocidades de transacciones
@@ -1674,6 +1725,7 @@ Modificacion umbral de velocidades de transacciones
 ---
 
 ### 📌 Descripción Breve
+
 Se implementa la configuración de umbrales de monto mínimo y máximo para la alerta de transacciones rápidas, permitiendo que el sistema detecte actividad sospechosa solo si las transacciones se encuentran dentro de un rango de monto configurable según el tipo de cliente ("individuo" o "empresa"). Esto mejora la flexibilidad y precisión de la lógica antifraude.
 
 ---

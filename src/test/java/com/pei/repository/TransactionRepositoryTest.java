@@ -52,10 +52,12 @@ class TransactionRepositoryTest {
         // Crear cuentas
         Account accountUser1 = new Account(user1);
         accountUser1.setAccountType(AccountType.CUENTA_CORRIENTE);
+        accountUser1.setCountry("Argentina");
         accountRepository.save(accountUser1);
 
         Account accountUser2 = new Account(user2);
         accountUser2.setAccountType(AccountType.CUENTA_CORRIENTE);
+        accountUser2.setCountry("Argentina");
         accountRepository.save(accountUser2);
 
         // Usar fechas fijas para evitar problemas de precisión
@@ -131,10 +133,12 @@ class TransactionRepositoryTest {
         // Crear cuentas
         Account accountUser1 = new Account(user1);
         accountUser1.setAccountType(AccountType.CUENTA_CORRIENTE);
+        accountUser1.setCountry("Argentina");
         accountRepository.save(accountUser1);
 
         Account accountUser2 = new Account(user2);
         accountUser2.setAccountType(AccountType.CUENTA_CORRIENTE);
+        accountUser2.setCountry("Argentina");
         accountRepository.save(accountUser2);
 
         // Crear transacciones
@@ -205,10 +209,12 @@ class TransactionRepositoryTest {
         // Crear cuentas
         Account accountUser1 = new Account(user1);
         accountUser1.setAccountType(AccountType.CUENTA_CORRIENTE);
+        accountUser1.setCountry("Argentina");
         accountRepository.save(accountUser1);
 
         Account accountUser2 = new Account(user2);
         accountUser2.setAccountType(AccountType.CUENTA_CORRIENTE);
+        accountUser2.setCountry("Argentina");
         accountRepository.save(accountUser2);
 
         // Crear transacciones
@@ -268,11 +274,13 @@ class TransactionRepositoryTest {
 
         // Crear cuentas
         Account account1 = new Account(user);
+        account1.setCountry("Argentina");
         account1.setAccountType(AccountType.CUENTA_CORRIENTE);
         accountRepository.save(account1);
 
         Account account2 = new Account(user);
         account2.setAccountType(AccountType.CUENTA_AHORROS);
+        account2.setCountry("Argentina");
         accountRepository.save(account2);
 
         // Crear transacciones
